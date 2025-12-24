@@ -1066,6 +1066,11 @@ def random_prompt():
 
 
 if __name__ == '__main__':
+    # Server configuration from environment variables
+    HOST = os.environ.get('HOST', '0.0.0.0')
+    PORT = int(os.environ.get('PORT', 5309))
+    DEBUG = os.environ.get('FLASK_DEBUG', '').lower() in ('1', 'true', 'yes')
+
     # Start model loader thread
     loader_thread = threading.Thread(target=load_models, daemon=True)
     loader_thread.start()
@@ -1075,5 +1080,5 @@ if __name__ == '__main__':
     worker_thread.start()
 
     print("Starting server... Models loading in background.")
-    print("Access at http://localhost:5309")
-    app.run(host='0.0.0.0', port=5309, debug=False, threaded=True)
+    print(f"Access at http://{HOST if HOST != '0.0.0.0' else 'localhost'}:{PORT}")
+    app.run(host=HOST, port=PORT, debug=DEBUG, threaded=True)

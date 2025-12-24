@@ -88,10 +88,17 @@ pip install flashy julius lameenc demucs xformers transformers encodec torchmetr
 
 ## Configuration
 
+Copy `.env.example` to `.env` and customize as needed:
+
+```bash
+cp .env.example .env
+```
+
 | Environment Variable | Description | Default |
 |---------------------|-------------|---------|
 | `HOST` | Server bind address | `0.0.0.0` |
 | `PORT` | Server port | `5309` |
+| `FLASK_DEBUG` | Enable debug mode with auto-reload | `false` |
 
 ## API Reference
 
