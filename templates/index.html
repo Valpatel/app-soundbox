@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Box - Graphlings Apps</title>
+    <meta name="description" content="Generate music & sound effects using AI">
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="icon" type="image/png" sizes="32x32" id="favicon-link" href="/static/graphlings/logo-104.png">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================
+           SOUND BOX - Futuristic Theme
+           ======================================== */
+        :root {
+            --bg-dark: #0a0e17;
+            --bg-card: #111827;
+            --bg-input: #0d1117;
+            --accent: #a855f7;
+            --accent-glow: rgba(168, 85, 247, 0.4);
+            --cyan: #00d4ff;
+            --cyan-glow: rgba(0, 212, 255, 0.3);
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --text-muted: #64748b;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --success: #10b981;
+            --error: #ef4444;
+            --gradient-accent: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+            --gradient-cyan: linear-gradient(135deg, #00d4ff 0%, #0ea5e9 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            background-image:
+                radial-gradient(ellipse at top, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(0, 212, 255, 0.08) 0%, transparent 50%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        h1, h2, h3 { font-family: 'Fredoka', sans-serif; }
+
+        /* Page Header */
+        .page-header {
+            text-align: center;
+            padding: 16px 16px 8px;
+            background: transparent;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text);
+            text-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .page-title span {
+            background: linear-gradient(135deg, var(--accent), var(--cyan), var(--accent));
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleGradient 4s ease-in-out infinite;
+        }
+
+        @keyframes titleGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .widget-bar {
+            display: flex;
+            justify-content: flex-start;
+            padding: 8px 16px 16px;
+            min-height: 80px;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            font-size: 0.95rem;
+        }
+
+        .subtitle a {
+            color: var(--cyan);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .subtitle a:hover {
+            text-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--card-border-accent, var(--border));
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+            transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+            animation: cardFloat 6s ease-in-out infinite;
+        }
+
+        @keyframes cardFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 25px var(--accent-glow);
+            animation-play-state: paused;
+            transform: translateY(-5px);
+        }
+
+        /* Labels */
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Textarea */
+        textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 90px;
+            transition: all 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow), 0 0 15px var(--accent-glow);
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Model Tabs */
+        .model-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .model-tab {
+            flex: 1;
+            padding: 16px 12px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.25s;
+            text-align: center;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .model-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .model-tab:hover::before {
+            left: 100%;
+        }
+
+        .model-tab:hover {
+            border-color: var(--accent);
+            background: var(--chip-bg, rgba(255, 255, 255, 0.02));
+            color: var(--text);
+            transform: translateY(-3px);
+        }
+
+        .model-tab.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--chip-bg, rgba(168, 85, 247, 0.1));
+            box-shadow: 0 0 20px var(--accent-glow);
+            animation: tabPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes tabPulse {
+            0%, 100% { box-shadow: 0 0 20px var(--accent-glow); }
+            50% { box-shadow: 0 0 30px var(--accent-glow), 0 0 40px var(--accent-glow); }
+        }
+
+        .model-tab .icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .model-tab .name {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .model-tab .desc {
+            font-size: 0.7rem;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+
+        /* Controls Row */
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: stretch;
+            margin-top: 20px;
+        }
+
+        /* Control Box - shared style for duration, loop, random */
+        .control-box {
+            background: var(--bg-input);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .control-box:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-box:active {
+            transform: translateY(0);
+        }
+
+        .control-box label {
+            font-size: 0.7rem;
+            margin: 0 0 4px 0;
+            text-align: center;
+        }
+
+        /* Duration Control */
+        .duration-control {
+            flex-direction: column;
+            min-width: 100px;
+        }
+
+        .duration-value {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 4px;
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-glow);
+            transition: transform 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Loop Toggle Control */
+        .loop-control {
+            gap: 10px;
+        }
+
+        .loop-control.active {
+            border-color: var(--accent);
+            background: rgba(168, 85, 247, 0.1);
+        }
+
+        .loop-control .loop-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            margin: 0;
+            text-transform: none;
+        }
+
+        /* Custom Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            background: var(--border);
+            border-radius: 11px;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 16px;
+            height: 16px;
+            background: var(--text-dim);
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .loop-control.active .toggle-switch {
+            background: var(--accent);
+        }
+
+        .loop-control.active .toggle-switch::after {
+            left: 21px;
+            background: white;
+        }
+
+        .loop-control input[type="checkbox"] {
+            display: none;
+        }
+
+        /* Random Control */
+        .random-control {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            min-width: 80px;
+        }
+
+        .random-control:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Generate Button */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: var(--gradient-accent);
+            color: white;
+            box-shadow: 0 4px 15px var(--accent-glow);
+            animation: generatePulse 2s ease-in-out infinite;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: btnShine 3s ease-in-out infinite;
+        }
+
+        @keyframes generatePulse {
+            0%, 100% { box-shadow: 0 4px 15px var(--accent-glow); }
+            50% { box-shadow: 0 4px 25px var(--accent-glow), 0 0 40px var(--accent-glow); }
+        }
+
+        @keyframes btnShine {
+            0% { left: -100%; }
+            50%, 100% { left: 100%; }
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 30px var(--accent-glow);
+            animation: none;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            animation: none !important;
+        }
+
+        .btn:disabled::before {
+            animation: none;
+        }
+
+        /* Status Messages */
+        .status {
+            text-align: center;
+            padding: 16px;
+            margin-top: 16px;
+            border-radius: 12px;
+            display: none;
+            font-weight: 600;
+        }
+
+        .status.loading {
+            display: block;
+            background: var(--chip-bg, rgba(168, 85, 247, 0.15));
+            color: var(--accent);
+            border: 1px solid var(--chip-border, rgba(168, 85, 247, 0.3));
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+            50% { box-shadow: 0 0 20px 5px var(--accent-glow); }
+        }
+
+        .status.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Player Section */
+        .player {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .player.show {
+            display: block;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 12px;
+            border-radius: 8px;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            margin: 0 0 16px 0;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 2px;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+        /* History List */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .history-item {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .history-item:hover {
+            border-color: var(--border-hover);
+        }
+
+        .history-header {
+            padding: 14px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.2s;
+        }
+
+        .history-header:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .history-expand {
+            color: var(--text-muted);
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+
+        .history-item.expanded .history-expand {
+            transform: rotate(90deg);
+            color: var(--accent);
+        }
+
+        .history-item.expanded {
+            border-color: var(--card-border-accent, var(--border));
+        }
+
+        .history-header .prompt {
+            flex: 1;
+            font-size: 0.9rem;
+            color: var(--text);
+            word-break: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .history-header .meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .history-content {
+            display: none;
+            padding: 0 16px 16px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .history-item.expanded .history-content {
+            display: block;
+        }
+
+        .history-content .prompt-full {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin: 12px 0;
+            word-break: break-word;
+        }
+
+        .history-item audio {
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .rating-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .rating-btn:hover {
+            border-color: var(--border-hover);
+            color: var(--text);
+            transform: scale(1.1);
+        }
+
+        .rating-btn.active-up {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .rating-btn.active-down {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .download-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            margin-left: auto;
+            transition: all 0.2s;
+        }
+
+        .download-btn:hover {
+            background: var(--chip-bg, rgba(168, 85, 247, 0.1));
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .spectrogram {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .spectrogram:hover {
+            opacity: 0.85;
+            transform: scale(1.01);
+        }
+
+        .spectrogram.loading {
+            height: 80px;
+            background: var(--bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .quality-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+
+        .quality-badge.good {
+            background: var(--chip-bg, rgba(16, 185, 129, 0.2));
+            color: var(--accent);
+        }
+
+        .quality-badge.medium {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .quality-badge.bad {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        .quality-issues {
+            font-size: 0.75rem;
+            color: var(--error);
+            margin-top: 4px;
+        }
+
+        .player-spectrogram {
+            margin-top: 16px;
+        }
+
+        .player-spectrogram img {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Example Chips */
+        .examples {
+            margin-top: 16px;
+        }
+
+        .examples span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .example-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .chip {
+            padding: 8px 14px;
+            background: var(--chip-bg, rgba(168, 85, 247, 0.1));
+            border: 1px solid var(--chip-border, rgba(168, 85, 247, 0.3));
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chip::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: var(--accent-glow);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        .chip:active::after {
+            width: 200px;
+            height: 200px;
+            opacity: 0;
+        }
+
+        .chip:hover {
+            background: var(--chip-bg, rgba(168, 85, 247, 0.2));
+            border-color: var(--accent);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .loading-banner {
+            background: rgba(255, 193, 7, 0.15);
+            border: 1px solid rgba(255, 193, 7, 0.4);
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .loading-banner.ready {
+            background: rgba(40, 167, 69, 0.15);
+            border-color: rgba(40, 167, 69, 0.4);
+        }
+        .loading-banner .title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #ffc107;
+        }
+        .loading-banner.ready .title {
+            color: #28a745;
+        }
+        .model-status {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            font-size: 14px;
+        }
+        .model-status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #666;
+        }
+        .status-dot.pending { background: #666; }
+        .status-dot.loading { background: #ffc107; animation: pulse 1s infinite; }
+        .status-dot.ready { background: #28a745; }
+        .status-dot.error { background: #dc3545; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .gpu-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .gpu-icon {
+            font-size: 18px;
+        }
+        #gpu-name {
+            color: #888;
+            flex: 0 0 auto;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .gpu-bar {
+            flex: 1;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .gpu-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #ffc107);
+            border-radius: 4px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+        #gpu-mem {
+            color: #888;
+            min-width: 40px;
+        }
+        .gpu-busy {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .gpu-busy.idle {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+        }
+        .gpu-busy.busy {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+        .job-progress {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .job-progress .position {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        .job-progress .progress-text {
+            color: #00d4ff;
+            font-weight: 500;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff 0%, #0099cc 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .queue-info {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            margin-top: 10px;
+        }
+        /* Tooltip styles */
+        [title] {
+            position: relative;
+        }
+        .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 1000;
+            margin-bottom: 5px;
+        }
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+        }
+        .queue-status-banner {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .queue-status-banner.show {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .queue-status-banner .queue-count {
+            color: #ffc107;
+            font-weight: 600;
+        }
+        .queue-status-banner .wait-time {
+            color: #888;
+            font-size: 13px;
+        }
+        .feedback-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(40, 167, 69, 0.95);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 10000;
+            pointer-events: none;
+        }
+        .feedback-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-header">
+        <h1 class="page-title">Sound <span>Box</span></h1>
+    </div>
+    <div class="widget-bar">
+        <div id="wallet-widget-container"></div>
+    </div>
+
+    <div class="container" style="padding: 0 20px 20px;">
+        <p class="subtitle">Generate music & sound effects using Meta's AI models — <a href="https://ai.meta.com/resources/models-and-libraries/audiocraft/" target="_blank" rel="noopener" style="color: #00d4ff; text-decoration: none;">More information</a></p>
+
+        <div id="loading-banner" class="loading-banner">
+            <div class="title">Loading AI Models...</div>
+            <div class="model-status">
+                <div class="model-status-item">
+                    <span class="status-dot" id="music-status-dot"></span>
+                    <span>MusicGen</span>
+                </div>
+                <div class="model-status-item">
+                    <span class="status-dot" id="audio-status-dot"></span>
+                    <span>AudioGen</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="gpu-status" class="gpu-status" title="GPU memory usage and status">
+            <span class="gpu-icon">🖥️</span>
+            <span id="gpu-name">GPU</span>
+            <div class="gpu-bar">
+                <div class="gpu-bar-fill" id="gpu-bar-fill"></div>
+            </div>
+            <span id="gpu-mem">0%</span>
+            <span class="gpu-busy" id="gpu-busy">IDLE</span>
+        </div>
+
+        <div id="queue-status-banner" class="queue-status-banner">
+            <span><span class="queue-count" id="queue-count">0</span> jobs in queue</span>
+            <span class="wait-time" id="estimated-wait">Est. wait: calculating...</span>
+        </div>
+
+        <div class="card">
+            <div class="model-tabs">
+                <div class="model-tab active" data-model="music" onclick="selectModel('music')">
+                    <div class="icon">🎵</div>
+                    <div class="name">MusicGen</div>
+                    <div class="desc">Generate music</div>
+                </div>
+                <div class="model-tab" data-model="audio" onclick="selectModel('audio')">
+                    <div class="icon">🔊</div>
+                    <div class="name">AudioGen</div>
+                    <div class="desc">Generate sound effects</div>
+                </div>
+            </div>
+
+            <label for="prompt">Describe what you want to generate:</label>
+            <textarea id="prompt" placeholder="e.g., upbeat electronic dance music with heavy bass and synth leads"></textarea>
+
+            <div class="examples" id="music-examples">
+                <span>Try these:</span>
+                <div class="example-chips">
+                    <span class="chip" onclick="setPrompt('lo-fi hip hop beat with jazzy piano')">Lo-fi Hip Hop</span>
+                    <span class="chip" onclick="setPrompt('epic orchestral music with dramatic strings')">Epic Orchestral</span>
+                    <span class="chip" onclick="setPrompt('chill acoustic guitar with soft drums')">Chill Acoustic</span>
+                    <span class="chip" onclick="setPrompt('80s synthwave with retro synths and drums')">80s Synthwave</span>
+                </div>
+            </div>
+
+            <div class="examples" id="audio-examples" style="display: none;">
+                <span>Try these:</span>
+                <div class="example-chips">
+                    <span class="chip" onclick="setPrompt('dog barking in the distance')">Dog Barking</span>
+                    <span class="chip" onclick="setPrompt('thunder and heavy rain')">Thunder Storm</span>
+                    <span class="chip" onclick="setPrompt('footsteps on wooden floor')">Footsteps</span>
+                    <span class="chip" onclick="setPrompt('car engine starting and revving')">Car Engine</span>
+                    <span class="chip" onclick="setPrompt('crowd cheering at a sports event')">Crowd Cheering</span>
+                    <span class="chip" onclick="setPrompt('glass breaking and shattering')">Glass Breaking</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="control-box duration-control">
+                    <label for="duration">Duration</label>
+                    <div class="duration-value"><span id="duration-display">8</span>s</div>
+                    <input type="range" id="duration" min="3" max="120" value="8">
+                </div>
+                <div class="control-box loop-control" id="loop-control" onclick="toggleLoop()" title="Apply crossfade to make the audio loop seamlessly">
+                    <span class="toggle-switch"></span>
+                    <span class="loop-label">Loop</span>
+                    <input type="checkbox" id="loop-checkbox">
+                </div>
+                <div class="control-box random-control" id="random-btn" onclick="randomPrompt()" title="Generate a random creative prompt">Random</div>
+                <button id="generate-btn" class="btn btn-primary" onclick="generate()" title="Generate audio from your prompt">
+                    <span>Generate</span>
+                </button>
+            </div>
+
+            <div id="status" class="status"></div>
+
+            <div id="player" class="player">
+                <h2>Generated Audio <span id="quality-badge" class="quality-badge"></span></h2>
+                <audio id="audio" controls></audio>
+                <div id="player-spectrogram" class="player-spectrogram"></div>
+            </div>
+        </div>
+
+        <div class="card" id="history-card" style="display: none;">
+            <h2>Recent Generations</h2>
+            <div id="history" class="history-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const promptEl = document.getElementById('prompt');
+        const durationEl = document.getElementById('duration');
+        const durationDisplay = document.getElementById('duration-display');
+        const statusEl = document.getElementById('status');
+        const playerEl = document.getElementById('player');
+        const audioEl = document.getElementById('audio');
+        const generateBtn = document.getElementById('generate-btn');
+        const historyEl = document.getElementById('history');
+        const historyCard = document.getElementById('history-card');
+        const musicExamples = document.getElementById('music-examples');
+        const audioExamples = document.getElementById('audio-examples');
+        const loadingBanner = document.getElementById('loading-banner');
+        const musicStatusDot = document.getElementById('music-status-dot');
+        const audioStatusDot = document.getElementById('audio-status-dot');
+        const qualityBadge = document.getElementById('quality-badge');
+        const playerSpectrogram = document.getElementById('player-spectrogram');
+
+        let currentModel = 'music';
+        let modelStatus = { music: 'pending', audio: 'pending' };
+        let currentJobId = null;
+        let modelsReady = false;
+
+        // Separate prompts for each model
+        let modelPrompts = {
+            music: '',
+            audio: ''
+        };
+
+        // User ID from Graphlings widget (set when logged in)
+        let currentUserId = null;
+
+        const gpuName = document.getElementById('gpu-name');
+        const gpuBarFill = document.getElementById('gpu-bar-fill');
+        const gpuMem = document.getElementById('gpu-mem');
+        const gpuBusy = document.getElementById('gpu-busy');
+
+        const queueBanner = document.getElementById('queue-status-banner');
+        const queueCountEl = document.getElementById('queue-count');
+        const estimatedWaitEl = document.getElementById('estimated-wait');
+
+        async function checkStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                modelStatus = data.models;
+
+                // Update model status dots
+                musicStatusDot.className = 'status-dot ' + (modelStatus.music.startsWith?.('error') ? 'error' : modelStatus.music);
+                audioStatusDot.className = 'status-dot ' + (modelStatus.audio.startsWith?.('error') ? 'error' : modelStatus.audio);
+
+                // Update GPU status
+                if (data.gpu && data.gpu.available) {
+                    gpuName.textContent = data.gpu.name?.replace('NVIDIA GeForce ', '') || 'GPU';
+                    gpuBarFill.style.width = data.gpu.memory_percent + '%';
+                    gpuMem.textContent = data.gpu.memory_percent + '%';
+                    gpuBusy.textContent = data.gpu.busy ? 'BUSY' : 'IDLE';
+                    gpuBusy.className = 'gpu-busy ' + (data.gpu.busy ? 'busy' : 'idle');
+                }
+
+                // Check if all ready
+                const allReady = modelStatus.music === 'ready' && modelStatus.audio === 'ready';
+                if (allReady && !modelsReady) {
+                    modelsReady = true;
+                    loadingBanner.classList.add('ready');
+                    loadingBanner.querySelector('.title').textContent = 'Models Ready!';
+                    setTimeout(() => {
+                        loadingBanner.style.display = 'none';
+                    }, 2000);
+                }
+
+                // Update queue status
+                if (data.queue_length > 0) {
+                    queueBanner.classList.add('show');
+                    queueCountEl.textContent = data.queue_length;
+                    const waitSeconds = data.estimated_wait || 0;
+                    if (waitSeconds > 60) {
+                        estimatedWaitEl.textContent = `Est. wait: ${Math.ceil(waitSeconds / 60)} min`;
+                    } else if (waitSeconds > 0) {
+                        estimatedWaitEl.textContent = `Est. wait: ~${Math.ceil(waitSeconds)}s`;
+                    } else {
+                        estimatedWaitEl.textContent = 'Processing now...';
+                    }
+                } else {
+                    queueBanner.classList.remove('show');
+                }
+
+                updateGenerateButton();
+            } catch (err) {
+                console.error('Status check failed:', err);
+            }
+
+            // Keep polling
+            setTimeout(checkStatus, 2000);
+        }
+
+        function updateGenerateButton() {
+            if (currentJobId) {
+                generateBtn.disabled = true;
+                return;
+            }
+            const ready = modelStatus[currentModel] === 'ready';
+            generateBtn.disabled = !ready;
+            if (!ready && modelStatus[currentModel] === 'loading') {
+                generateBtn.textContent = 'Loading Model...';
+            } else {
+                generateBtn.textContent = 'Generate';
+            }
+        }
+
+        durationEl.addEventListener('input', () => {
+            durationDisplay.textContent = durationEl.value;
+        });
+
+        function selectModel(model) {
+            // Save current prompt before switching
+            modelPrompts[currentModel] = promptEl.value;
+
+            currentModel = model;
+            document.querySelectorAll('.model-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.model === model);
+            });
+
+            if (model === 'music') {
+                musicExamples.style.display = 'block';
+                audioExamples.style.display = 'none';
+                promptEl.placeholder = 'e.g., upbeat electronic dance music with heavy bass and synth leads';
+            } else {
+                musicExamples.style.display = 'none';
+                audioExamples.style.display = 'block';
+                promptEl.placeholder = 'e.g., dog barking loudly, thunder in the background';
+            }
+
+            // Restore saved prompt for this model
+            promptEl.value = modelPrompts[model] || '';
+
+            updateGenerateButton();
+
+            // Reload history filtered by model
+            loadHistory();
+        }
+
+        function setPrompt(text) {
+            promptEl.value = text;
+            promptEl.focus();
+        }
+
+        function toggleLoop() {
+            const loopControl = document.getElementById('loop-control');
+            const checkbox = document.getElementById('loop-checkbox');
+            checkbox.checked = !checkbox.checked;
+            loopControl.classList.toggle('active', checkbox.checked);
+        }
+
+        async function randomPrompt() {
+            const randomBtn = document.getElementById('random-btn');
+            randomBtn.style.opacity = '0.5';
+            randomBtn.style.pointerEvents = 'none';
+
+            try {
+                const response = await fetch('/random-prompt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: currentModel })
+                });
+                const data = await response.json();
+
+                if (data.success && data.prompt) {
+                    promptEl.value = data.prompt;
+                    promptEl.focus();
+                } else {
+                    console.error('Random prompt failed:', data.error);
+                }
+            } catch (err) {
+                console.error('Random prompt error:', err);
+            } finally {
+                randomBtn.style.opacity = '1';
+                randomBtn.style.pointerEvents = 'auto';
+            }
+        }
+
+        async function generate() {
+            const prompt = promptEl.value.trim();
+            if (!prompt) {
+                statusEl.className = 'status error';
+                statusEl.textContent = 'Please enter a description';
+                return;
+            }
+
+            generateBtn.disabled = true;
+            statusEl.className = 'status loading';
+            statusEl.innerHTML = `<span class="spinner"></span>Submitting to queue...`;
+            playerEl.classList.remove('show');
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        duration: parseInt(durationEl.value),
+                        model: currentModel,
+                        loop: document.getElementById('loop-checkbox').checked,
+                        priority: 'standard',
+                        user_id: currentUserId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentJobId = data.job_id;
+                    statusEl.innerHTML = `
+                        <div class="job-progress">
+                            <div class="position">Position in queue: ${data.position}</div>
+                            <div class="progress-text"><span class="spinner"></span>Waiting...</div>
+                        </div>
+                    `;
+                    pollJobStatus();
+                } else {
+                    statusEl.className = 'status error';
+                    statusEl.textContent = 'Error: ' + data.error;
+                    generateBtn.disabled = false;
+                }
+            } catch (err) {
+                statusEl.className = 'status error';
+                statusEl.textContent = 'Error: ' + err.message;
+                generateBtn.disabled = false;
+            }
+        }
+
+        async function pollJobStatus() {
+            if (!currentJobId) return;
+
+            try {
+                const response = await fetch(`/job/${currentJobId}`);
+                const job = await response.json();
+
+                if (job.status === 'completed') {
+                    statusEl.style.display = 'none';
+                    audioEl.src = `/audio/${job.filename}`;
+
+                    // Show quality badge
+                    if (job.quality) {
+                        const score = job.quality.score;
+                        qualityBadge.textContent = `${score}%`;
+                        qualityBadge.className = 'quality-badge ' +
+                            (score >= 80 ? 'good' : score >= 60 ? 'medium' : 'bad');
+                    } else {
+                        qualityBadge.textContent = '';
+                    }
+
+                    // Show spectrogram
+                    if (job.spectrogram) {
+                        playerSpectrogram.innerHTML = `<img src="/spectrogram/${job.spectrogram}" alt="Spectrogram">`;
+                    }
+
+                    playerEl.classList.add('show');
+                    loadHistory();
+                    currentJobId = null;
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = 'Generate';
+                } else if (job.status === 'failed') {
+                    statusEl.className = 'status error';
+                    statusEl.textContent = 'Error: ' + (job.error || 'Generation failed');
+                    currentJobId = null;
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = 'Generate';
+                } else {
+                    // Still processing
+                    const posText = job.position > 1 ? `Position in queue: ${job.position}` : '';
+                    const pct = job.progress_pct || 0;
+                    const showBar = job.status === 'processing' && pct > 0;
+                    statusEl.innerHTML = `
+                        <div class="job-progress">
+                            ${posText ? `<div class="position">${posText}</div>` : ''}
+                            ${showBar ? `
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill" style="width: ${pct}%"></div>
+                                </div>
+                            ` : ''}
+                            <div class="progress-text">${!showBar ? '<span class="spinner"></span>' : ''}${job.progress || 'Processing...'}</div>
+                        </div>
+                    `;
+                    setTimeout(pollJobStatus, 300);
+                }
+            } catch (err) {
+                console.error('Job poll failed:', err);
+                setTimeout(pollJobStatus, 1000);
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                // Build query params for filtering
+                const params = new URLSearchParams();
+                params.set('model', currentModel);
+                if (currentUserId) {
+                    params.set('user_id', currentUserId);
+                }
+
+                const response = await fetch('/history?' + params.toString());
+                const items = await response.json();
+
+                // Update history section title based on model
+                const historyTitle = historyCard.querySelector('h2');
+                if (historyTitle) {
+                    historyTitle.innerHTML = currentModel === 'music'
+                        ? '🎵 Music History'
+                        : '🔊 Sound Effects History';
+                }
+
+                if (items.length > 0) {
+                    historyCard.style.display = 'block';
+                    historyEl.innerHTML = items.slice(0, 20).map(item => {
+                        const score = item.quality_score;
+                        const qualityClass = score >= 80 ? 'good' : score >= 60 ? 'medium' : 'bad';
+                        const specSrc = item.spectrogram ? `/spectrogram/${item.spectrogram}` : '';
+                        const promptShort = item.prompt.length > 50 ? item.prompt.substring(0, 50) + '...' : item.prompt;
+                        const loopBadge = item.loop ? '<span class="loop-badge">🔁</span>' : '';
+
+                        return `
+                        <div class="history-item" data-filename="${item.filename}">
+                            <div class="history-header" onclick="toggleHistoryItem(this)">
+                                <span class="history-expand">▶</span>
+                                <span class="meta">${item.model === 'music' ? '🎵' : '🔊'}</span>
+                                <span class="prompt">${escapeHtml(promptShort)}</span>
+                                <span class="meta">${item.duration}s</span>
+                                ${score ? `<span class="quality-badge ${qualityClass}">${score}%</span>` : ''}
+                            </div>
+                            <div class="history-content">
+                                <div class="prompt-full">${escapeHtml(item.prompt)}</div>
+                                <audio src="/audio/${item.filename}" controls></audio>
+                                ${specSrc ?
+                                    `<img class="spectrogram" src="${specSrc}" alt="Spectrogram" loading="lazy">` :
+                                    `<div class="spectrogram loading" onclick="loadSpectrogram(this, '${item.filename}')">Click to load spectrogram</div>`
+                                }
+                                ${item.quality_issues && item.quality_issues.length > 0 ?
+                                    `<div class="quality-issues">⚠️ ${item.quality_issues.join(', ')}</div>` : ''
+                                }
+                                <div class="history-actions">
+                                    <button class="rating-btn ${item.rating === 'up' ? 'active-up' : ''}" onclick="rate('${item.filename}', 'up')">👍</button>
+                                    <button class="rating-btn ${item.rating === 'down' ? 'active-down' : ''}" onclick="rate('${item.filename}', 'down')">👎</button>
+                                    <a href="/download/${item.filename}" class="download-btn">⬇ Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    `}).join('');
+                }
+            } catch (err) {
+                console.error('Failed to load history:', err);
+            }
+
+            // Handle empty results
+            if (!historyEl.innerHTML || historyEl.innerHTML.trim() === '') {
+                historyCard.style.display = 'none';
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function toggleHistoryItem(header) {
+            const item = header.closest('.history-item');
+            item.classList.toggle('expanded');
+        }
+
+        async function loadSpectrogram(element, filename) {
+            element.textContent = 'Loading...';
+            try {
+                const response = await fetch(`/generate-spectrogram/${filename}`);
+                const data = await response.json();
+                if (data.spectrogram) {
+                    const img = document.createElement('img');
+                    img.className = 'spectrogram';
+                    img.src = `/spectrogram/${data.spectrogram}`;
+                    img.alt = 'Spectrogram';
+                    element.replaceWith(img);
+                }
+            } catch (err) {
+                element.textContent = 'Failed to load';
+            }
+        }
+
+        async function rate(filename, rating) {
+            const item = document.querySelector(`[data-filename="${filename}"]`);
+            const upBtn = item.querySelector('.rating-btn:first-child');
+            const downBtn = item.querySelector('.rating-btn:nth-child(2)');
+
+            // Toggle: if already active, remove rating
+            const currentUp = upBtn.classList.contains('active-up');
+            const currentDown = downBtn.classList.contains('active-down');
+            let newRating = rating;
+            if ((rating === 'up' && currentUp) || (rating === 'down' && currentDown)) {
+                newRating = null;
+            }
+
+            try {
+                await fetch('/rate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename, rating: newRating })
+                });
+
+                upBtn.classList.toggle('active-up', newRating === 'up');
+                downBtn.classList.toggle('active-down', newRating === 'down');
+
+                // If thumbs down, show feedback message and remove from list
+                if (newRating === 'down') {
+                    showFeedbackToast('Thanks for your feedback!');
+                    item.style.transition = 'opacity 0.5s, transform 0.5s, max-height 0.5s';
+                    item.style.opacity = '0.5';
+
+                    setTimeout(() => {
+                        item.style.opacity = '0';
+                        item.style.transform = 'translateX(-20px)';
+                        item.style.maxHeight = '0';
+                        item.style.overflow = 'hidden';
+                        item.style.paddingTop = '0';
+                        item.style.paddingBottom = '0';
+                        item.style.marginBottom = '0';
+
+                        setTimeout(() => {
+                            item.remove();
+                            // Check if history is empty
+                            if (historyEl.children.length === 0) {
+                                historyCard.style.display = 'none';
+                            }
+                        }, 500);
+                    }, 1200);
+                }
+            } catch (err) {
+                console.error('Failed to rate:', err);
+            }
+        }
+
+        function showFeedbackToast(message) {
+            // Remove existing toast if any
+            const existingToast = document.querySelector('.feedback-toast');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'feedback-toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            // Trigger animation
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+
+            // Remove after delay
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        loadHistory();
+        checkStatus();
+        generateBtn.disabled = true;
+    </script>
+
+    <!-- Graphlings Widget Integration -->
+    <script>
+        // Auto-detect environment for Graphlings SDK
+        (function() {
+            const hostname = window.location.hostname;
+            const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+            const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+            // Check if hostname is a Tailscale IP (100.64.0.0/10 CGNAT range)
+            function isTailscaleIP(host) {
+                const ipMatch = host.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+                if (!ipMatch) return false;
+                const [, a, b] = ipMatch.map(Number);
+                return a === 100 && b >= 64 && b <= 127;
+            }
+            const isTailscale = hostname.endsWith('.ts.net') || isTailscaleIP(hostname);
+
+            const SDK_CONFIG = {
+                appId: 'sfx-music',
+                // Auto-detect: localhost, Tailscale, or production
+                accountsUrl: isLocalhost
+                    ? 'http://localhost:8002'
+                    : isTailscale
+                        ? `http://${hostname}:8002`
+                        : 'https://accounts.graphlings.net',
+                debug: true
+            };
+            console.log('[SFX-Music] SDK Config:', SDK_CONFIG);
+
+            // Set favicon from accounts server
+            const faviconLink = document.getElementById('favicon-link');
+            if (faviconLink) {
+                faviconLink.href = SDK_CONFIG.accountsUrl + '/static/graphlings/logo-104.png';
+            }
+
+            // Dynamically load SDK from accounts server
+            const sdkScript = document.createElement('script');
+            sdkScript.src = SDK_CONFIG.accountsUrl + '/sdk/graphlings.js';
+            document.head.appendChild(sdkScript);
+
+            // Wait for SDK to load and initialize
+            function waitForSDK(callback) {
+                if (typeof Graphlings !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(() => waitForSDK(callback), 50);
+                }
+            }
+
+            // Theme definitions - 'default' is the original Sound Box purple/cyan theme
+            const THEMES = {
+                default: {
+                    accent: '#a855f7',
+                    accentGlow: 'rgba(168, 85, 247, 0.4)',
+                    secondary: '#00d4ff',
+                    secondaryGlow: 'rgba(0, 212, 255, 0.3)',
+                    gradientAccent: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+                    gradientSecondary: 'linear-gradient(135deg, #00d4ff 0%, #0ea5e9 100%)',
+                    success: '#10b981',
+                    cardBorder: 'rgba(168, 85, 247, 0.2)',
+                    chipBg: 'rgba(168, 85, 247, 0.1)',
+                    chipBorder: 'rgba(168, 85, 247, 0.3)'
+                },
+                graphlings: {
+                    accent: '#a855f7',
+                    accentGlow: 'rgba(168, 85, 247, 0.4)',
+                    secondary: '#f97316',
+                    secondaryGlow: 'rgba(249, 115, 22, 0.3)',
+                    gradientAccent: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+                    gradientSecondary: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                    success: '#10b981',
+                    cardBorder: 'rgba(168, 85, 247, 0.2)',
+                    chipBg: 'rgba(168, 85, 247, 0.1)',
+                    chipBorder: 'rgba(168, 85, 247, 0.3)'
+                },
+                professional: {
+                    accent: '#3b82f6',
+                    accentGlow: 'rgba(59, 130, 246, 0.4)',
+                    secondary: '#60a5fa',
+                    secondaryGlow: 'rgba(96, 165, 250, 0.3)',
+                    gradientAccent: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+                    gradientSecondary: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
+                    success: '#3b82f6',
+                    cardBorder: 'rgba(59, 130, 246, 0.2)',
+                    chipBg: 'rgba(59, 130, 246, 0.1)',
+                    chipBorder: 'rgba(59, 130, 246, 0.3)'
+                },
+                ocean: {
+                    accent: '#06b6d4',
+                    accentGlow: 'rgba(6, 182, 212, 0.4)',
+                    secondary: '#22d3ee',
+                    secondaryGlow: 'rgba(34, 211, 238, 0.3)',
+                    gradientAccent: 'linear-gradient(135deg, #06b6d4 0%, #0284c7 100%)',
+                    gradientSecondary: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)',
+                    success: '#06b6d4',
+                    cardBorder: 'rgba(6, 182, 212, 0.2)',
+                    chipBg: 'rgba(6, 182, 212, 0.1)',
+                    chipBorder: 'rgba(6, 182, 212, 0.3)'
+                },
+                forest: {
+                    accent: '#22c55e',
+                    accentGlow: 'rgba(34, 197, 94, 0.4)',
+                    secondary: '#4ade80',
+                    secondaryGlow: 'rgba(74, 222, 128, 0.3)',
+                    gradientAccent: 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)',
+                    gradientSecondary: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
+                    success: '#22c55e',
+                    cardBorder: 'rgba(34, 197, 94, 0.2)',
+                    chipBg: 'rgba(34, 197, 94, 0.1)',
+                    chipBorder: 'rgba(34, 197, 94, 0.3)'
+                },
+                princess: {
+                    accent: '#ec4899',
+                    accentGlow: 'rgba(236, 72, 153, 0.4)',
+                    secondary: '#f472b6',
+                    secondaryGlow: 'rgba(244, 114, 182, 0.3)',
+                    gradientAccent: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+                    gradientSecondary: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)',
+                    success: '#ec4899',
+                    cardBorder: 'rgba(236, 72, 153, 0.2)',
+                    chipBg: 'rgba(236, 72, 153, 0.1)',
+                    chipBorder: 'rgba(236, 72, 153, 0.3)'
+                }
+            };
+
+            // Apply theme colors to CSS variables
+            function applyTheme(themeName) {
+                const theme = THEMES[themeName] || THEMES.default;
+                const root = document.documentElement;
+
+                // Core accent colors
+                root.style.setProperty('--accent', theme.accent);
+                root.style.setProperty('--accent-glow', theme.accentGlow);
+                root.style.setProperty('--cyan', theme.secondary);
+                root.style.setProperty('--cyan-glow', theme.secondaryGlow);
+                root.style.setProperty('--gradient-accent', theme.gradientAccent);
+                root.style.setProperty('--gradient-cyan', theme.gradientSecondary);
+                root.style.setProperty('--success', theme.success);
+
+                // Card and UI element colors
+                root.style.setProperty('--card-border-accent', theme.cardBorder);
+                root.style.setProperty('--chip-bg', theme.chipBg);
+                root.style.setProperty('--chip-border', theme.chipBorder);
+
+                // Save to localStorage for persistence
+                localStorage.setItem('soundbox_theme', themeName);
+                console.log('[SFX-Music] Theme applied:', themeName);
+            }
+
+            // Load saved theme on page load
+            function loadSavedTheme() {
+                const savedTheme = localStorage.getItem('soundbox_theme');
+                if (savedTheme && THEMES[savedTheme]) {
+                    applyTheme(savedTheme);
+                }
+            }
+
+            // Load theme immediately
+            loadSavedTheme();
+
+            waitForSDK(function() {
+                window.graphlings = new Graphlings(SDK_CONFIG);
+                window.graphlings.createWidget({
+                    container: '#wallet-widget-container'
+                });
+
+                // Listen for theme changes from the widget
+                window.graphlings.on('themeChanged', function(data) {
+                    applyTheme(data.theme);
+                });
+
+                // Listen for login to get user ID
+                window.graphlings.on('login', function(data) {
+                    if (data.user && data.user.id) {
+                        currentUserId = data.user.id;
+                        console.log('[SFX-Music] User logged in:', currentUserId);
+                        // Reload history to show user's personal history
+                        loadHistory();
+                    }
+                });
+
+                // Listen for logout to clear user ID
+                window.graphlings.on('logout', function() {
+                    currentUserId = null;
+                    console.log('[SFX-Music] User logged out');
+                    // Reload history to show all public history
+                    loadHistory();
+                });
+
+                // Check if user is already logged in and apply their theme
+                window.graphlings.on('widgetReady', function(data) {
+                    // Apply theme from widget (overrides local storage)
+                    if (data.theme && THEMES[data.theme]) {
+                        applyTheme(data.theme);
+                        console.log('[SFX-Music] Theme synced from widget:', data.theme);
+                    }
+
+                    if (data.authenticated && data.user && data.user.id) {
+                        currentUserId = data.user.id;
+                        console.log('[SFX-Music] User already logged in:', currentUserId);
+                        loadHistory();
+                    }
+                });
+
+                console.log('[SFX-Music] Graphlings widget initialized');
+            });
+        })();
+    </script>
+</body>
+</html>

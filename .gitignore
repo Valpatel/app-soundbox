@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+node_modules/
+
+# Generated files
+generated/
+spectrograms/
+generations.json
+*.log
+
+# Environment
+.env
