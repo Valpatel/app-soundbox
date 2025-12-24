@@ -1,4 +1,29 @@
+# Sound Box Dependencies
+# Note: For full setup including CUDA-enabled PyTorch, run ./setup.sh instead
+
+# Core framework
+flask>=2.0
+
+# PyTorch (CPU version - use setup.sh for GPU/CUDA version)
+torch>=2.0
+torchaudio>=2.0
+
+# Audio generation
 audiocraft
-flask
-torch
-torchaudio
+
+# Audio analysis and visualization
+numpy>=1.20
+librosa>=0.10
+matplotlib>=3.5
+soundfile>=0.12
+
+# AudioCraft dependencies
+einops
+sentencepiece
+hydra-core
+hydra-colorlog
+num2words
+transformers
+encodec
+torchmetrics
+protobuf
