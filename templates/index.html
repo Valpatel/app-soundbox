@@ -2593,12 +2593,6 @@
             // Load user's vote for this track
             loadRadioTrackVote();
 
-            // Update comment count
-            document.getElementById('radio-comment-count').textContent = currentRadioTrack.comment_count || 0;
-
-            // Hide comments section when changing tracks
-            document.getElementById('radio-comments-section').classList.add('hidden');
-
             const specImg = document.getElementById('radio-spectrogram');
             if (currentRadioTrack.spectrogram) {
                 specImg.src = '/spectrogram/' + currentRadioTrack.spectrogram;
