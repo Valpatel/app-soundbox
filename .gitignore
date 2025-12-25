@@ -15,3 +15,4 @@ generations.json
 
 # Environment
 .env
+soundbox.db
