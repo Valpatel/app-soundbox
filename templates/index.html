@@ -1404,11 +1404,15 @@
             }
         }
 
+        let showAllHistory = true;  // Default to showing all assets
+
         async function loadHistory() {
             try {
                 // Build query params for filtering
                 const params = new URLSearchParams();
-                params.set('model', currentModel);
+                if (!showAllHistory) {
+                    params.set('model', currentModel);
+                }
                 if (currentUserId) {
                     params.set('user_id', currentUserId);
                 }
@@ -1416,17 +1420,21 @@
                 const response = await fetch('/history?' + params.toString());
                 const items = await response.json();
 
-                // Update history section title based on model
+                // Update history section title based on filter
                 const historyTitle = historyCard.querySelector('h2');
                 if (historyTitle) {
-                    historyTitle.innerHTML = currentModel === 'music'
-                        ? '🎵 Music History'
-                        : '🔊 Sound Effects History';
+                    if (showAllHistory) {
+                        historyTitle.innerHTML = '📁 All Generations (' + items.length + ')';
+                    } else {
+                        historyTitle.innerHTML = currentModel === 'music'
+                            ? '🎵 Music History'
+                            : '🔊 Sound Effects History';
+                    }
                 }
 
                 if (items.length > 0) {
                     historyCard.style.display = 'block';
-                    historyEl.innerHTML = items.slice(0, 20).map(item => {
+                    historyEl.innerHTML = items.map(item => {
                         const score = item.quality_score;
                         const qualityClass = score >= 80 ? 'good' : score >= 60 ? 'medium' : 'bad';
                         const specSrc = item.spectrogram ? `/spectrogram/${item.spectrogram}` : '';

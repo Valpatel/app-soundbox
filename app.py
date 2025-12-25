@@ -560,10 +560,6 @@ def history():
             'user_id': info.get('user_id')
         })
 
-        # Limit results
-        if len(result) >= 50:
-            break
-
     return jsonify(result)
 
 
