@@ -998,12 +998,17 @@
             border-radius: 8px;
             padding: 10px 15px;
             margin-bottom: 15px;
-            display: none;
-        }
-        .queue-status-banner.show {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            min-height: 42px;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+        .queue-status-banner.show {
+            visibility: visible;
+            opacity: 1;
         }
         .queue-status-banner .queue-count {
             color: #ffc107;
@@ -1182,12 +1187,25 @@
 
         .now-playing {
             display: flex;
-            gap: 16px;
+            flex-direction: column;
+            gap: 12px;
             padding: 16px;
             background: var(--bg-input);
             border-radius: 12px;
-            align-items: center;
             margin-bottom: 12px;
+        }
+
+        .now-playing .track-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .now-playing .controls-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .now-playing.hidden {
@@ -1227,10 +1245,15 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex: 1;
+        }
+
+        .now-playing .styled-audio {
+            flex: 1;
         }
 
         .now-playing .styled-audio audio {
-            width: 160px;
+            width: 100%;
         }
 
         .skip-btn {
@@ -1771,22 +1794,26 @@
             </div>
 
             <div class="now-playing hidden" id="now-playing">
-                <img id="radio-spectrogram" class="radio-spectrogram" src="" alt="Spectrogram">
-                <div class="track-info">
-                    <div id="radio-prompt" class="track-title">Loading...</div>
-                    <div class="track-meta">
-                        <span id="radio-duration">0s</span>
+                <div class="track-row">
+                    <img id="radio-spectrogram" class="radio-spectrogram" src="" alt="Spectrogram">
+                    <div class="track-info">
+                        <div id="radio-prompt" class="track-title">Loading...</div>
+                        <div class="track-meta">
+                            <span id="radio-duration">0s</span>
+                        </div>
+                    </div>
+                    <div class="radio-actions">
+                        <button class="vote-btn" id="radio-vote-up" onclick="showPositiveFeedbackMenu()">👍 <span id="radio-upvotes">0</span></button>
+                        <button class="vote-btn" id="radio-vote-down" onclick="showFeedbackMenu()">👎 <span id="radio-downvotes">0</span></button>
                     </div>
                 </div>
-                <div class="playback-controls">
-                    <div class="styled-audio">
-                        <audio id="radio-player" controls></audio>
+                <div class="controls-row">
+                    <div class="playback-controls">
+                        <div class="styled-audio">
+                            <audio id="radio-player" controls></audio>
+                        </div>
                     </div>
                     <button class="skip-btn" onclick="skipTrack()">⏭ Skip</button>
-                </div>
-                <div class="radio-actions">
-                    <button class="vote-btn" id="radio-vote-up" onclick="showPositiveFeedbackMenu()">👍 <span id="radio-upvotes">0</span></button>
-                    <button class="vote-btn" id="radio-vote-down" onclick="showFeedbackMenu()">👎 <span id="radio-downvotes">0</span></button>
                 </div>
             </div>
 

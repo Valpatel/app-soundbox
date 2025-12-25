@@ -215,10 +215,12 @@ def get_library(page=1, per_page=20, model=None, search=None, sort='recent', use
         params.append(user_id)
 
     # Full-text search (OR logic for multiple words)
+    # Quote each term to handle special chars like hyphens (lo-fi)
     if search:
         words = search.strip().split()
         if words:
-            fts_query = ' OR '.join(words)
+            quoted_words = ['"' + w.replace('"', '') + '"' for w in words]
+            fts_query = ' OR '.join(quoted_words)
             conditions.append("g.rowid IN (SELECT rowid FROM generations_fts WHERE generations_fts MATCH ?)")
             params.append(fts_query)
 
@@ -260,10 +262,15 @@ def get_library(page=1, per_page=20, model=None, search=None, sort='recent', use
     }
 
 
-def get_random_tracks(model=None, search=None, count=10):
+def get_random_tracks(model=None, search=None, count=10, min_duration=60):
     """Get random tracks for radio shuffle."""
     conditions = []
     params = []
+
+    # Filter out short tracks (sound effects) - minimum 60 seconds for radio
+    if min_duration:
+        conditions.append("g.duration >= ?")
+        params.append(min_duration)
 
     if model:
         conditions.append("g.model = ?")
@@ -271,9 +278,12 @@ def get_random_tracks(model=None, search=None, count=10):
 
     if search:
         # Convert multi-word search to OR query for FTS5 (match any word)
+        # Quote each term to handle special chars like hyphens (lo-fi)
         words = search.strip().split()
         if words:
-            fts_query = ' OR '.join(words)
+            # Quote each word and join with OR
+            quoted_words = ['"' + w.replace('"', '') + '"' for w in words]
+            fts_query = ' OR '.join(quoted_words)
             conditions.append("g.rowid IN (SELECT rowid FROM generations_fts WHERE generations_fts MATCH ?)")
             params.append(fts_query)
 
