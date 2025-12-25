@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from flask import Flask, render_template, request, jsonify, send_file
 from audiocraft.models import MusicGen, AudioGen, MAGNeT
 from audiocraft.data.audio import audio_write
+import database as db
 
 METADATA_FILE = "generations.json"
 OUTPUT_DIR = "generated"
@@ -289,7 +290,7 @@ def process_queue():
                 spec_path = os.path.join(SPECTROGRAMS_DIR, spec_filename)
                 generate_spectrogram(filepath, spec_path)
 
-                # Save metadata
+                # Save metadata (JSON for backwards compatibility)
                 metadata = load_metadata()
                 metadata[filename] = {
                     'prompt': job['prompt'],
@@ -305,6 +306,22 @@ def process_queue():
                     'user_id': job.get('user_id')  # Track user who created this
                 }
                 save_metadata(metadata)
+
+                # Also save to SQLite database
+                try:
+                    db.create_generation(
+                        gen_id=job_id,
+                        filename=filename,
+                        prompt=job['prompt'],
+                        model=model_type,
+                        duration=job['duration'],
+                        is_loop=job.get('loop', False),
+                        quality_score=quality['score'],
+                        spectrogram=spec_filename,
+                        user_id=job.get('user_id')
+                    )
+                except Exception as e:
+                    print(f"[DB] Failed to save generation: {e}")
 
                 job['status'] = 'completed'
                 job['filename'] = filename
@@ -579,6 +596,223 @@ def rate():
         return jsonify({'success': True})
 
     return jsonify({'success': False, 'error': 'File not found'}), 404
+
+
+# =============================================================================
+# NEW API: Library with Pagination & Search
+# =============================================================================
+
+@app.route('/api/library')
+def api_library():
+    """
+    Get paginated library with filters.
+
+    Query params:
+        page: Page number (default 1)
+        per_page: Items per page (default 20, max 100)
+        model: Filter by 'music' or 'audio'
+        search: Full-text search in prompts
+        sort: 'recent', 'popular', or 'rating'
+        user_id: Filter by creator
+    """
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 20))
+    model = request.args.get('model')
+    search = request.args.get('search')
+    sort = request.args.get('sort', 'recent')
+    user_id = request.args.get('user_id')
+
+    result = db.get_library(
+        page=page,
+        per_page=per_page,
+        model=model,
+        search=search,
+        sort=sort,
+        user_id=user_id
+    )
+
+    return jsonify(result)
+
+
+@app.route('/api/library/<gen_id>')
+def api_library_item(gen_id):
+    """Get a single generation by ID."""
+    generation = db.get_generation(gen_id)
+    if not generation:
+        return jsonify({'error': 'Not found'}), 404
+    return jsonify(generation)
+
+
+# =============================================================================
+# NEW API: Voting
+# =============================================================================
+
+@app.route('/api/library/<gen_id>/vote', methods=['POST'])
+def api_vote(gen_id):
+    """
+    Cast or update a vote.
+
+    Body:
+        vote: 1 (upvote), -1 (downvote), or 0 (remove)
+        user_id: The voter's user ID
+    """
+    data = request.json or {}
+    vote_value = data.get('vote', 0)
+    user_id = data.get('user_id')
+
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    if vote_value not in [-1, 0, 1]:
+        return jsonify({'error': 'vote must be -1, 0, or 1'}), 400
+
+    # Verify generation exists
+    generation = db.get_generation(gen_id)
+    if not generation:
+        return jsonify({'error': 'Not found'}), 404
+
+    result = db.vote(gen_id, user_id, vote_value)
+    return jsonify(result)
+
+
+@app.route('/api/library/votes', methods=['POST'])
+def api_get_votes():
+    """
+    Get user's votes for multiple generations.
+
+    Body:
+        generation_ids: List of generation IDs
+        user_id: The user's ID
+    """
+    data = request.json or {}
+    generation_ids = data.get('generation_ids', [])
+    user_id = data.get('user_id')
+
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    votes = db.get_user_votes(generation_ids, user_id)
+    return jsonify({'votes': votes})
+
+
+# =============================================================================
+# NEW API: Comments
+# =============================================================================
+
+@app.route('/api/library/<gen_id>/comments', methods=['GET'])
+def api_get_comments(gen_id):
+    """Get paginated comments for a generation."""
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 20))
+
+    result = db.get_comments(gen_id, page=page, per_page=per_page)
+    return jsonify(result)
+
+
+@app.route('/api/library/<gen_id>/comments', methods=['POST'])
+def api_add_comment(gen_id):
+    """
+    Add a comment to a generation.
+
+    Body:
+        user_id: The commenter's user ID
+        content: The comment text
+        username: Optional display name
+    """
+    data = request.json or {}
+    user_id = data.get('user_id')
+    content = data.get('content', '').strip()
+    username = data.get('username')
+
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    if not content:
+        return jsonify({'error': 'content required'}), 400
+
+    if len(content) > 500:
+        return jsonify({'error': 'Comment too long (max 500 chars)'}), 400
+
+    # Verify generation exists
+    generation = db.get_generation(gen_id)
+    if not generation:
+        return jsonify({'error': 'Not found'}), 404
+
+    comment_id = db.add_comment(gen_id, user_id, content, username)
+    return jsonify({'success': True, 'comment_id': comment_id})
+
+
+@app.route('/api/library/<gen_id>/comments/<int:comment_id>', methods=['DELETE'])
+def api_delete_comment(gen_id, comment_id):
+    """Delete a comment (only by owner)."""
+    user_id = request.args.get('user_id')
+
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    deleted = db.delete_comment(comment_id, user_id)
+    if deleted:
+        return jsonify({'success': True})
+    return jsonify({'error': 'Comment not found or not owned by user'}), 404
+
+
+# =============================================================================
+# NEW API: Radio Station
+# =============================================================================
+
+@app.route('/api/radio/shuffle')
+def api_radio_shuffle():
+    """
+    Get random tracks for radio shuffle.
+
+    Query params:
+        model: Filter by 'music' or 'audio' (recommended)
+        search: Optional keyword filter
+        count: Number of tracks (default 10, max 50)
+    """
+    model = request.args.get('model')
+    search = request.args.get('search')
+    count = min(int(request.args.get('count', 10)), 50)
+
+    tracks = db.get_random_tracks(model=model, search=search, count=count)
+
+    return jsonify({
+        'tracks': tracks,
+        'filters': {
+            'model': model,
+            'search': search
+        }
+    })
+
+
+# =============================================================================
+# Database Stats
+# =============================================================================
+
+@app.route('/api/stats')
+def api_stats():
+    """Get database statistics."""
+    return jsonify(db.get_stats())
+
+
+@app.route('/api/log-error', methods=['POST'])
+def api_log_error():
+    """Log frontend errors to backend."""
+    data = request.get_json() or {}
+    message = data.get('message', 'Unknown error')
+    url = data.get('url', '')
+    user_agent = data.get('userAgent', '')
+    timestamp = data.get('timestamp', '')
+
+    # Log to console with formatting
+    print(f"\n{'='*60}")
+    print(f"[FRONTEND ERROR] {timestamp}")
+    print(f"Message: {message}")
+    print(f"URL: {url}")
+    print(f"User-Agent: {user_agent[:80]}...")
+    print(f"{'='*60}\n")
+
+    return jsonify({'logged': True})
 
 
 def slugify_prompt(prompt, max_length=30):
@@ -1066,6 +1300,10 @@ if __name__ == '__main__':
     HOST = os.environ.get('HOST', '0.0.0.0')
     PORT = int(os.environ.get('PORT', 5309))
     DEBUG = os.environ.get('FLASK_DEBUG', '').lower() in ('1', 'true', 'yes')
+
+    # Initialize database and migrate from JSON if needed
+    db.init_db()
+    db.migrate_from_json()
 
     # Start model loader thread
     loader_thread = threading.Thread(target=load_models, daemon=True)

@@ -78,11 +78,46 @@
             50% { background-position: 100% 50%; }
         }
 
-        .widget-bar {
+        .widget-bar-top {
             display: flex;
-            justify-content: flex-start;
-            padding: 8px 16px 16px;
-            min-height: 80px;
+            justify-content: center;
+            padding: 20px 16px 12px;
+            min-height: 70px;
+            background: linear-gradient(180deg, rgba(168, 85, 247, 0.08) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 8px;
+        }
+
+        /* Dark themed audio player using filter inversion */
+        audio {
+            width: 100%;
+            height: 36px;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        /* Styled audio wrapper - inverts the default light player to dark */
+        .styled-audio {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0 4px;
+            margin-bottom: 8px;
+        }
+
+        .styled-audio audio {
+            filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(1.1);
+            background: transparent;
+        }
+
+        /* Override for the now-playing smaller player */
+        .now-playing .styled-audio {
+            padding: 0 4px;
+            margin-bottom: 0;
+        }
+
+        .now-playing .styled-audio audio {
+            height: 32px;
         }
 
         .container {
@@ -994,19 +1029,687 @@
             transition: opacity 0.3s, transform 0.3s;
             z-index: 10000;
             pointer-events: none;
+            max-width: 90%;
+            text-align: center;
         }
         .feedback-toast.show {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+        .feedback-toast.error {
+            background: rgba(220, 53, 69, 0.95);
+        }
+        .feedback-toast .toast-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        .feedback-toast .copy-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 8px;
+            pointer-events: auto !important;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .feedback-toast .copy-btn:hover {
+            background: rgba(255,255,255,0.4);
+        }
+        .feedback-toast .copy-btn:active {
+            background: rgba(40, 167, 69, 0.6);
+            transform: scale(0.98);
+        }
+
+        /* ========================================
+           RADIO STATION
+           ======================================== */
+        .radio-card {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%);
+            border: 2px solid var(--accent);
+        }
+
+        .radio-card h2 {
+            font-size: 1.3rem;
+            color: var(--accent);
+        }
+
+        .radio-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .radio-controls select,
+        .radio-controls input[type="text"] {
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .radio-controls select {
+            min-width: 140px;
+            cursor: pointer;
+        }
+
+        .radio-controls input[type="text"] {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .radio-controls select:focus,
+        .radio-controls input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .shuffle-btn {
+            padding: 12px 24px;
+            background: var(--gradient-accent);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 700;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .shuffle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .radio-filters {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .filter-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .filter-chips {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .filter-chip {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-chip:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(168, 85, 247, 0.1);
+        }
+
+        .filter-chip.active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .now-playing {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-input);
+            border-radius: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .now-playing.hidden {
+            display: none;
+        }
+
+        .radio-spectrogram {
+            width: 80px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--bg-card);
+        }
+
+        .now-playing .track-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .now-playing .track-title {
+            font-weight: 600;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .now-playing .track-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 12px;
+            margin-top: 4px;
+        }
+
+        .now-playing .playback-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .now-playing .styled-audio audio {
+            width: 160px;
+        }
+
+        .skip-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .skip-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .radio-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .radio-actions .vote-btn,
+        .radio-actions .comments-btn {
+            padding: 8px 14px;
+        }
+
+        .feedback-menu {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .feedback-menu.hidden {
+            display: none;
+        }
+
+        .feedback-header {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .feedback-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .feedback-tag {
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: transparent;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .feedback-tag:hover {
+            border-color: var(--error);
+            color: var(--error);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .feedback-tag.positive:hover {
+            border-color: var(--success);
+            color: var(--success);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .feedback-cancel {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .feedback-cancel:hover {
+            border-color: var(--text-dim);
+            color: var(--text);
+        }
+
+        .radio-queue {
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+        }
+
+        .radio-queue.hidden {
+            display: none;
+        }
+
+        .queue-header {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .queue-items {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .queue-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .queue-item .queue-num {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            min-width: 20px;
+        }
+
+        .queue-item .queue-prompt {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ========================================
+           LIBRARY VIEW
+           ======================================== */
+        .library-card {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border: 2px solid var(--cyan);
+        }
+
+        .library-card h2 {
+            font-size: 1.3rem;
+            color: var(--cyan);
+        }
+
+        .library-card h2 span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: normal;
+            margin-left: 8px;
+        }
+
+        .library-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .library-controls .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .library-controls .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .library-controls select {
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.85rem;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .library-controls select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .library-items {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .library-item {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .library-item:hover {
+            border-color: var(--border-hover);
+        }
+
+        .item-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .model-badge {
+            font-size: 16px;
+        }
+
+        .item-header .prompt {
+            flex: 1;
+            font-weight: 600;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .item-header .duration {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .library-item audio {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .item-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vote-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .vote-btn:hover {
+            border-color: var(--border-hover);
+        }
+
+        .vote-btn.voted-up {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .vote-btn.voted-down {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .vote-count {
+            font-size: 0.85rem;
+        }
+
+        .comments-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .comments-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .item-download {
+            margin-left: auto;
+            padding: 6px 14px;
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .item-download:hover {
+            background: var(--chip-bg);
+        }
+
+        /* Comments Section */
+        .comments-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+
+        .comments-section.show {
+            display: block;
+        }
+
+        .comment {
+            padding: 10px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .comment-user {
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 0.85rem;
+        }
+
+        .comment-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .comment-text {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .comment-input-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .comment-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .comment-submit {
+            padding: 10px 16px;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .comment-submit:hover {
+            opacity: 0.9;
+        }
+
+        .comment-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* ========================================
+           COLLAPSIBLE GENERATOR
+           ======================================== */
+        .generator-card h2 {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .generator-card h2 .collapse-icon {
+            margin-left: auto;
+            transition: transform 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .generator-card.collapsed h2 .collapse-icon {
+            transform: rotate(-90deg);
+        }
+
+        .generator-content {
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            overflow: hidden;
+        }
+
+        .generator-card.collapsed .generator-content {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
         }
     </style>
 </head>
 <body>
+    <div class="widget-bar-top">
+        <div id="wallet-widget-container"></div>
+    </div>
     <div class="page-header">
         <h1 class="page-title">Sound <span>Box</span></h1>
-    </div>
-    <div class="widget-bar">
-        <div id="wallet-widget-container"></div>
     </div>
 
     <div class="container" style="padding: 0 20px 20px;">
@@ -1041,7 +1744,118 @@
             <span class="wait-time" id="estimated-wait">Est. wait: calculating...</span>
         </div>
 
-        <div class="card">
+        <!-- RADIO STATION (Primary Feature) -->
+        <div class="card radio-card">
+            <h2>📻 Radio Station</h2>
+
+            <div class="radio-controls">
+                <select id="radio-model">
+                    <option value="music">🎵 Music</option>
+                    <option value="audio">🔊 Sound Effects</option>
+                </select>
+                <input type="text" id="radio-keywords" placeholder="Keywords (optional)...">
+                <button class="shuffle-btn" id="shuffle-btn" onclick="shuffleRadio()">🔀 Shuffle Play</button>
+            </div>
+
+            <div class="radio-filters" id="radio-filters">
+                <span class="filter-label">Quick Filters</span>
+                <div class="filter-chips">
+                    <button class="filter-chip" onclick="setRadioFilter('chill ambient relaxing', this)">😌 Chill</button>
+                    <button class="filter-chip" onclick="setRadioFilter('upbeat energetic', this)">⚡ Energetic</button>
+                    <button class="filter-chip" onclick="setRadioFilter('epic orchestral cinematic', this)">🎬 Epic</button>
+                    <button class="filter-chip" onclick="setRadioFilter('dark moody', this)">🌙 Dark</button>
+                    <button class="filter-chip" onclick="setRadioFilter('8-bit chiptune retro', this)">👾 Retro</button>
+                    <button class="filter-chip" onclick="setRadioFilter('lo-fi hip hop jazz', this)">🎧 Lo-Fi</button>
+                    <button class="filter-chip" onclick="setRadioFilter('', this)">✨ All</button>
+                </div>
+            </div>
+
+            <div class="now-playing hidden" id="now-playing">
+                <img id="radio-spectrogram" class="radio-spectrogram" src="" alt="Spectrogram">
+                <div class="track-info">
+                    <div id="radio-prompt" class="track-title">Loading...</div>
+                    <div class="track-meta">
+                        <span id="radio-duration">0s</span>
+                    </div>
+                </div>
+                <div class="playback-controls">
+                    <div class="styled-audio">
+                        <audio id="radio-player" controls></audio>
+                    </div>
+                    <button class="skip-btn" onclick="skipTrack()">⏭ Skip</button>
+                </div>
+                <div class="radio-actions">
+                    <button class="vote-btn" id="radio-vote-up" onclick="showPositiveFeedbackMenu()">👍 <span id="radio-upvotes">0</span></button>
+                    <button class="vote-btn" id="radio-vote-down" onclick="showFeedbackMenu()">👎 <span id="radio-downvotes">0</span></button>
+                </div>
+            </div>
+
+            <div class="feedback-menu hidden" id="feedback-menu-positive">
+                <div class="feedback-header" style="color: var(--success);">What do you like about this track?</div>
+                <div class="feedback-options">
+                    <button class="feedback-tag positive" onclick="submitPositiveFeedback('catchy')">🎵 Catchy/memorable</button>
+                    <button class="feedback-tag positive" onclick="submitPositiveFeedback('quality')">✨ Great quality</button>
+                    <button class="feedback-tag positive" onclick="submitPositiveFeedback('creative')">🎨 Creative/unique</button>
+                    <button class="feedback-tag positive" onclick="submitPositiveFeedback('matches')">✅ Matches prompt well</button>
+                    <button class="feedback-tag positive" onclick="submitPositiveFeedback('mood')">😊 Great mood/vibe</button>
+                    <button class="feedback-tag positive" onclick="submitPositiveFeedback('useful')">🎮 Perfect for games</button>
+                </div>
+                <button class="feedback-cancel" onclick="hidePositiveFeedbackMenu()">Cancel</button>
+            </div>
+
+            <div class="feedback-menu hidden" id="feedback-menu">
+                <div class="feedback-header">What's wrong with this track?</div>
+                <div class="feedback-options">
+                    <button class="feedback-tag" onclick="submitFeedback('scratchy')">🔊 Too scratchy/noisy</button>
+                    <button class="feedback-tag" onclick="submitFeedback('quiet')">🔇 Too quiet</button>
+                    <button class="feedback-tag" onclick="submitFeedback('repetitive')">🔁 Too repetitive</button>
+                    <button class="feedback-tag" onclick="submitFeedback('mismatch')">❌ Doesn't match prompt</button>
+                    <button class="feedback-tag" onclick="submitFeedback('boring')">😴 Boring/generic</button>
+                    <button class="feedback-tag" onclick="submitFeedback('style')">🎨 Not my style</button>
+                    <button class="feedback-tag" onclick="submitFeedback('other')">❓ Other</button>
+                </div>
+                <button class="feedback-cancel" onclick="hideFeedbackMenu()">Cancel</button>
+            </div>
+
+            <div class="radio-queue hidden" id="radio-queue">
+                <div class="queue-header">Up Next:</div>
+                <div class="queue-items" id="queue-items"></div>
+            </div>
+        </div>
+
+        <!-- LIBRARY (Browse & Search) -->
+        <div class="card library-card">
+            <h2>🔍 Library <span id="library-total"></span></h2>
+
+            <div class="library-controls">
+                <input type="text" class="search-input" id="library-search" placeholder="Search prompts...">
+                <select id="library-model">
+                    <option value="">All Types</option>
+                    <option value="music">🎵 Music</option>
+                    <option value="audio">🔊 Sound Effects</option>
+                </select>
+                <select id="library-sort">
+                    <option value="recent">Most Recent</option>
+                    <option value="popular">Most Popular</option>
+                    <option value="rating">Highest Rated</option>
+                </select>
+            </div>
+
+            <div id="library-items" class="library-items">
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">Loading library...</div>
+            </div>
+
+            <div class="pagination" id="pagination">
+                <button class="page-btn" id="prev-page" onclick="prevPage()">← Prev</button>
+                <span class="page-info" id="page-info">Page 1 of 1</span>
+                <button class="page-btn" id="next-page" onclick="nextPage()">Next →</button>
+            </div>
+        </div>
+
+        <!-- GENERATOR (Secondary - Collapsible) -->
+        <div class="card generator-card" id="generator-card">
+            <h2 onclick="toggleGenerator()">🎹 Generate New <span class="collapse-icon">▼</span></h2>
+            <div class="generator-content">
             <div class="model-tabs">
                 <div class="model-tab active" data-model="music" onclick="selectModel('music')">
                     <div class="icon">🎵</div>
@@ -1101,11 +1915,15 @@
 
             <div id="player" class="player">
                 <h2>Generated Audio <span id="quality-badge" class="quality-badge"></span></h2>
-                <audio id="audio" controls></audio>
+                <div class="styled-audio">
+                    <audio id="audio" controls></audio>
+                </div>
                 <div id="player-spectrogram" class="player-spectrogram"></div>
             </div>
+            </div> <!-- /generator-content -->
         </div>
 
+        <!-- Legacy History (hidden, kept for backwards compatibility) -->
         <div class="card" id="history-card" style="display: none;">
             <h2>Recent Generations</h2>
             <div id="history" class="history-list"></div>
@@ -1141,8 +1959,29 @@
             audio: ''
         };
 
-        // User ID from Graphlings widget (set when logged in)
+        // User ID - use Graphlings login OR generate anonymous device ID
         let currentUserId = null;
+        let isAdultAccount = false;  // Only true for verified adult Graphlings accounts
+
+        // Generate anonymous device ID for voting without login
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('soundbox_device_id');
+            if (!deviceId) {
+                deviceId = 'anon_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+                localStorage.setItem('soundbox_device_id', deviceId);
+            }
+            return deviceId;
+        }
+
+        // Get effective user ID (logged in user OR device ID)
+        function getEffectiveUserId() {
+            return currentUserId || getDeviceId();
+        }
+
+        // Check if user can see comments (adults only)
+        function canSeeComments() {
+            return isAdultAccount;
+        }
 
         const gpuName = document.getElementById('gpu-name');
         const gpuBarFill = document.getElementById('gpu-bar-fill');
@@ -1452,7 +2291,9 @@
                             </div>
                             <div class="history-content">
                                 <div class="prompt-full">${escapeHtml(item.prompt)}</div>
-                                <audio src="/audio/${item.filename}" controls></audio>
+                                <div class="styled-audio">
+                                    <audio src="/audio/${item.filename}" controls></audio>
+                                </div>
                                 ${specSrc ?
                                     `<img class="spectrogram" src="${specSrc}" alt="Spectrogram" loading="lazy">` :
                                     `<div class="spectrogram loading" onclick="loadSpectrogram(this, '${item.filename}')">Click to load spectrogram</div>`
@@ -1559,14 +2400,87 @@
             }
         }
 
-        function showFeedbackToast(message) {
+        function showFeedbackToast(message, isError = false) {
             // Remove existing toast if any
             const existingToast = document.querySelector('.feedback-toast');
             if (existingToast) existingToast.remove();
 
             const toast = document.createElement('div');
-            toast.className = 'feedback-toast';
-            toast.textContent = message;
+            toast.className = 'feedback-toast' + (isError ? ' error' : '');
+
+            if (isError) {
+                // Error toast with copy button
+                const content = document.createElement('div');
+                content.className = 'toast-content';
+
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'toast-message';
+                msgDiv.textContent = message;
+                content.appendChild(msgDiv);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = '📋 Copy Error';
+                copyBtn.type = 'button';
+                copyBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Copy button clicked, message:', message);
+
+                    // Try modern clipboard API first
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(message).then(() => {
+                            copyBtn.textContent = '✓ Copied!';
+                            copyBtn.style.background = 'rgba(40, 167, 69, 0.6)';
+                            console.log('Copied via clipboard API');
+                        }).catch((err) => {
+                            console.log('Clipboard API failed, trying fallback:', err);
+                            fallbackCopy();
+                        });
+                    } else {
+                        fallbackCopy();
+                    }
+
+                    function fallbackCopy() {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = message;
+                        textArea.style.position = 'fixed';
+                        textArea.style.left = '-9999px';
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        try {
+                            const success = document.execCommand('copy');
+                            if (success) {
+                                copyBtn.textContent = '✓ Copied!';
+                                copyBtn.style.background = 'rgba(40, 167, 69, 0.6)';
+                                console.log('Copied via execCommand');
+                            } else {
+                                copyBtn.textContent = '✗ Failed';
+                                console.log('execCommand returned false');
+                            }
+                        } catch (err) {
+                            copyBtn.textContent = '✗ Failed';
+                            console.error('Copy failed:', err);
+                        }
+                        document.body.removeChild(textArea);
+                    }
+
+                    // Reset button after delay
+                    setTimeout(() => {
+                        copyBtn.textContent = '📋 Copy Error';
+                        copyBtn.style.background = '';
+                    }, 2500);
+                });
+                content.appendChild(copyBtn);
+                toast.appendChild(content);
+
+                // Log error to backend
+                logErrorToBackend(message);
+            } else {
+                toast.textContent = message;
+            }
+
             document.body.appendChild(toast);
 
             // Trigger animation
@@ -1574,14 +2488,754 @@
                 toast.classList.add('show');
             });
 
-            // Remove after delay
+            // Remove after delay (longer for errors)
+            const delay = isError ? 10000 : 2500;
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 300);
-            }, 2500);
+            }, delay);
         }
 
+        async function logErrorToBackend(message) {
+            try {
+                await fetch('/api/log-error', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        url: window.location.href,
+                        userAgent: navigator.userAgent,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            } catch (e) {
+                console.error('Failed to log error to backend:', e);
+            }
+        }
+
+        function showErrorToast(message) {
+            showFeedbackToast(message, true);
+        }
+
+        // ========================================
+        // RADIO STATION
+        // ========================================
+        let radioQueue = [];
+        let currentRadioTrack = null;
+        const radioPlayer = document.getElementById('radio-player');
+        const nowPlayingEl = document.getElementById('now-playing');
+        const radioQueueEl = document.getElementById('radio-queue');
+        const queueItemsEl = document.getElementById('queue-items');
+
+        async function shuffleRadio() {
+            const model = document.getElementById('radio-model').value;
+            const keywords = document.getElementById('radio-keywords').value.trim();
+            const shuffleBtn = document.getElementById('shuffle-btn');
+
+            shuffleBtn.disabled = true;
+            shuffleBtn.textContent = 'Loading...';
+
+            try {
+                const params = new URLSearchParams({ model, count: 10 });
+                if (keywords) params.set('search', keywords);
+
+                const response = await fetch('/api/radio/shuffle?' + params.toString());
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (data.tracks && data.tracks.length > 0) {
+                    radioQueue = data.tracks;
+                    playNextTrack();
+                    updateRadioQueue();
+                } else {
+                    showFeedbackToast('No tracks found with those filters');
+                }
+            } catch (err) {
+                console.error('Radio shuffle failed:', err);
+                showErrorToast('Failed to load tracks: ' + err.message);
+            } finally {
+                shuffleBtn.disabled = false;
+                shuffleBtn.textContent = '🔀 Shuffle Play';
+            }
+        }
+
+        function playNextTrack() {
+            if (radioQueue.length === 0) {
+                nowPlayingEl.classList.add('hidden');
+                radioQueueEl.classList.add('hidden');
+                currentRadioTrack = null;
+                return;
+            }
+
+            currentRadioTrack = radioQueue.shift();
+
+            // Skip tracks with missing data
+            if (!currentRadioTrack.filename || !currentRadioTrack.prompt) {
+                console.warn('Skipping invalid track:', currentRadioTrack);
+                playNextTrack();
+                return;
+            }
+
+            nowPlayingEl.classList.remove('hidden');
+
+            // Update now playing display
+            document.getElementById('radio-prompt').textContent = currentRadioTrack.prompt;
+            document.getElementById('radio-duration').textContent = currentRadioTrack.duration + 's';
+            document.getElementById('radio-upvotes').textContent = currentRadioTrack.upvotes || 0;
+            document.getElementById('radio-downvotes').textContent = currentRadioTrack.downvotes || 0;
+
+            // Reset vote button states
+            document.getElementById('radio-vote-up').classList.remove('voted-up');
+            document.getElementById('radio-vote-down').classList.remove('voted-down');
+
+            // Load user's vote for this track
+            loadRadioTrackVote();
+
+            // Update comment count
+            document.getElementById('radio-comment-count').textContent = currentRadioTrack.comment_count || 0;
+
+            // Hide comments section when changing tracks
+            document.getElementById('radio-comments-section').classList.add('hidden');
+
+            const specImg = document.getElementById('radio-spectrogram');
+            if (currentRadioTrack.spectrogram) {
+                specImg.src = '/spectrogram/' + currentRadioTrack.spectrogram;
+                specImg.style.display = 'block';
+            } else {
+                specImg.style.display = 'none';
+            }
+
+            // Play the audio
+            radioPlayer.src = '/audio/' + currentRadioTrack.filename;
+            radioPlayer.play();
+
+            updateRadioQueue();
+        }
+
+        let currentRadioVote = 0;
+
+        async function loadRadioTrackVote() {
+            if (!currentRadioTrack) return;
+            const voterId = getEffectiveUserId();
+            try {
+                const response = await fetch('/api/library/votes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ generation_ids: [currentRadioTrack.id], user_id: voterId })
+                });
+                const data = await response.json();
+                currentRadioVote = data.votes?.[currentRadioTrack.id] || 0;
+                document.getElementById('radio-vote-up').classList.toggle('voted-up', currentRadioVote === 1);
+                document.getElementById('radio-vote-down').classList.toggle('voted-down', currentRadioVote === -1);
+            } catch (err) {
+                console.error('Failed to load radio track vote:', err);
+            }
+        }
+
+        async function voteRadioTrack(voteValue) {
+            if (!currentRadioTrack) return;
+            const voterId = getEffectiveUserId();
+
+            // Toggle vote if clicking same button
+            const newVote = currentRadioVote === voteValue ? 0 : voteValue;
+
+            try {
+                const response = await fetch(`/api/library/${currentRadioTrack.id}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vote: newVote, user_id: voterId })
+                });
+                const data = await response.json();
+
+                currentRadioVote = data.user_vote;
+                document.getElementById('radio-upvotes').textContent = data.upvotes;
+                document.getElementById('radio-downvotes').textContent = data.downvotes;
+                document.getElementById('radio-vote-up').classList.toggle('voted-up', data.user_vote === 1);
+                document.getElementById('radio-vote-down').classList.toggle('voted-down', data.user_vote === -1);
+
+                // If downvoted, skip to next track after a moment
+                if (newVote === -1) {
+                    showFeedbackToast('Skipping...');
+                    setTimeout(() => skipTrack(), 800);
+                }
+            } catch (err) {
+                console.error('Radio vote failed:', err);
+            }
+        }
+
+        function showPositiveFeedbackMenu() {
+            document.getElementById('feedback-menu-positive').classList.remove('hidden');
+            document.getElementById('feedback-menu').classList.add('hidden');
+        }
+
+        function hidePositiveFeedbackMenu() {
+            document.getElementById('feedback-menu-positive').classList.add('hidden');
+        }
+
+        async function submitPositiveFeedback(reason) {
+            if (!currentRadioTrack) return;
+            const voterId = getEffectiveUserId();
+
+            try {
+                // Submit upvote
+                const response = await fetch(`/api/library/${currentRadioTrack.id}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vote: 1, user_id: voterId })
+                });
+                const data = await response.json();
+
+                // Store positive feedback reason
+                await fetch(`/api/library/${currentRadioTrack.id}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: voterId,
+                        content: `[POSITIVE:${reason}]`,
+                        username: 'System'
+                    })
+                });
+
+                // Update UI
+                currentRadioVote = 1;
+                document.getElementById('radio-upvotes').textContent = data.upvotes;
+                document.getElementById('radio-downvotes').textContent = data.downvotes;
+                document.getElementById('radio-vote-up').classList.add('voted-up');
+                document.getElementById('radio-vote-down').classList.remove('voted-down');
+
+                hidePositiveFeedbackMenu();
+
+                const reasons = {
+                    'catchy': 'Catchy!',
+                    'quality': 'Great quality!',
+                    'creative': 'Creative!',
+                    'matches': 'Matches well!',
+                    'mood': 'Great vibe!',
+                    'useful': 'Perfect for games!'
+                };
+                showFeedbackToast(`👍 ${reasons[reason]}`);
+
+            } catch (err) {
+                console.error('Positive feedback failed:', err);
+                showErrorToast('Failed to submit feedback: ' + err.message);
+            }
+        }
+
+        function showFeedbackMenu() {
+            document.getElementById('feedback-menu').classList.remove('hidden');
+            document.getElementById('feedback-menu-positive').classList.add('hidden');
+        }
+
+        function hideFeedbackMenu() {
+            document.getElementById('feedback-menu').classList.add('hidden');
+        }
+
+        async function submitFeedback(reason) {
+            if (!currentRadioTrack) return;
+            const voterId = getEffectiveUserId();
+
+            try {
+                // Submit downvote with feedback reason as comment
+                const response = await fetch(`/api/library/${currentRadioTrack.id}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vote: -1, user_id: voterId })
+                });
+                const data = await response.json();
+
+                // Also store the feedback reason
+                await fetch(`/api/library/${currentRadioTrack.id}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: voterId,
+                        content: `[FEEDBACK:${reason}]`,
+                        username: 'System'
+                    })
+                });
+
+                // Update UI
+                currentRadioVote = -1;
+                document.getElementById('radio-upvotes').textContent = data.upvotes;
+                document.getElementById('radio-downvotes').textContent = data.downvotes;
+                document.getElementById('radio-vote-up').classList.remove('voted-up');
+                document.getElementById('radio-vote-down').classList.add('voted-down');
+
+                hideFeedbackMenu();
+
+                const reasons = {
+                    'scratchy': 'Too scratchy',
+                    'quiet': 'Too quiet',
+                    'repetitive': 'Too repetitive',
+                    'mismatch': "Doesn't match",
+                    'boring': 'Boring',
+                    'style': 'Not my style',
+                    'other': 'Other'
+                };
+                showFeedbackToast(`Feedback: ${reasons[reason]} - Skipping...`);
+                setTimeout(() => skipTrack(), 1000);
+
+            } catch (err) {
+                console.error('Feedback failed:', err);
+                showErrorToast('Failed to submit feedback: ' + err.message);
+            }
+        }
+
+        function skipTrack() {
+            playNextTrack();
+        }
+
+        function setRadioFilter(keywords, btn) {
+            document.getElementById('radio-keywords').value = keywords;
+            // Update active state on chips
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            if (btn) btn.classList.add('active');
+            // Auto-shuffle when filter is clicked
+            shuffleRadio();
+        }
+
+        function updateRadioQueue() {
+            if (radioQueue.length === 0) {
+                radioQueueEl.classList.add('hidden');
+                return;
+            }
+
+            radioQueueEl.classList.remove('hidden');
+            queueItemsEl.innerHTML = radioQueue.slice(0, 5).map((track, i) => `
+                <div class="queue-item">
+                    <span class="queue-num">${i + 1}</span>
+                    <span class="queue-prompt">${escapeHtml(track.prompt)}</span>
+                </div>
+            `).join('');
+        }
+
+        // Auto-advance when track ends
+        if (radioPlayer) {
+            radioPlayer.addEventListener('ended', playNextTrack);
+        }
+
+        // ========================================
+        // LIBRARY VIEW
+        // ========================================
+        let libraryPage = 1;
+        let libraryTotal = 0;
+        let libraryPages = 1;
+        let userVotes = {};
+        let searchDebounceTimer = null;
+
+        const libraryItemsEl = document.getElementById('library-items');
+        const librarySearchEl = document.getElementById('library-search');
+        const libraryModelEl = document.getElementById('library-model');
+        const librarySortEl = document.getElementById('library-sort');
+        const paginationEl = document.getElementById('pagination');
+        const prevPageBtn = document.getElementById('prev-page');
+        const nextPageBtn = document.getElementById('next-page');
+        const pageInfoEl = document.getElementById('page-info');
+        const libraryTotalEl = document.getElementById('library-total');
+
+        async function loadLibrary() {
+            const params = new URLSearchParams({
+                page: libraryPage,
+                per_page: 10,
+                sort: librarySortEl.value
+            });
+
+            const model = libraryModelEl.value;
+            if (model) params.set('model', model);
+
+            const search = librarySearchEl.value.trim();
+            if (search) params.set('search', search);
+
+            try {
+                const response = await fetch('/api/library?' + params.toString());
+                const data = await response.json();
+
+                libraryTotal = data.total;
+                libraryPages = data.pages;
+
+                libraryTotalEl.textContent = `(${libraryTotal} total)`;
+                pageInfoEl.textContent = `Page ${data.page} of ${libraryPages || 1}`;
+                prevPageBtn.disabled = data.page <= 1;
+                nextPageBtn.disabled = data.page >= libraryPages;
+
+                if (data.items.length === 0) {
+                    libraryItemsEl.innerHTML = `
+                        <div style="text-align: center; color: var(--text-muted); padding: 40px;">
+                            ${search ? 'No tracks found matching "' + escapeHtml(search) + '"' : 'No tracks yet. Generate some!'}
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Get user votes for these items (works for anonymous users too)
+                const ids = data.items.map(item => item.id);
+                await loadUserVotes(ids);
+
+                libraryItemsEl.innerHTML = data.items.map(item => renderLibraryItem(item)).join('');
+
+            } catch (err) {
+                console.error('Library load failed:', err);
+                libraryItemsEl.innerHTML = `
+                    <div style="text-align: center; color: var(--error); padding: 20px;">
+                        Failed to load library
+                    </div>
+                `;
+            }
+        }
+
+        async function loadUserVotes(generationIds) {
+            const voterId = getEffectiveUserId();
+            try {
+                const response = await fetch('/api/library/votes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ generation_ids: generationIds, user_id: voterId })
+                });
+                const data = await response.json();
+                userVotes = data.votes || {};
+            } catch (err) {
+                console.error('Failed to load votes:', err);
+            }
+        }
+
+        function renderLibraryItem(item) {
+            const userVote = userVotes[item.id] || 0;
+            const upClass = userVote === 1 ? 'voted-up' : '';
+            const downClass = userVote === -1 ? 'voted-down' : '';
+
+            // Only show "View Feedback" button to adult accounts
+            const viewFeedbackBtn = isAdultAccount
+                ? `<button class="comments-btn" onclick="viewFeedback('${item.id}')">📋 Feedback</button>`
+                : '';
+
+            return `
+                <div class="library-item" data-id="${item.id}">
+                    <div class="item-header">
+                        <span class="model-badge">${item.model === 'music' ? '🎵' : '🔊'}</span>
+                        <span class="prompt">${escapeHtml(item.prompt)}</span>
+                        <span class="duration">${item.duration}s</span>
+                    </div>
+                    <div class="styled-audio">
+                        <audio controls src="/audio/${item.filename}"></audio>
+                    </div>
+                    <div class="item-actions">
+                        <button class="vote-btn ${upClass}" onclick="showLibraryPositiveFeedback('${item.id}')">
+                            👍 <span class="vote-count">${item.upvotes || 0}</span>
+                        </button>
+                        <button class="vote-btn ${downClass}" onclick="showLibraryFeedback('${item.id}')">
+                            👎 <span class="vote-count">${item.downvotes || 0}</span>
+                        </button>
+                        ${viewFeedbackBtn}
+                        <a href="/download/${item.filename}" class="item-download">⬇ Download</a>
+                    </div>
+                    <div class="feedback-menu hidden" id="feedback-positive-${item.id}">
+                        <div class="feedback-header" style="color: var(--success);">What do you like?</div>
+                        <div class="feedback-options">
+                            <button class="feedback-tag positive" onclick="submitLibraryPositiveFeedback('${item.id}', 'catchy')">🎵 Catchy</button>
+                            <button class="feedback-tag positive" onclick="submitLibraryPositiveFeedback('${item.id}', 'quality')">✨ Quality</button>
+                            <button class="feedback-tag positive" onclick="submitLibraryPositiveFeedback('${item.id}', 'creative')">🎨 Creative</button>
+                            <button class="feedback-tag positive" onclick="submitLibraryPositiveFeedback('${item.id}', 'matches')">✅ Matches</button>
+                            <button class="feedback-tag positive" onclick="submitLibraryPositiveFeedback('${item.id}', 'mood')">😊 Vibe</button>
+                        </div>
+                        <button class="feedback-cancel" onclick="hideLibraryPositiveFeedback('${item.id}')">Cancel</button>
+                    </div>
+                    <div class="feedback-menu hidden" id="feedback-${item.id}">
+                        <div class="feedback-header">What's wrong?</div>
+                        <div class="feedback-options">
+                            <button class="feedback-tag" onclick="submitLibraryFeedback('${item.id}', 'scratchy')">🔊 Scratchy</button>
+                            <button class="feedback-tag" onclick="submitLibraryFeedback('${item.id}', 'quiet')">🔇 Quiet</button>
+                            <button class="feedback-tag" onclick="submitLibraryFeedback('${item.id}', 'repetitive')">🔁 Repetitive</button>
+                            <button class="feedback-tag" onclick="submitLibraryFeedback('${item.id}', 'mismatch')">❌ Wrong</button>
+                            <button class="feedback-tag" onclick="submitLibraryFeedback('${item.id}', 'style')">🎨 Not my style</button>
+                        </div>
+                        <button class="feedback-cancel" onclick="hideLibraryFeedback('${item.id}')">Cancel</button>
+                    </div>
+                    <div class="feedback-view hidden" id="feedback-view-${item.id}"></div>
+                </div>
+            `;
+        }
+
+        async function voteLibrary(genId, voteValue) {
+            const voterId = getEffectiveUserId();
+
+            const item = document.querySelector(`[data-id="${genId}"]`);
+            const upBtn = item.querySelector('.vote-btn:first-child');
+            const downBtn = item.querySelector('.vote-btn:nth-child(2)');
+
+            // Toggle vote if clicking same button
+            const currentVote = userVotes[genId] || 0;
+            const newVote = currentVote === voteValue ? 0 : voteValue;
+
+            try {
+                const response = await fetch(`/api/library/${genId}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vote: newVote, user_id: voterId })
+                });
+                const data = await response.json();
+
+                userVotes[genId] = data.user_vote;
+
+                // Update UI
+                upBtn.classList.toggle('voted-up', data.user_vote === 1);
+                downBtn.classList.toggle('voted-down', data.user_vote === -1);
+                upBtn.querySelector('.vote-count').textContent = data.upvotes;
+                downBtn.querySelector('.vote-count').textContent = data.downvotes;
+
+            } catch (err) {
+                console.error('Vote failed:', err);
+            }
+        }
+
+        function showLibraryPositiveFeedback(genId) {
+            // Hide any other open feedback menus
+            document.querySelectorAll('.library-item .feedback-menu').forEach(menu => {
+                menu.classList.add('hidden');
+            });
+            document.getElementById('feedback-positive-' + genId).classList.remove('hidden');
+        }
+
+        function hideLibraryPositiveFeedback(genId) {
+            document.getElementById('feedback-positive-' + genId).classList.add('hidden');
+        }
+
+        async function submitLibraryPositiveFeedback(genId, reason) {
+            const voterId = getEffectiveUserId();
+            const item = document.querySelector(`[data-id="${genId}"]`);
+            const upBtn = item.querySelector('.vote-btn:first-child');
+            const downBtn = item.querySelector('.vote-btn:nth-child(2)');
+
+            try {
+                // Submit upvote
+                const response = await fetch(`/api/library/${genId}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vote: 1, user_id: voterId })
+                });
+                const data = await response.json();
+
+                // Store positive feedback reason
+                await fetch(`/api/library/${genId}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: voterId,
+                        content: `[POSITIVE:${reason}]`,
+                        username: 'System'
+                    })
+                });
+
+                // Update UI
+                userVotes[genId] = 1;
+                upBtn.classList.add('voted-up');
+                downBtn.classList.remove('voted-down');
+                upBtn.querySelector('.vote-count').textContent = data.upvotes;
+                downBtn.querySelector('.vote-count').textContent = data.downvotes;
+
+                hideLibraryPositiveFeedback(genId);
+                showFeedbackToast('👍 Thanks for your feedback!');
+
+            } catch (err) {
+                console.error('Positive feedback failed:', err);
+                showErrorToast('Failed to submit feedback: ' + err.message);
+            }
+        }
+
+        function showLibraryFeedback(genId) {
+            // Hide any other open feedback menus
+            document.querySelectorAll('.library-item .feedback-menu').forEach(menu => {
+                menu.classList.add('hidden');
+            });
+            document.getElementById('feedback-' + genId).classList.remove('hidden');
+        }
+
+        function hideLibraryFeedback(genId) {
+            document.getElementById('feedback-' + genId).classList.add('hidden');
+        }
+
+        // View feedback - only available to adult accounts
+        async function viewFeedback(genId) {
+            if (!isAdultAccount) {
+                showFeedbackToast('Adult account required to view feedback');
+                return;
+            }
+
+            const viewEl = document.getElementById('feedback-view-' + genId);
+
+            if (!viewEl.classList.contains('hidden')) {
+                viewEl.classList.add('hidden');
+                return;
+            }
+
+            viewEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 10px;">Loading feedback...</div>';
+            viewEl.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`/api/library/${genId}/comments`);
+                const data = await response.json();
+
+                if (!data.comments || data.comments.length === 0) {
+                    viewEl.innerHTML = '<div style="color: var(--text-muted); padding: 10px; font-size: 0.85rem;">No feedback yet</div>';
+                    return;
+                }
+
+                // Parse and summarize feedback
+                const positive = {};
+                const negative = {};
+
+                data.comments.forEach(c => {
+                    const posMatch = c.content.match(/\[POSITIVE:(\w+)\]/);
+                    const negMatch = c.content.match(/\[FEEDBACK:(\w+)\]/);
+
+                    if (posMatch) {
+                        positive[posMatch[1]] = (positive[posMatch[1]] || 0) + 1;
+                    }
+                    if (negMatch) {
+                        negative[negMatch[1]] = (negative[negMatch[1]] || 0) + 1;
+                    }
+                });
+
+                let html = '<div style="padding: 12px; font-size: 0.85rem;">';
+
+                if (Object.keys(positive).length > 0) {
+                    html += '<div style="color: var(--success); margin-bottom: 8px;"><strong>👍 Positive:</strong> ';
+                    html += Object.entries(positive).map(([k, v]) => `${k} (${v})`).join(', ');
+                    html += '</div>';
+                }
+
+                if (Object.keys(negative).length > 0) {
+                    html += '<div style="color: var(--error);"><strong>👎 Issues:</strong> ';
+                    html += Object.entries(negative).map(([k, v]) => `${k} (${v})`).join(', ');
+                    html += '</div>';
+                }
+
+                html += '</div>';
+                viewEl.innerHTML = html;
+
+            } catch (err) {
+                viewEl.innerHTML = '<div style="color: var(--error); padding: 10px;">Failed to load feedback</div>';
+            }
+        }
+
+        async function submitLibraryFeedback(genId, reason) {
+            const voterId = getEffectiveUserId();
+            const item = document.querySelector(`[data-id="${genId}"]`);
+            const upBtn = item.querySelector('.vote-btn:first-child');
+            const downBtn = item.querySelector('.vote-btn:nth-child(2)');
+
+            try {
+                // Submit downvote
+                const response = await fetch(`/api/library/${genId}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vote: -1, user_id: voterId })
+                });
+                const data = await response.json();
+
+                // Store feedback reason
+                await fetch(`/api/library/${genId}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: voterId,
+                        content: `[FEEDBACK:${reason}]`,
+                        username: 'System'
+                    })
+                });
+
+                // Update UI
+                userVotes[genId] = -1;
+                upBtn.classList.remove('voted-up');
+                downBtn.classList.add('voted-down');
+                upBtn.querySelector('.vote-count').textContent = data.upvotes;
+                downBtn.querySelector('.vote-count').textContent = data.downvotes;
+
+                hideLibraryFeedback(genId);
+                showFeedbackToast('Thanks for your feedback!');
+
+            } catch (err) {
+                console.error('Feedback failed:', err);
+                showErrorToast('Failed to submit feedback: ' + err.message);
+            }
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+            return date.toLocaleDateString();
+        }
+
+        function prevPage() {
+            if (libraryPage > 1) {
+                libraryPage--;
+                loadLibrary();
+            }
+        }
+
+        function nextPage() {
+            if (libraryPage < libraryPages) {
+                libraryPage++;
+                loadLibrary();
+            }
+        }
+
+        // Search debounce
+        if (librarySearchEl) {
+            librarySearchEl.addEventListener('input', () => {
+                clearTimeout(searchDebounceTimer);
+                searchDebounceTimer = setTimeout(() => {
+                    libraryPage = 1;
+                    loadLibrary();
+                }, 300);
+            });
+        }
+
+        // Filter change handlers
+        if (libraryModelEl) {
+            libraryModelEl.addEventListener('change', () => {
+                libraryPage = 1;
+                loadLibrary();
+            });
+        }
+
+        if (librarySortEl) {
+            librarySortEl.addEventListener('change', () => {
+                libraryPage = 1;
+                loadLibrary();
+            });
+        }
+
+        // ========================================
+        // COLLAPSIBLE GENERATOR
+        // ========================================
+        function toggleGenerator() {
+            const card = document.getElementById('generator-card');
+            card.classList.toggle('collapsed');
+            // Save preference
+            localStorage.setItem('generator_collapsed', card.classList.contains('collapsed'));
+        }
+
+        // Restore generator state
+        (function() {
+            const collapsed = localStorage.getItem('generator_collapsed') === 'true';
+            if (collapsed) {
+                document.getElementById('generator-card')?.classList.add('collapsed');
+            }
+        })();
+
+        // Initialize
         loadHistory();
+        loadLibrary();
         checkStatus();
         generateBtn.disabled = true;
     </script>
@@ -1761,18 +3415,24 @@
                 window.graphlings.on('login', function(data) {
                     if (data.user && data.user.id) {
                         currentUserId = data.user.id;
-                        console.log('[SFX-Music] User logged in:', currentUserId);
+                        // Check if user is an adult account
+                        isAdultAccount = data.user.account_type === 'adult' ||
+                                        (data.user.account_type !== 'child' && !data.user.is_child);
+                        console.log('[SFX-Music] User logged in:', currentUserId, 'isAdult:', isAdultAccount);
                         // Reload history to show user's personal history
                         loadHistory();
+                        loadLibrary();  // Refresh library to show/hide feedback buttons
                     }
                 });
 
                 // Listen for logout to clear user ID
                 window.graphlings.on('logout', function() {
                     currentUserId = null;
+                    isAdultAccount = false;
                     console.log('[SFX-Music] User logged out');
                     // Reload history to show all public history
                     loadHistory();
+                    loadLibrary();  // Refresh library to update feedback button visibility
                 });
 
                 // Check if user is already logged in and apply their theme
@@ -1785,8 +3445,12 @@
 
                     if (data.authenticated && data.user && data.user.id) {
                         currentUserId = data.user.id;
-                        console.log('[SFX-Music] User already logged in:', currentUserId);
+                        // Check if user is an adult account
+                        isAdultAccount = data.user.account_type === 'adult' ||
+                                        (data.user.account_type !== 'child' && !data.user.is_child);
+                        console.log('[SFX-Music] User already logged in:', currentUserId, 'isAdult:', isAdultAccount);
                         loadHistory();
+                        loadLibrary();  // Refresh library to show/hide feedback buttons
                     }
                 });
 
