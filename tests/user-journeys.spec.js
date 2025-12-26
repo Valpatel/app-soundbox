@@ -14,7 +14,7 @@ test.describe('First-Time User Journey', () => {
         await page.waitForLoadState('networkidle');
 
         // 1. Land on Radio tab (default)
-        await expect(page.locator('#radio-tab')).toBeVisible();
+        await expect(page.locator('#content-radio')).toBeVisible();
 
         // 2. See radio stations
         const stationCards = page.locator('.station-card');
@@ -168,7 +168,7 @@ test.describe('Mobile User Journey', () => {
         await page.waitForLoadState('networkidle');
 
         // 1. Radio should be visible
-        await expect(page.locator('#radio-tab')).toBeVisible();
+        await expect(page.locator('#content-radio')).toBeVisible();
 
         // 2. Tabs should be scrollable or visible
         const tabsContainer = page.locator('.main-tabs');
@@ -179,7 +179,7 @@ test.describe('Mobile User Journey', () => {
         await page.waitForTimeout(500);
 
         // 4. Library content should be visible
-        await expect(page.locator('#library-tab')).toBeVisible();
+        await expect(page.locator('#content-library')).toBeVisible();
 
         // Take screenshot
         await page.screenshot({
@@ -197,7 +197,7 @@ test.describe('Mobile User Journey', () => {
         await page.waitForTimeout(500);
 
         // Verify tab switched
-        await expect(page.locator('#library-tab')).toBeVisible();
+        await expect(page.locator('#content-library')).toBeVisible();
 
         // Take screenshot
         await page.screenshot({
@@ -244,7 +244,7 @@ test.describe('Returning User Journey', () => {
         }
 
         // Verify we're still on radio tab
-        await expect(page.locator('#radio-tab')).toBeVisible();
+        await expect(page.locator('#content-radio')).toBeVisible();
     });
 });
 

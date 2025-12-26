@@ -12,6 +12,18 @@ test.describe('Voting System', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
+
+        // Disable animations for stable element interactions
+        await page.addStyleTag({
+            content: `
+                *, *::before, *::after {
+                    animation-duration: 0s !important;
+                    animation-delay: 0s !important;
+                    transition-duration: 0s !important;
+                    transition-delay: 0s !important;
+                }
+            `
+        });
     });
 
     test('can upvote a track in library', async ({ page }) => {
@@ -19,15 +31,15 @@ test.describe('Voting System', () => {
         await page.click('.main-tab:has-text("Library")');
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        // Find vote buttons (actual class is .action-btn.vote-up)
-        const upvoteBtn = page.locator('.library-item .vote-up').first();
-        if (await upvoteBtn.isVisible()) {
-            await upvoteBtn.click();
-            await page.waitForTimeout(500);
+        // Find vote buttons using title attribute
+        const upvoteBtn = page.locator('.library-item button[title="Like this track"]').first();
+        await expect(upvoteBtn).toBeVisible({ timeout: 5000 });
+        await upvoteBtn.click();
+        await page.waitForTimeout(500);
 
-            // Button should show active state
-            await expect(upvoteBtn).toHaveClass(/active|voted/);
-        }
+        // Clicking opens a feedback modal - confirm it appears
+        const modal = page.locator('.feedback-modal, #feedback-modal');
+        await expect(modal).toBeVisible({ timeout: 5000 });
     });
 
     test('can downvote a track in library', async ({ page }) => {
@@ -35,19 +47,15 @@ test.describe('Voting System', () => {
         await page.click('.main-tab:has-text("Library")');
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        // Find downvote buttons
-        const downvoteBtn = page.locator('.library-item .vote-down, .library-item .downvote-btn').first();
-        if (await downvoteBtn.isVisible()) {
-            await downvoteBtn.click();
-            await page.waitForTimeout(500);
+        // Find downvote buttons using title attribute (triggers feedback modal)
+        const downvoteBtn = page.locator('.library-item button[title="Dislike this track"]').first();
+        await expect(downvoteBtn).toBeVisible({ timeout: 5000 });
+        await downvoteBtn.click();
+        await page.waitForTimeout(500);
 
-            // Should trigger feedback modal or show active state
-            const modal = page.locator('.modal, [role="dialog"]');
-            const hasModal = await modal.isVisible();
-            const hasActiveClass = await downvoteBtn.evaluate(el => el.classList.contains('active') || el.classList.contains('voted'));
-
-            expect(hasModal || hasActiveClass).toBeTruthy();
-        }
+        // Should trigger feedback modal
+        const modal = page.locator('.feedback-modal, #feedback-modal');
+        await expect(modal).toBeVisible({ timeout: 5000 });
     });
 
     test('can change vote from up to down', async ({ page }) => {
@@ -55,20 +63,23 @@ test.describe('Voting System', () => {
         await page.click('.main-tab:has-text("Library")');
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        const upvoteBtn = page.locator('.library-item .vote-up, .library-item .upvote-btn').first();
-        const downvoteBtn = page.locator('.library-item .vote-down, .library-item .downvote-btn').first();
+        const upvoteBtn = page.locator('.library-item button[title="Like this track"]').first();
 
-        if (await upvoteBtn.isVisible() && await downvoteBtn.isVisible()) {
-            // First upvote
-            await upvoteBtn.click();
+        await expect(upvoteBtn).toBeVisible({ timeout: 5000 });
+
+        // Click upvote to open feedback modal
+        await upvoteBtn.click();
+        await page.waitForTimeout(500);
+
+        // Feedback modal should open
+        const modal = page.locator('.feedback-modal, #feedback-modal');
+        await expect(modal).toBeVisible({ timeout: 5000 });
+
+        // Submit the positive feedback
+        const submitBtn = page.locator('.feedback-modal button:has-text("Submit"), #feedback-submit-btn');
+        if (await submitBtn.isVisible()) {
+            await submitBtn.click();
             await page.waitForTimeout(500);
-
-            // Then downvote
-            await downvoteBtn.click();
-            await page.waitForTimeout(500);
-
-            // Upvote should no longer be active
-            await expect(upvoteBtn).not.toHaveClass(/active/);
         }
     });
 
@@ -77,25 +88,29 @@ test.describe('Voting System', () => {
         await page.click('.main-tab:has-text("Library")');
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        // Get initial count
-        const voteCount = page.locator('.library-item .vote-count, .library-item .upvote-count').first();
-        let initialCount = '0';
-        if (await voteCount.isVisible()) {
-            initialCount = await voteCount.textContent();
-        }
+        // Click upvote using title attribute
+        const upvoteBtn = page.locator('.library-item button[title="Like this track"]').first();
+        await expect(upvoteBtn).toBeVisible({ timeout: 5000 });
 
-        // Click upvote
-        const upvoteBtn = page.locator('.library-item .vote-up, .library-item .upvote-btn').first();
-        if (await upvoteBtn.isVisible()) {
-            await upvoteBtn.click();
+        // Get initial count from the button's span
+        const countSpan = upvoteBtn.locator('.vote-count');
+        const initialCount = await countSpan.textContent();
+
+        await upvoteBtn.click();
+        await page.waitForTimeout(500);
+
+        // Feedback modal opens - submit it
+        const modal = page.locator('.feedback-modal, #feedback-modal');
+        await expect(modal).toBeVisible({ timeout: 5000 });
+
+        const submitBtn = page.locator('#feedback-submit-btn');
+        if (await submitBtn.isVisible()) {
+            await submitBtn.click();
             await page.waitForTimeout(500);
 
-            // Count should change
-            if (await voteCount.isVisible()) {
-                const newCount = await voteCount.textContent();
-                // Count may have changed
-                console.log(`Vote count: ${initialCount} -> ${newCount}`);
-            }
+            // Count should change after submission
+            const newCount = await countSpan.textContent();
+            console.log(`Vote count: ${initialCount} -> ${newCount}`);
         }
     });
 });
@@ -104,43 +119,51 @@ test.describe('Radio Player Voting', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
+
+        // Disable animations for stable element interactions
+        await page.addStyleTag({
+            content: `
+                *, *::before, *::after {
+                    animation-duration: 0s !important;
+                    animation-delay: 0s !important;
+                    transition-duration: 0s !important;
+                    transition-delay: 0s !important;
+                }
+            `
+        });
     });
 
     test('can vote on current radio track', async ({ page }) => {
         // Wait for radio to load
         await page.waitForTimeout(2000);
 
-        // Find radio vote buttons
-        const radioUpvote = page.locator('#radio-upvote, .radio-controls .vote-up');
-        const radioDownvote = page.locator('#radio-downvote, .radio-controls .vote-down');
-
-        if (await radioUpvote.isVisible()) {
-            await radioUpvote.click();
-            await page.waitForTimeout(500);
-            await expect(radioUpvote).toHaveClass(/active|voted/);
-        }
+        // Find radio vote buttons (actual IDs)
+        const radioUpvote = page.locator('#radio-vote-up');
+        await expect(radioUpvote).toBeVisible({ timeout: 5000 });
+        await radioUpvote.click();
+        await page.waitForTimeout(500);
+        await expect(radioUpvote).toHaveClass(/voted-up/);
     });
 
     test('vote persists when track changes', async ({ page }) => {
         // This tests that vote state is properly saved
         await page.waitForTimeout(2000);
 
-        const radioUpvote = page.locator('#radio-upvote, .radio-controls .vote-up');
-        if (await radioUpvote.isVisible()) {
-            // Vote on current track
-            await radioUpvote.click();
-            await page.waitForTimeout(500);
+        const radioUpvote = page.locator('#radio-vote-up');
+        await expect(radioUpvote).toBeVisible({ timeout: 5000 });
 
-            // Skip to next track
-            const nextBtn = page.locator('#radio-next, .radio-controls .next-btn');
-            if (await nextBtn.isVisible()) {
-                await nextBtn.click();
-                await page.waitForTimeout(1000);
+        // Vote on current track
+        await radioUpvote.click();
+        await page.waitForTimeout(500);
 
-                // New track should not have vote active
-                await expect(radioUpvote).not.toHaveClass(/active/);
-            }
-        }
+        // Skip to next track
+        const nextBtn = page.locator('#radio-next');
+        await expect(nextBtn).toBeVisible({ timeout: 5000 });
+        await nextBtn.click();
+        await page.waitForTimeout(1000);
+
+        // New track should not have vote active
+        await expect(radioUpvote).not.toHaveClass(/voted-up/);
     });
 });
 
@@ -148,6 +171,18 @@ test.describe('Favorites System', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
+
+        // Disable animations for stable element interactions
+        await page.addStyleTag({
+            content: `
+                *, *::before, *::after {
+                    animation-duration: 0s !important;
+                    animation-delay: 0s !important;
+                    transition-duration: 0s !important;
+                    transition-delay: 0s !important;
+                }
+            `
+        });
     });
 
     test('can add track to favorites from library', async ({ page }) => {
@@ -155,15 +190,14 @@ test.describe('Favorites System', () => {
         await page.click('.main-tab:has-text("Library")');
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        // Find favorite button
-        const favBtn = page.locator('.library-item .favorite-btn, .library-item .add-favorite').first();
-        if (await favBtn.isVisible()) {
-            await favBtn.click();
-            await page.waitForTimeout(500);
+        // Find favorite button (actual class is .item-favorite)
+        const favBtn = page.locator('.library-item .item-favorite').first();
+        await expect(favBtn).toBeVisible({ timeout: 5000 });
+        await favBtn.click();
+        await page.waitForTimeout(500);
 
-            // Should show favorited state
-            await expect(favBtn).toHaveClass(/favorited|active/);
-        }
+        // Should show favorited state
+        await expect(favBtn).toHaveClass(/favorited/);
     });
 
     test('can remove track from favorites', async ({ page }) => {
@@ -171,19 +205,19 @@ test.describe('Favorites System', () => {
         await page.click('.main-tab:has-text("Library")');
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        const favBtn = page.locator('.library-item .favorite-btn, .library-item .add-favorite').first();
-        if (await favBtn.isVisible()) {
-            // Click to add
-            await favBtn.click();
-            await page.waitForTimeout(500);
+        const favBtn = page.locator('.library-item .item-favorite').first();
+        await expect(favBtn).toBeVisible({ timeout: 5000 });
 
-            // Click again to remove
-            await favBtn.click();
-            await page.waitForTimeout(500);
+        // Click to add
+        await favBtn.click();
+        await page.waitForTimeout(500);
 
-            // Should not be favorited
-            await expect(favBtn).not.toHaveClass(/favorited|active/);
-        }
+        // Click again to remove
+        await favBtn.click();
+        await page.waitForTimeout(500);
+
+        // Should not be favorited
+        await expect(favBtn).not.toHaveClass(/favorited/);
     });
 
     test('favorites appear in favorites station', async ({ page }) => {
@@ -191,22 +225,20 @@ test.describe('Favorites System', () => {
         await page.click('.main-tab:has-text("Library")');
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        const favBtn = page.locator('.library-item .item-favorite, .library-item .favorite-btn').first();
-        if (await favBtn.isVisible()) {
-            await favBtn.click();
-            await page.waitForTimeout(500);
-        }
+        const favBtn = page.locator('.library-item .item-favorite').first();
+        await expect(favBtn).toBeVisible({ timeout: 5000 });
+        await favBtn.click();
+        await page.waitForTimeout(500);
 
         // Go to Radio tab and click Favorites station preset
         await page.click('.main-tab:has-text("Radio")');
         await page.waitForTimeout(500);
 
-        // Click on Favorites station preset (it's a station, not a main tab)
-        const favStation = page.locator('[title*="favorited"], .station-preset:has-text("Favorites")');
-        if (await favStation.isVisible()) {
-            await favStation.click();
-            await page.waitForTimeout(500);
-        }
+        // Click on Favorites station card (has title containing "favorited")
+        const favStation = page.locator('.station-card[title*="favorited"]');
+        await expect(favStation).toBeVisible({ timeout: 5000 });
+        await favStation.click();
+        await page.waitForTimeout(500);
 
         // Take screenshot
         await page.screenshot({
@@ -218,12 +250,11 @@ test.describe('Favorites System', () => {
     test('can favorite current radio track', async ({ page }) => {
         await page.waitForTimeout(2000);
 
-        const radioFavBtn = page.locator('#radio-favorite, .radio-controls .favorite-btn');
-        if (await radioFavBtn.isVisible()) {
-            await radioFavBtn.click();
-            await page.waitForTimeout(500);
-            await expect(radioFavBtn).toHaveClass(/favorited|active/);
-        }
+        const radioFavBtn = page.locator('#radio-favorite-btn');
+        await expect(radioFavBtn).toBeVisible({ timeout: 5000 });
+        await radioFavBtn.click();
+        await page.waitForTimeout(500);
+        await expect(radioFavBtn).toHaveClass(/favorited/);
     });
 });
 
@@ -231,6 +262,18 @@ test.describe('Tag Suggestions', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
+
+        // Disable animations for stable element interactions
+        await page.addStyleTag({
+            content: `
+                *, *::before, *::after {
+                    animation-duration: 0s !important;
+                    animation-delay: 0s !important;
+                    transition-duration: 0s !important;
+                    transition-delay: 0s !important;
+                }
+            `
+        });
     });
 
     test('can open tag suggestion modal', async ({ page }) => {
@@ -238,23 +281,24 @@ test.describe('Tag Suggestions', () => {
         await page.click('.main-tab:has-text("Library")');
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        // Find tag button
-        const tagBtn = page.locator('.library-item .tag-btn, .library-item .suggest-tag').first();
-        if (await tagBtn.isVisible()) {
+        // Find tag button (in library-item actions area)
+        const tagBtn = page.locator('.library-item .action-btn:has-text("Tag")').first();
+        if (await tagBtn.count() > 0 && await tagBtn.isVisible()) {
             await tagBtn.click();
             await page.waitForTimeout(500);
 
             // Modal should open
-            const modal = page.locator('.tag-modal, .modal:has-text("tag"), [role="dialog"]');
-            if (await modal.isVisible()) {
-                await expect(modal).toBeVisible();
+            const modal = page.locator('.tag-modal, .modal');
+            await expect(modal).toBeVisible({ timeout: 3000 });
 
-                // Take screenshot
-                await page.screenshot({
-                    path: 'test-results/tag-modal.png',
-                    fullPage: true
-                });
-            }
+            // Take screenshot
+            await page.screenshot({
+                path: 'test-results/tag-modal.png',
+                fullPage: true
+            });
+        } else {
+            // Skip if tag button not found (feature may not be in library items)
+            console.log('Tag button not found in library items');
         }
     });
 
@@ -263,24 +307,27 @@ test.describe('Tag Suggestions', () => {
         await page.click('.main-tab:has-text("Library")');
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        const tagBtn = page.locator('.library-item .tag-btn, .library-item .suggest-tag').first();
-        if (await tagBtn.isVisible()) {
+        // Tag button may be in library items or radio controls
+        const tagBtn = page.locator('.library-item .action-btn:has-text("Tag")').first();
+        if (await tagBtn.count() > 0 && await tagBtn.isVisible()) {
             await tagBtn.click();
             await page.waitForTimeout(500);
 
-            // Find a category to select
-            const categoryBtn = page.locator('.tag-modal .category-btn, .modal .tag-option').first();
-            if (await categoryBtn.isVisible()) {
+            // Find a category to select in modal
+            const categoryBtn = page.locator('.tag-modal .tag-option, .modal .category-btn').first();
+            if (await categoryBtn.count() > 0 && await categoryBtn.isVisible()) {
                 await categoryBtn.click();
                 await page.waitForTimeout(500);
 
-                // Submit button should be clickable
-                const submitBtn = page.locator('.tag-modal .submit-btn, .modal button:has-text("Submit")');
-                if (await submitBtn.isVisible()) {
+                // Submit button
+                const submitBtn = page.locator('.tag-modal button:has-text("Submit"), .modal button:has-text("Submit")');
+                if (await submitBtn.count() > 0 && await submitBtn.isVisible()) {
                     await submitBtn.click();
                     await page.waitForTimeout(500);
                 }
             }
+        } else {
+            console.log('Tag button not found in library items');
         }
     });
 });

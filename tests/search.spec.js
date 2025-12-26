@@ -129,39 +129,37 @@ test.describe('Type Filters', () => {
     test('can filter by Music type', async ({ page }) => {
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        const musicTab = page.locator('.type-tab:has-text("Music"), [data-type="music"]');
-        if (await musicTab.isVisible()) {
-            await musicTab.click();
-            await page.waitForTimeout(500);
+        const musicTab = page.locator('.type-tab[data-type="music"]');
+        await expect(musicTab).toBeVisible({ timeout: 5000 });
+        await musicTab.click();
+        await page.waitForTimeout(500);
 
-            // Tab should be active
-            await expect(musicTab).toHaveClass(/active/);
+        // Tab should be active
+        await expect(musicTab).toHaveClass(/active/);
 
-            // Take screenshot
-            await page.screenshot({
-                path: 'test-results/filter-music.png',
-                fullPage: true
-            });
-        }
+        // Take screenshot
+        await page.screenshot({
+            path: 'test-results/filter-music.png',
+            fullPage: true
+        });
     });
 
     test('can filter by SFX type', async ({ page }) => {
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        const sfxTab = page.locator('.type-tab:has-text("SFX"), .type-tab:has-text("Audio"), [data-type="audio"]');
-        if (await sfxTab.isVisible()) {
-            await sfxTab.click();
-            await page.waitForTimeout(500);
+        const sfxTab = page.locator('.type-tab[data-type="audio"]');
+        await expect(sfxTab).toBeVisible({ timeout: 5000 });
+        await sfxTab.click();
+        await page.waitForTimeout(500);
 
-            // Tab should be active
-            await expect(sfxTab).toHaveClass(/active/);
+        // Tab should be active
+        await expect(sfxTab).toHaveClass(/active/);
 
-            // Take screenshot
-            await page.screenshot({
-                path: 'test-results/filter-sfx.png',
-                fullPage: true
-            });
-        }
+        // Take screenshot
+        await page.screenshot({
+            path: 'test-results/filter-sfx.png',
+            fullPage: true
+        });
     });
 
     test('All tab shows all types', async ({ page }) => {
@@ -207,19 +205,17 @@ test.describe('Category/Genre Filters', () => {
 
         // Expand the "Ambient & Chill" genre group first
         const ambientHeader = page.locator('.genre-section-header:has-text("Ambient")');
-        if (await ambientHeader.isVisible()) {
-            await ambientHeader.click();
-            await page.waitForTimeout(300);
-        }
+        await expect(ambientHeader).toBeVisible({ timeout: 5000 });
+        await ambientHeader.click();
+        await page.waitForTimeout(300);
 
         const genreItem = page.locator('.genre-item[data-genre="ambient"]');
-        if (await genreItem.isVisible()) {
-            await genreItem.click({ force: true });
-            await page.waitForTimeout(500);
+        await expect(genreItem).toBeVisible({ timeout: 3000 });
+        await genreItem.click();
+        await page.waitForTimeout(500);
 
-            // Genre should be active
-            await expect(genreItem).toHaveClass(/active/);
-        }
+        // Genre should be active
+        await expect(genreItem).toHaveClass(/active/);
     });
 
     test('clear filter button removes category filter', async ({ page }) => {
@@ -227,27 +223,25 @@ test.describe('Category/Genre Filters', () => {
 
         // Expand a genre group first
         const genreHeader = page.locator('.genre-section-header').first();
-        if (await genreHeader.isVisible()) {
-            await genreHeader.click();
-            await page.waitForTimeout(300);
-        }
+        await expect(genreHeader).toBeVisible({ timeout: 5000 });
+        await genreHeader.click();
+        await page.waitForTimeout(300);
 
         // Click a genre
         const genreItem = page.locator('.genre-item').first();
-        if (await genreItem.isVisible()) {
-            await genreItem.click({ force: true });
+        await expect(genreItem).toBeVisible({ timeout: 3000 });
+        await genreItem.click();
+        await page.waitForTimeout(500);
+
+        // Click clear button if it appears
+        const clearBtn = page.locator('#clear-filter-btn');
+        if (await clearBtn.isVisible()) {
+            await clearBtn.click();
             await page.waitForTimeout(500);
 
-            // Click clear button
-            const clearBtn = page.locator('#clear-filter-btn, .clear-filter');
-            if (await clearBtn.isVisible()) {
-                await clearBtn.click({ force: true });
-                await page.waitForTimeout(500);
-
-                // No genre should be active
-                const activeGenres = await page.locator('.genre-item.active').count();
-                expect(activeGenres).toBe(0);
-            }
+            // No genre should be active
+            const activeGenres = await page.locator('.genre-item.active').count();
+            expect(activeGenres).toBe(0);
         }
     });
 });

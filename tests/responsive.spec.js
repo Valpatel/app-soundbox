@@ -26,7 +26,7 @@ test.describe('Viewport Breakpoints - Radio Tab', () => {
             await page.waitForLoadState('networkidle');
 
             // Radio tab should be visible
-            await expect(page.locator('#radio-tab')).toBeVisible();
+            await expect(page.locator('#content-radio')).toBeVisible();
 
             // Station cards should be visible
             const stationCards = page.locator('.station-card');
@@ -53,7 +53,7 @@ test.describe('Viewport Breakpoints - Library Tab', () => {
             await page.waitForTimeout(500);
 
             // Library should be visible
-            await expect(page.locator('#library-tab')).toBeVisible();
+            await expect(page.locator('#content-library')).toBeVisible();
 
             // Wait for items to load
             await page.waitForSelector('.library-item, .empty-state', { timeout: 10000 });

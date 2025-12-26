@@ -25,35 +25,35 @@ test.describe('Tab Navigation', () => {
 
     test('clicking tab switches content', async ({ page }) => {
         // Start on Radio (default)
-        await expect(page.locator('#radio-tab')).toBeVisible();
+        await expect(page.locator('#content-radio')).toBeVisible();
 
         // Switch to Library
         await page.click('.main-tab:has-text("Library")');
-        await expect(page.locator('#library-tab')).toBeVisible();
-        await expect(page.locator('#radio-tab')).not.toBeVisible();
+        await expect(page.locator('#content-library')).toBeVisible();
+        await expect(page.locator('#content-radio')).not.toBeVisible();
 
         // Switch to Generate
         await page.click('.main-tab:has-text("Generate")');
-        await expect(page.locator('#generate-tab')).toBeVisible();
-        await expect(page.locator('#library-tab')).not.toBeVisible();
+        await expect(page.locator('#content-generate')).toBeVisible();
+        await expect(page.locator('#content-library')).not.toBeVisible();
 
         // Switch back to Radio
         await page.click('.main-tab:has-text("Radio")');
-        await expect(page.locator('#radio-tab')).toBeVisible();
-        await expect(page.locator('#generate-tab')).not.toBeVisible();
+        await expect(page.locator('#content-radio')).toBeVisible();
+        await expect(page.locator('#content-generate')).not.toBeVisible();
     });
 
     test('tab state persists on reload', async ({ page }) => {
         // Switch to Library
         await page.click('.main-tab:has-text("Library")');
-        await expect(page.locator('#library-tab')).toBeVisible();
+        await expect(page.locator('#content-library')).toBeVisible();
 
         // Reload page
         await page.reload();
         await page.waitForLoadState('networkidle');
 
         // Library should still be active
-        await expect(page.locator('#library-tab')).toBeVisible();
+        await expect(page.locator('#content-library')).toBeVisible();
     });
 
     test('active tab has visual indicator', async ({ page }) => {
@@ -138,7 +138,7 @@ test.describe('URL and Deep Links', () => {
         await page.reload();
         await page.waitForLoadState('networkidle');
 
-        await expect(page.locator('#library-tab')).toBeVisible();
+        await expect(page.locator('#content-library')).toBeVisible();
     });
 
     test('can navigate directly to generate', async ({ page }) => {
@@ -151,6 +151,6 @@ test.describe('URL and Deep Links', () => {
         await page.reload();
         await page.waitForLoadState('networkidle');
 
-        await expect(page.locator('#generate-tab')).toBeVisible();
+        await expect(page.locator('#content-generate')).toBeVisible();
     });
 });

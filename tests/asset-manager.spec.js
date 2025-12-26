@@ -32,7 +32,7 @@ test.describe('Library', () => {
 
     test('should display library section when assets exist', async ({ page }) => {
         // Wait for library tab content
-        const libraryTab = page.locator('#library-tab');
+        const libraryTab = page.locator('#content-library');
         await expect(libraryTab).toBeVisible({ timeout: 10000 });
 
         // Check for library items container

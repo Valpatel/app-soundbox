@@ -17,6 +17,18 @@ test.describe('Category System', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
+
+        // Disable CSS animations for stable element interactions
+        await page.addStyleTag({
+            content: `
+                *, *::before, *::after {
+                    animation-duration: 0s !important;
+                    animation-delay: 0s !important;
+                    transition-duration: 0s !important;
+                    transition-delay: 0s !important;
+                }
+            `
+        });
     });
 
     test('displays category counts in sidebar', async ({ page }) => {
@@ -24,14 +36,16 @@ test.describe('Category System', () => {
         await page.click('.main-tab:has-text("Library")');
         await page.waitForTimeout(500);
 
+        // Wait for library to load
+        await page.waitForSelector('.library-item', { timeout: 10000 });
+
         // Expand a genre group to see items (groups are collapsed by default)
         const genreHeader = page.locator('.genre-section-header').first();
-        if (await genreHeader.isVisible()) {
-            await genreHeader.click();
-            await page.waitForTimeout(300);
-        }
+        await expect(genreHeader).toBeVisible({ timeout: 5000 });
+        await genreHeader.click();
+        await page.waitForTimeout(300);
 
-        // Check that genre count elements exist
+        // Check that genre count elements exist in the expanded group
         const counts = await page.locator('.genre-count').allTextContents();
         expect(counts.length).toBeGreaterThan(0);
 
@@ -46,20 +60,21 @@ test.describe('Category System', () => {
         // Click Library tab
         await page.click('.main-tab:has-text("Library")');
         await page.waitForTimeout(500);
+        await page.waitForSelector('.library-item', { timeout: 10000 });
 
         // Expand the "Ambient & Chill" genre group (contains ambient)
         const ambientGroupHeader = page.locator('.genre-section-header:has-text("Ambient")');
-        if (await ambientGroupHeader.isVisible()) {
-            await ambientGroupHeader.click();
-            await page.waitForTimeout(300);
-        }
+        await expect(ambientGroupHeader).toBeVisible({ timeout: 5000 });
+        await ambientGroupHeader.click();
+        await page.waitForTimeout(300);
 
         // Click Ambient genre
-        await page.click('.genre-item[data-genre="ambient"]', { force: true });
+        const ambientItem = page.locator('.genre-item[data-genre="ambient"]');
+        await expect(ambientItem).toBeVisible({ timeout: 3000 });
+        await ambientItem.click();
         await page.waitForTimeout(500);
 
         // Check that Ambient is now active
-        const ambientItem = page.locator('.genre-item[data-genre="ambient"]');
         await expect(ambientItem).toHaveClass(/active/);
 
         // Take screenshot of filtered view
@@ -73,23 +88,25 @@ test.describe('Category System', () => {
         // Click Library tab
         await page.click('.main-tab:has-text("Library")');
         await page.waitForTimeout(500);
+        await page.waitForSelector('.library-item', { timeout: 10000 });
 
         // Expand the Electronic group first
         const electronicHeader = page.locator('.genre-section-header:has-text("Electronic")');
-        if (await electronicHeader.isVisible()) {
-            await electronicHeader.click();
-            await page.waitForTimeout(300);
-        }
+        await expect(electronicHeader).toBeVisible({ timeout: 5000 });
+        await electronicHeader.click();
+        await page.waitForTimeout(300);
 
         // Click a genre first
-        await page.click('.genre-item[data-genre="electronic"]', { force: true });
+        const electronicItem = page.locator('.genre-item[data-genre="electronic"]');
+        await expect(electronicItem).toBeVisible({ timeout: 3000 });
+        await electronicItem.click();
         await page.waitForTimeout(500);
 
-        // Clear filter button should be visible
+        // Clear filter button should be visible after selecting a genre
         const clearBtn = page.locator('#clear-filter-btn');
         if (await clearBtn.isVisible()) {
             // Click clear
-            await clearBtn.click({ force: true });
+            await clearBtn.click();
             await page.waitForTimeout(500);
 
             // Check that no genre is active
@@ -102,20 +119,20 @@ test.describe('Category System', () => {
         // Click Library tab
         await page.click('.main-tab:has-text("Library")');
         await page.waitForTimeout(500);
+        await page.waitForSelector('.library-item', { timeout: 10000 });
 
         // Click the SFX type tab
         const sfxTab = page.locator('.type-tab[data-type="audio"]');
-        if (await sfxTab.isVisible()) {
-            await sfxTab.click();
-            await page.waitForTimeout(500);
+        await expect(sfxTab).toBeVisible({ timeout: 5000 });
+        await sfxTab.click();
+        await page.waitForTimeout(500);
 
-            // Music genres should be hidden, SFX genres visible
-            await expect(sfxTab).toHaveClass(/active/);
-        }
+        // SFX tab should be active
+        await expect(sfxTab).toHaveClass(/active/);
 
-        // SFX genres should be visible after switching
-        const sfxGenres = page.locator('.sfx-genres');
-        await expect(sfxGenres).toBeVisible();
+        // SFX genres section should be visible (not hidden)
+        const sfxGenres = page.locator('#sfx-genres');
+        await expect(sfxGenres).toBeVisible({ timeout: 3000 });
 
         // Take screenshot
         await page.screenshot({
