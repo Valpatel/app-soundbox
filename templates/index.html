@@ -549,126 +549,6 @@
             border-radius: 2px;
             box-shadow: 0 0 8px var(--accent-glow);
         }
-        /* History List */
-        .history-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .history-item {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-            transition: border-color 0.2s;
-        }
-
-        .history-item:hover {
-            border-color: var(--border-hover);
-        }
-
-        .history-header {
-            padding: 14px 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: background 0.2s;
-        }
-
-        .history-header:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .history-expand {
-            color: var(--text-muted);
-            font-size: 12px;
-            transition: transform 0.2s;
-        }
-
-        .history-item.expanded .history-expand {
-            transform: rotate(90deg);
-            color: var(--accent);
-        }
-
-        .history-item.expanded {
-            border-color: var(--card-border-accent, var(--border));
-        }
-
-        .history-header .prompt {
-            flex: 1;
-            font-size: 0.9rem;
-            color: var(--text);
-            word-break: break-word;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .history-header .meta {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            white-space: nowrap;
-        }
-
-        .history-content {
-            display: none;
-            padding: 0 16px 16px 16px;
-            border-top: 1px solid var(--border);
-        }
-
-        .history-item.expanded .history-content {
-            display: block;
-        }
-
-        .history-content .prompt-full {
-            font-size: 0.85rem;
-            color: var(--text-dim);
-            margin: 12px 0;
-            word-break: break-word;
-        }
-
-        .history-item audio {
-            width: 100%;
-            margin-bottom: 12px;
-        }
-
-        .history-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .rating-btn {
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: transparent;
-            color: var(--text-dim);
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.2s;
-        }
-
-        .rating-btn:hover {
-            border-color: var(--border-hover);
-            color: var(--text);
-            transform: scale(1.1);
-        }
-
-        .rating-btn.active-up {
-            background: rgba(16, 185, 129, 0.2);
-            border-color: var(--success);
-            color: var(--success);
-        }
-
-        .rating-btn.active-down {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: var(--error);
-            color: var(--error);
-        }
-
         .download-btn {
             padding: 8px 16px;
             border: 1px solid var(--accent);
@@ -1670,23 +1550,25 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 16px;
+            gap: 8px;
             margin-top: 20px;
             padding-top: 16px;
             border-top: 1px solid var(--border);
         }
 
         .page-btn {
-            padding: 8px 16px;
+            padding: 8px 14px;
             border: 1px solid var(--border);
             border-radius: 8px;
             background: transparent;
             color: var(--text);
             cursor: pointer;
             transition: all 0.2s;
+            min-width: 40px;
+            text-align: center;
         }
 
-        .page-btn:hover:not(:disabled) {
+        .page-btn:hover:not(:disabled):not(.active) {
             border-color: var(--accent);
             color: var(--accent);
         }
@@ -1696,9 +1578,34 @@
             cursor: not-allowed;
         }
 
+        .page-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .page-numbers {
+            display: flex;
+            gap: 4px;
+        }
+
+        .page-ellipsis {
+            color: var(--text-muted);
+            padding: 8px 4px;
+        }
+
         .page-info {
             color: var(--text-muted);
             font-size: 0.9rem;
+        }
+
+        @media (max-width: 480px) {
+            .page-numbers {
+                display: none;
+            }
+            .pagination {
+                gap: 16px;
+            }
         }
 
         /* ========================================
@@ -1877,9 +1784,10 @@
             </div>
 
             <div class="pagination" id="pagination">
-                <button class="page-btn" id="prev-page" onclick="prevPage()">← Prev</button>
+                <button class="page-btn" id="prev-page" onclick="prevPage()">←</button>
+                <div class="page-numbers" id="page-numbers"></div>
                 <span class="page-info" id="page-info">Page 1 of 1</span>
-                <button class="page-btn" id="next-page" onclick="nextPage()">Next →</button>
+                <button class="page-btn" id="next-page" onclick="nextPage()">→</button>
             </div>
         </div>
 
@@ -1954,11 +1862,6 @@
             </div> <!-- /generator-content -->
         </div>
 
-        <!-- Legacy History (hidden, kept for backwards compatibility) -->
-        <div class="card" id="history-card" style="display: none;">
-            <h2>Recent Generations</h2>
-            <div id="history" class="history-list"></div>
-        </div>
     </div>
 
     <script>
@@ -1969,8 +1872,6 @@
         const playerEl = document.getElementById('player');
         const audioEl = document.getElementById('audio');
         const generateBtn = document.getElementById('generate-btn');
-        const historyEl = document.getElementById('history');
-        const historyCard = document.getElementById('history-card');
         const musicExamples = document.getElementById('music-examples');
         const audioExamples = document.getElementById('audio-examples');
         const loadingBanner = document.getElementById('loading-banner');
@@ -2120,8 +2021,6 @@
 
             updateGenerateButton();
 
-            // Reload history filtered by model
-            loadHistory();
         }
 
         function setPrompt(text) {
@@ -2240,7 +2139,7 @@
                     }
 
                     playerEl.classList.add('show');
-                    loadHistory();
+                    loadLibrary();  // Refresh library with new generation
                     currentJobId = null;
                     generateBtn.disabled = false;
                     generateBtn.textContent = 'Generate';
@@ -2274,161 +2173,10 @@
             }
         }
 
-        let showAllHistory = true;  // Default to showing all assets
-
-        async function loadHistory() {
-            try {
-                // Build query params for filtering
-                const params = new URLSearchParams();
-                if (!showAllHistory) {
-                    params.set('model', currentModel);
-                }
-                if (currentUserId) {
-                    params.set('user_id', currentUserId);
-                }
-
-                const response = await fetch('/history?' + params.toString());
-                const items = await response.json();
-
-                // Update history section title based on filter
-                const historyTitle = historyCard.querySelector('h2');
-                if (historyTitle) {
-                    if (showAllHistory) {
-                        historyTitle.innerHTML = '📁 All Generations (' + items.length + ')';
-                    } else {
-                        historyTitle.innerHTML = currentModel === 'music'
-                            ? '🎵 Music History'
-                            : '🔊 Sound Effects History';
-                    }
-                }
-
-                if (items.length > 0) {
-                    historyCard.style.display = 'block';
-                    historyEl.innerHTML = items.map(item => {
-                        const score = item.quality_score;
-                        const qualityClass = score >= 80 ? 'good' : score >= 60 ? 'medium' : 'bad';
-                        const specSrc = item.spectrogram ? `/spectrogram/${item.spectrogram}` : '';
-                        const promptShort = item.prompt.length > 50 ? item.prompt.substring(0, 50) + '...' : item.prompt;
-                        const loopBadge = item.loop ? '<span class="loop-badge">🔁</span>' : '';
-
-                        return `
-                        <div class="history-item" data-filename="${item.filename}">
-                            <div class="history-header" onclick="toggleHistoryItem(this)">
-                                <span class="history-expand">▶</span>
-                                <span class="meta">${item.model === 'music' ? '🎵' : '🔊'}</span>
-                                <span class="prompt">${escapeHtml(promptShort)}</span>
-                                <span class="meta">${item.duration}s</span>
-                                ${score ? `<span class="quality-badge ${qualityClass}">${score}%</span>` : ''}
-                            </div>
-                            <div class="history-content">
-                                <div class="prompt-full">${escapeHtml(item.prompt)}</div>
-                                <div class="styled-audio">
-                                    <audio src="/audio/${item.filename}" controls></audio>
-                                </div>
-                                ${specSrc ?
-                                    `<img class="spectrogram" src="${specSrc}" alt="Spectrogram" loading="lazy">` :
-                                    `<div class="spectrogram loading" onclick="loadSpectrogram(this, '${item.filename}')">Click to load spectrogram</div>`
-                                }
-                                ${item.quality_issues && item.quality_issues.length > 0 ?
-                                    `<div class="quality-issues">⚠️ ${item.quality_issues.join(', ')}</div>` : ''
-                                }
-                                <div class="history-actions">
-                                    <button class="rating-btn ${item.rating === 'up' ? 'active-up' : ''}" onclick="rate('${item.filename}', 'up')">👍</button>
-                                    <button class="rating-btn ${item.rating === 'down' ? 'active-down' : ''}" onclick="rate('${item.filename}', 'down')">👎</button>
-                                    <a href="/download/${item.filename}" class="download-btn">⬇ Download</a>
-                                </div>
-                            </div>
-                        </div>
-                    `}).join('');
-                }
-            } catch (err) {
-                console.error('Failed to load history:', err);
-            }
-
-            // Handle empty results
-            if (!historyEl.innerHTML || historyEl.innerHTML.trim() === '') {
-                historyCard.style.display = 'none';
-            }
-        }
-
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
-        }
-
-        function toggleHistoryItem(header) {
-            const item = header.closest('.history-item');
-            item.classList.toggle('expanded');
-        }
-
-        async function loadSpectrogram(element, filename) {
-            element.textContent = 'Loading...';
-            try {
-                const response = await fetch(`/generate-spectrogram/${filename}`);
-                const data = await response.json();
-                if (data.spectrogram) {
-                    const img = document.createElement('img');
-                    img.className = 'spectrogram';
-                    img.src = `/spectrogram/${data.spectrogram}`;
-                    img.alt = 'Spectrogram';
-                    element.replaceWith(img);
-                }
-            } catch (err) {
-                element.textContent = 'Failed to load';
-            }
-        }
-
-        async function rate(filename, rating) {
-            const item = document.querySelector(`[data-filename="${filename}"]`);
-            const upBtn = item.querySelector('.rating-btn:first-child');
-            const downBtn = item.querySelector('.rating-btn:nth-child(2)');
-
-            // Toggle: if already active, remove rating
-            const currentUp = upBtn.classList.contains('active-up');
-            const currentDown = downBtn.classList.contains('active-down');
-            let newRating = rating;
-            if ((rating === 'up' && currentUp) || (rating === 'down' && currentDown)) {
-                newRating = null;
-            }
-
-            try {
-                await fetch('/rate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename, rating: newRating })
-                });
-
-                upBtn.classList.toggle('active-up', newRating === 'up');
-                downBtn.classList.toggle('active-down', newRating === 'down');
-
-                // If thumbs down, show feedback message and remove from list
-                if (newRating === 'down') {
-                    showFeedbackToast('Thanks for your feedback!');
-                    item.style.transition = 'opacity 0.5s, transform 0.5s, max-height 0.5s';
-                    item.style.opacity = '0.5';
-
-                    setTimeout(() => {
-                        item.style.opacity = '0';
-                        item.style.transform = 'translateX(-20px)';
-                        item.style.maxHeight = '0';
-                        item.style.overflow = 'hidden';
-                        item.style.paddingTop = '0';
-                        item.style.paddingBottom = '0';
-                        item.style.marginBottom = '0';
-
-                        setTimeout(() => {
-                            item.remove();
-                            // Check if history is empty
-                            if (historyEl.children.length === 0) {
-                                historyCard.style.display = 'none';
-                            }
-                        }, 500);
-                    }, 1200);
-                }
-            } catch (err) {
-                console.error('Failed to rate:', err);
-            }
         }
 
         function showFeedbackToast(message, type = 'success') {
@@ -2567,6 +2315,9 @@
         async function shuffleRadio() {
             const model = document.getElementById('radio-model').value;
             const keywords = document.getElementById('radio-keywords').value.trim();
+
+            // Save radio preferences
+            localStorage.setItem('soundbox_radio_model', model);
             const shuffleBtn = document.getElementById('shuffle-btn');
 
             shuffleBtn.disabled = true;
@@ -2587,7 +2338,12 @@
                     playNextTrack();
                     updateRadioQueue();
                 } else {
-                    showWarningToast('No tracks found with those filters (min 60s duration)');
+                    const radioKeywords = document.getElementById('radio-keywords')?.value;
+                    if (radioKeywords) {
+                        showWarningToast('No tracks found for "' + radioKeywords + '" (try different keywords)');
+                    } else {
+                        showWarningToast('No tracks found. Generate some music first!');
+                    }
                 }
             } catch (err) {
                 console.error('Radio shuffle failed:', err);
@@ -2866,7 +2622,61 @@
         const prevPageBtn = document.getElementById('prev-page');
         const nextPageBtn = document.getElementById('next-page');
         const pageInfoEl = document.getElementById('page-info');
+        const pageNumbersEl = document.getElementById('page-numbers');
         const libraryTotalEl = document.getElementById('library-total');
+
+        function renderPageNumbers(currentPage, totalPages) {
+            if (!pageNumbersEl || totalPages <= 1) {
+                if (pageNumbersEl) pageNumbersEl.innerHTML = '';
+                return;
+            }
+
+            const pages = [];
+            const maxVisible = 5;
+
+            // Always show first page
+            pages.push(1);
+
+            // Calculate range around current page
+            let start = Math.max(2, currentPage - 1);
+            let end = Math.min(totalPages - 1, currentPage + 1);
+
+            // Adjust range if at edges
+            if (currentPage <= 3) {
+                end = Math.min(totalPages - 1, maxVisible - 1);
+            } else if (currentPage >= totalPages - 2) {
+                start = Math.max(2, totalPages - maxVisible + 2);
+            }
+
+            // Add ellipsis before middle pages if needed
+            if (start > 2) pages.push('...');
+
+            // Add middle pages
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+
+            // Add ellipsis after middle pages if needed
+            if (end < totalPages - 1) pages.push('...');
+
+            // Always show last page if more than 1 page
+            if (totalPages > 1) pages.push(totalPages);
+
+            // Render
+            pageNumbersEl.innerHTML = pages.map(p => {
+                if (p === '...') {
+                    return '<span class="page-ellipsis">...</span>';
+                }
+                const activeClass = p === currentPage ? ' active' : '';
+                return `<button class="page-btn${activeClass}" onclick="goToPage(${p})">${p}</button>`;
+            }).join('');
+        }
+
+        function goToPage(page) {
+            libraryPage = page;
+            loadLibrary();
+            document.querySelector('.library-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
 
         async function loadLibrary() {
             const params = new URLSearchParams({
@@ -2892,11 +2702,32 @@
                 pageInfoEl.textContent = `Page ${data.page} of ${libraryPages || 1}`;
                 prevPageBtn.disabled = data.page <= 1;
                 nextPageBtn.disabled = data.page >= libraryPages;
+                renderPageNumbers(data.page, libraryPages);
 
                 if (data.items.length === 0) {
+                    let emptyMessage = '';
+                    if (search) {
+                        emptyMessage = `
+                            <div style="font-size: 2rem; margin-bottom: 8px;">🔍</div>
+                            <div style="margin-bottom: 8px;">No tracks found matching "<strong>${escapeHtml(search)}</strong>"</div>
+                            <div style="font-size: 0.85rem; opacity: 0.7;">Try different keywords or clear the search</div>
+                        `;
+                    } else if (model) {
+                        emptyMessage = `
+                            <div style="font-size: 2rem; margin-bottom: 8px;">${model === 'music' ? '🎵' : '🔊'}</div>
+                            <div style="margin-bottom: 8px;">No ${model === 'music' ? 'music' : 'sound effects'} yet</div>
+                            <div style="font-size: 0.85rem; opacity: 0.7;">Generate some using the form below!</div>
+                        `;
+                    } else {
+                        emptyMessage = `
+                            <div style="font-size: 2rem; margin-bottom: 8px;">🎹</div>
+                            <div style="margin-bottom: 8px;">Welcome to Sound Box!</div>
+                            <div style="font-size: 0.85rem; opacity: 0.7;">Generate your first track using the form below</div>
+                        `;
+                    }
                     libraryItemsEl.innerHTML = `
                         <div style="text-align: center; color: var(--text-muted); padding: 40px;">
-                            ${search ? 'No tracks found matching "' + escapeHtml(search) + '"' : 'No tracks yet. Generate some!'}
+                            ${emptyMessage}
                         </div>
                     `;
                     return;
@@ -3210,6 +3041,8 @@
             if (libraryPage > 1) {
                 libraryPage--;
                 loadLibrary();
+                // Smooth scroll to library section
+                document.querySelector('.library-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
@@ -3217,6 +3050,8 @@
             if (libraryPage < libraryPages) {
                 libraryPage++;
                 loadLibrary();
+                // Smooth scroll to library section
+                document.querySelector('.library-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
@@ -3231,10 +3066,11 @@
             });
         }
 
-        // Filter change handlers
+        // Filter change handlers with localStorage persistence
         if (libraryModelEl) {
             libraryModelEl.addEventListener('change', () => {
                 libraryPage = 1;
+                localStorage.setItem('soundbox_library_model', libraryModelEl.value);
                 loadLibrary();
             });
         }
@@ -3242,9 +3078,28 @@
         if (librarySortEl) {
             librarySortEl.addEventListener('change', () => {
                 libraryPage = 1;
+                localStorage.setItem('soundbox_library_sort', librarySortEl.value);
                 loadLibrary();
             });
         }
+
+        // Restore saved filter preferences
+        (function restoreFilters() {
+            const savedModel = localStorage.getItem('soundbox_library_model');
+            const savedSort = localStorage.getItem('soundbox_library_sort');
+            const savedRadioModel = localStorage.getItem('soundbox_radio_model');
+
+            if (savedModel && libraryModelEl) {
+                libraryModelEl.value = savedModel;
+            }
+            if (savedSort && librarySortEl) {
+                librarySortEl.value = savedSort;
+            }
+            if (savedRadioModel) {
+                const radioModelEl = document.getElementById('radio-model');
+                if (radioModelEl) radioModelEl.value = savedRadioModel;
+            }
+        })();
 
         // ========================================
         // COLLAPSIBLE GENERATOR
@@ -3265,7 +3120,6 @@
         })();
 
         // Initialize
-        loadHistory();
         loadLibrary();
         checkStatus();
         generateBtn.disabled = true;
@@ -3450,8 +3304,6 @@
                         isAdultAccount = data.user.account_type === 'adult' ||
                                         (data.user.account_type !== 'child' && !data.user.is_child);
                         console.log('[SFX-Music] User logged in:', currentUserId, 'isAdult:', isAdultAccount);
-                        // Reload history to show user's personal history
-                        loadHistory();
                         loadLibrary();  // Refresh library to show/hide feedback buttons
                     }
                 });
@@ -3461,8 +3313,6 @@
                     currentUserId = null;
                     isAdultAccount = false;
                     console.log('[SFX-Music] User logged out');
-                    // Reload history to show all public history
-                    loadHistory();
                     loadLibrary();  // Refresh library to update feedback button visibility
                 });
 
@@ -3480,7 +3330,6 @@
                         isAdultAccount = data.user.account_type === 'adult' ||
                                         (data.user.account_type !== 'child' && !data.user.is_child);
                         console.log('[SFX-Music] User already logged in:', currentUserId, 'isAdult:', isAdultAccount);
-                        loadHistory();
                         loadLibrary();  // Refresh library to show/hide feedback buttons
                     }
                 });
