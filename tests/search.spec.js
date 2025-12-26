@@ -203,9 +203,16 @@ test.describe('Category/Genre Filters', () => {
     });
 
     test('clicking category filters results', async ({ page }) => {
-        await page.waitForSelector('.library-item, .genre-item', { timeout: 10000 });
+        await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        const genreItem = page.locator('.genre-item[data-genre="ambient"], .category-item:has-text("Ambient")');
+        // Expand the "Ambient & Chill" genre group first
+        const ambientHeader = page.locator('.genre-section-header:has-text("Ambient")');
+        if (await ambientHeader.isVisible()) {
+            await ambientHeader.click();
+            await page.waitForTimeout(300);
+        }
+
+        const genreItem = page.locator('.genre-item[data-genre="ambient"]');
         if (await genreItem.isVisible()) {
             await genreItem.click({ force: true });
             await page.waitForTimeout(500);
@@ -216,7 +223,14 @@ test.describe('Category/Genre Filters', () => {
     });
 
     test('clear filter button removes category filter', async ({ page }) => {
-        await page.waitForSelector('.genre-item', { timeout: 10000 });
+        await page.waitForSelector('.library-item', { timeout: 10000 });
+
+        // Expand a genre group first
+        const genreHeader = page.locator('.genre-section-header').first();
+        if (await genreHeader.isVisible()) {
+            await genreHeader.click();
+            await page.waitForTimeout(300);
+        }
 
         // Click a genre
         const genreItem = page.locator('.genre-item').first();

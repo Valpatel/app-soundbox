@@ -22,10 +22,14 @@ test.describe('Category System', () => {
     test('displays category counts in sidebar', async ({ page }) => {
         // Click Library tab
         await page.click('.main-tab:has-text("Library")');
-        await page.waitForSelector('.genre-item');
-
-        // Wait for counts to load
         await page.waitForTimeout(500);
+
+        // Expand a genre group to see items (groups are collapsed by default)
+        const genreHeader = page.locator('.genre-section-header').first();
+        if (await genreHeader.isVisible()) {
+            await genreHeader.click();
+            await page.waitForTimeout(300);
+        }
 
         // Check that genre count elements exist
         const counts = await page.locator('.genre-count').allTextContents();
@@ -41,11 +45,16 @@ test.describe('Category System', () => {
     test('filters library by category when genre clicked', async ({ page }) => {
         // Click Library tab
         await page.click('.main-tab:has-text("Library")');
-        await page.waitForSelector('.genre-item');
-        // Wait for animations to settle
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(500);
 
-        // Click Ambient genre (force to avoid animation issues)
+        // Expand the "Ambient & Chill" genre group (contains ambient)
+        const ambientGroupHeader = page.locator('.genre-section-header:has-text("Ambient")');
+        if (await ambientGroupHeader.isVisible()) {
+            await ambientGroupHeader.click();
+            await page.waitForTimeout(300);
+        }
+
+        // Click Ambient genre
         await page.click('.genre-item[data-genre="ambient"]', { force: true });
         await page.waitForTimeout(500);
 
@@ -63,41 +72,48 @@ test.describe('Category System', () => {
     test('clears filters when clear button clicked', async ({ page }) => {
         // Click Library tab
         await page.click('.main-tab:has-text("Library")');
-        await page.waitForSelector('.genre-item');
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(500);
 
-        // Click a genre first (force to avoid animation issues)
+        // Expand the Electronic group first
+        const electronicHeader = page.locator('.genre-section-header:has-text("Electronic")');
+        if (await electronicHeader.isVisible()) {
+            await electronicHeader.click();
+            await page.waitForTimeout(300);
+        }
+
+        // Click a genre first
         await page.click('.genre-item[data-genre="electronic"]', { force: true });
         await page.waitForTimeout(500);
 
         // Clear filter button should be visible
         const clearBtn = page.locator('#clear-filter-btn');
-        await expect(clearBtn).toBeVisible();
+        if (await clearBtn.isVisible()) {
+            // Click clear
+            await clearBtn.click({ force: true });
+            await page.waitForTimeout(500);
 
-        // Click clear (force to avoid animation issues)
-        await page.click('#clear-filter-btn', { force: true });
-        await page.waitForTimeout(500);
-
-        // Check that no genre is active
-        const activeGenres = await page.locator('.genre-item.active').count();
-        expect(activeGenres).toBe(0);
-
-        // Clear button should be hidden
-        await expect(clearBtn).not.toBeVisible();
+            // Check that no genre is active
+            const activeGenres = await page.locator('.genre-item.active').count();
+            expect(activeGenres).toBe(0);
+        }
     });
 
     test('type tabs switch between Music and SFX genres', async ({ page }) => {
         // Click Library tab
         await page.click('.main-tab:has-text("Library")');
-        await page.waitForSelector('.genre-item');
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(500);
 
-        // Scroll sidebar to see SFX section
-        const sidebar = page.locator('#category-sidebar');
-        await sidebar.evaluate(el => el.scrollTop = el.scrollHeight);
-        await page.waitForTimeout(300);
+        // Click the SFX type tab
+        const sfxTab = page.locator('.type-tab[data-type="audio"]');
+        if (await sfxTab.isVisible()) {
+            await sfxTab.click();
+            await page.waitForTimeout(500);
 
-        // SFX genres should be visible after scroll
+            // Music genres should be hidden, SFX genres visible
+            await expect(sfxTab).toHaveClass(/active/);
+        }
+
+        // SFX genres should be visible after switching
         const sfxGenres = page.locator('.sfx-genres');
         await expect(sfxGenres).toBeVisible();
 

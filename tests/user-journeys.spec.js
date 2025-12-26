@@ -20,8 +20,8 @@ test.describe('First-Time User Journey', () => {
         const stationCards = page.locator('.station-card');
         await expect(stationCards.first()).toBeVisible({ timeout: 5000 });
 
-        // 3. Click a station to play
-        await page.click('.station-card.station-shuffle', { force: true });
+        // 3. Click a station to play (station-all is the shuffle/all music station)
+        await page.click('.station-card.station-all, .station-card.station-ambient', { force: true });
         await page.waitForTimeout(1000);
 
         // 4. Audio player should be ready
