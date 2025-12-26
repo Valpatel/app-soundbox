@@ -3,6 +3,7 @@ venv/
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
 
 # Node
 node_modules/
@@ -16,3 +17,20 @@ generations.json
 # Environment
 .env
 soundbox.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test artifacts
+playwright-report/
+test-results/
+.last-run.json
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini

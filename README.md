@@ -7,10 +7,13 @@ AI-powered music and sound effects generator built on Meta's AudioCraft models. 
 - **Music Generation** - Create original music from text prompts using MusicGen
 - **Sound Effects** - Generate ambient sounds and SFX using AudioGen
 - **Loop Mode** - Seamless looping with crossfade for game-ready audio
-- **Quality Analysis** - Automatic audio quality scoring with issue detection
+- **Quality Analysis** - Automatic audio quality scoring with auto-retry
 - **Spectrograms** - Visual mel spectrogram display for each generation
 - **Priority Queue** - Multi-tier job queue (admin → premium → standard → free)
-- **History & Ratings** - Personal generation history with thumbs up/down ratings
+- **Library & Voting** - Browse, search, and rate generations with feedback
+- **Radio Mode** - Shuffle play through generated audio with station presets
+- **Crowdsourced Tags** - Community category suggestions with consensus voting
+- **SQLite + FTS5** - Full-text search and efficient metadata storage
 - **Random Prompts** - Extensive vocabulary for creative prompt inspiration
 
 ## Graphlings Integration
@@ -101,6 +104,8 @@ cp .env.example .env
 | `FLASK_DEBUG` | Enable debug mode with auto-reload | `false` |
 
 ## API Reference
+
+See [docs/API.md](docs/API.md) for the complete API reference with all endpoints.
 
 ### Generate Audio
 ```
@@ -215,15 +220,22 @@ Response:
 ## Project Structure
 
 ```
-sfx-music/
+app-soundbox/
 ├── app.py              # Flask server with AudioCraft integration
+├── database.py         # SQLite database layer with FTS5 search
+├── prompts.py          # Category definitions and random prompts
 ├── templates/
-│   └── index.html      # Frontend with Graphlings SDK integration
-├── static/
-│   └── graphlings/     # Graphlings branding assets
+│   └── index.html      # Frontend SPA with Graphlings integration
+├── docs/               # Documentation
+│   ├── API.md          # Complete API reference
+│   ├── DATABASE.md     # Schema and queries
+│   ├── ARCHITECTURE.md # System design
+│   ├── FRONTEND.md     # UI documentation
+│   ├── DEPLOYMENT.md   # Installation guide
+│   └── TROUBLESHOOTING.md
 ├── generated/          # Output audio files (created at runtime)
-├── spectrograms/       # Generated spectrogram images (created at runtime)
-├── generations.json    # Metadata for generated files (created at runtime)
+├── spectrograms/       # Spectrogram images (created at runtime)
+├── soundbox.db         # SQLite database (created at runtime)
 ├── setup.sh            # One-command setup script
 ├── requirements.txt    # Python dependencies
 └── README.md           # This file
@@ -274,19 +286,14 @@ python app.py
 
 ## Troubleshooting
 
-**Models fail to load**
-- Ensure you have sufficient GPU memory (8GB+ recommended)
-- Check CUDA installation: `nvidia-smi`
-- Verify PyTorch CUDA support: `python -c "import torch; print(torch.cuda.is_available())"`
+See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for detailed solutions.
 
-**No audio output**
-- Check FFmpeg installation: `ffmpeg -version`
-- Verify librosa can load audio: `python -c "import librosa; print('OK')"`
+**Quick checks:**
 
-**Slow generation**
-- MusicGen: ~1.5 seconds per second of audio
-- AudioGen: ~0.5 seconds per second of audio
-- Reduce duration for faster results
+- **Models fail to load** - Check GPU memory: `nvidia-smi`
+- **CUDA not detected** - Verify: `python -c "import torch; print(torch.cuda.is_available())"`
+- **No audio output** - Check FFmpeg: `ffmpeg -version`
+- **Database errors** - Initialize: `python database.py init`
 
 ## License
 

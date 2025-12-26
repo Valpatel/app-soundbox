@@ -1,3 +1,13 @@
+"""
+Sound Box - AI Audio Generation Server
+
+Flask server that generates music and sound effects from text prompts
+using Meta's AudioCraft models (MusicGen/AudioGen). Features priority
+queue processing, quality analysis with auto-retry, and spectrogram
+visualization.
+
+See docs/ARCHITECTURE.md for system overview.
+"""
 import os
 import uuid
 import json
@@ -432,6 +442,77 @@ def queue_status():
         })
 
 
+@app.route('/api/queue')
+def api_queue():
+    """Get detailed queue status with all jobs for the Queue Explorer."""
+    with queue_lock:
+        queue_list = []
+        for job_id, job in jobs.items():
+            if job['status'] in ['queued', 'processing']:
+                queue_list.append({
+                    'id': job_id,
+                    'status': job['status'],
+                    'prompt': job['prompt'][:80] + '...' if len(job['prompt']) > 80 else job['prompt'],
+                    'model': job.get('model', 'music'),
+                    'duration': job.get('duration', 8),
+                    'priority': job.get('priority', 'standard'),
+                    'created': job.get('created'),
+                    'progress': job.get('progress', ''),
+                    'progress_pct': job.get('progress_pct', 0),
+                    'user_id': job.get('user_id')
+                })
+
+        # Sort by priority (lower = higher priority) then by creation time
+        queue_list.sort(key=lambda x: (
+            PRIORITY_LEVELS.get(x['priority'], 2),
+            x.get('created', '')
+        ))
+
+        # Add position numbers
+        for i, item in enumerate(queue_list):
+            item['position'] = i + 1
+
+        return jsonify({
+            'jobs': queue_list,
+            'current_job': current_job,
+            'total': len(queue_list)
+        })
+
+
+@app.route('/api/queue/<job_id>/cancel', methods=['POST'])
+def api_cancel_job(job_id):
+    """Cancel a queued job. Only the job owner can cancel."""
+    data = request.json or {}
+    user_id = data.get('user_id')
+
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    with queue_lock:
+        if job_id not in jobs:
+            return jsonify({'error': 'Job not found'}), 404
+
+        job = jobs[job_id]
+
+        # Only allow canceling own jobs
+        if job.get('user_id') != user_id:
+            return jsonify({'error': 'Not authorized to cancel this job'}), 403
+
+        # Can't cancel a job that's already processing
+        if job['status'] == 'processing':
+            return jsonify({'error': 'Cannot cancel a job that is already processing'}), 400
+
+        # Can't cancel completed/failed jobs
+        if job['status'] not in ['queued']:
+            return jsonify({'error': 'Job is not in queue'}), 400
+
+        # Mark as cancelled and remove from active jobs
+        job['status'] = 'cancelled'
+        del jobs[job_id]
+
+    return jsonify({'success': True, 'message': 'Job cancelled'})
+
+
 @app.route('/job/<job_id>')
 def job_status(job_id):
     """Get status of a specific job."""
@@ -614,6 +695,7 @@ def api_library():
         search: Full-text search in prompts
         sort: 'recent', 'popular', or 'rating'
         user_id: Filter by creator
+        category: Filter by genre/category (e.g., 'ambient', 'nature')
     """
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 20))
@@ -621,6 +703,7 @@ def api_library():
     search = request.args.get('search')
     sort = request.args.get('sort', 'recent')
     user_id = request.args.get('user_id')
+    category = request.args.get('category')
 
     result = db.get_library(
         page=page,
@@ -628,7 +711,8 @@ def api_library():
         model=model,
         search=search,
         sort=sort,
-        user_id=user_id
+        user_id=user_id,
+        category=category
     )
 
     return jsonify(result)
@@ -643,22 +727,51 @@ def api_library_item(gen_id):
     return jsonify(generation)
 
 
+@app.route('/api/library/counts')
+def api_library_counts():
+    """Get counts for each content type."""
+    counts = db.get_library_counts()
+    return jsonify(counts)
+
+
+@app.route('/api/library/category-counts')
+def api_category_counts():
+    """
+    Get counts for each category/genre.
+
+    Query params:
+        model: Optional filter by 'music' or 'audio'
+
+    Returns:
+        Dict mapping category names to counts
+    """
+    model = request.args.get('model')
+    counts = db.get_category_counts(model=model)
+    return jsonify(counts)
+
+
 # =============================================================================
-# NEW API: Voting
+# NEW API: Voting with Private Feedback
 # =============================================================================
 
 @app.route('/api/library/<gen_id>/vote', methods=['POST'])
 def api_vote(gen_id):
     """
-    Cast or update a vote.
+    Cast or update a vote with optional private feedback.
 
     Body:
         vote: 1 (upvote), -1 (downvote), or 0 (remove)
         user_id: The voter's user ID
+        feedback_reasons: Optional list of feedback tags (e.g., ['catchy', 'quality'])
+        notes: Optional private notes (not displayed publicly)
+        suggested_model: Optional reclassification suggestion ('music' or 'audio')
     """
     data = request.json or {}
     vote_value = data.get('vote', 0)
     user_id = data.get('user_id')
+    feedback_reasons = data.get('feedback_reasons')  # List of tags
+    notes = data.get('notes')  # Private notes
+    suggested_model = data.get('suggested_model')  # Reclassification suggestion
 
     if not user_id:
         return jsonify({'error': 'user_id required'}), 400
@@ -666,12 +779,16 @@ def api_vote(gen_id):
     if vote_value not in [-1, 0, 1]:
         return jsonify({'error': 'vote must be -1, 0, or 1'}), 400
 
+    # Validate suggested_model if provided
+    if suggested_model and suggested_model not in ('music', 'audio'):
+        return jsonify({'error': 'suggested_model must be "music" or "audio"'}), 400
+
     # Verify generation exists
     generation = db.get_generation(gen_id)
     if not generation:
         return jsonify({'error': 'Not found'}), 404
 
-    result = db.vote(gen_id, user_id, vote_value)
+    result = db.vote(gen_id, user_id, vote_value, feedback_reasons, notes, suggested_model)
     return jsonify(result)
 
 
@@ -695,65 +812,89 @@ def api_get_votes():
     return jsonify({'votes': votes})
 
 
-# =============================================================================
-# NEW API: Comments
-# =============================================================================
-
-@app.route('/api/library/<gen_id>/comments', methods=['GET'])
-def api_get_comments(gen_id):
-    """Get paginated comments for a generation."""
-    page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 20))
-
-    result = db.get_comments(gen_id, page=page, per_page=per_page)
-    return jsonify(result)
-
-
-@app.route('/api/library/<gen_id>/comments', methods=['POST'])
-def api_add_comment(gen_id):
+@app.route('/api/library/<gen_id>/feedback')
+def api_get_feedback(gen_id):
     """
-    Add a comment to a generation.
+    Get feedback summary for a generation.
+    Returns positive and negative feedback reason counts.
+    """
+    feedback = db.get_generation_feedback(gen_id)
+    return jsonify(feedback)
+
+
+# =============================================================================
+# Tag Suggestions API - Crowdsourced Categorization
+# =============================================================================
+
+@app.route('/api/library/<gen_id>/suggest-tag', methods=['POST'])
+def api_suggest_tag(gen_id):
+    """
+    Submit a tag/category suggestion for a generation.
+    When 3+ users agree, the category is automatically applied.
 
     Body:
-        user_id: The commenter's user ID
-        content: The comment text
-        username: Optional display name
+        category: The category to suggest
+        user_id: (optional) User identifier
     """
-    data = request.json or {}
-    user_id = data.get('user_id')
-    content = data.get('content', '').strip()
-    username = data.get('username')
-
+    data = request.get_json()
+    user_id = data.get('user_id') if data else None
     if not user_id:
-        return jsonify({'error': 'user_id required'}), 400
+        user_id = request.args.get('user_id') or request.remote_addr
 
-    if not content:
-        return jsonify({'error': 'content required'}), 400
+    if not data or 'category' not in data:
+        return jsonify({'error': 'Missing category'}), 400
 
-    if len(content) > 500:
-        return jsonify({'error': 'Comment too long (max 500 chars)'}), 400
+    result = db.submit_tag_suggestion(gen_id, user_id, data['category'])
 
-    # Verify generation exists
-    generation = db.get_generation(gen_id)
-    if not generation:
-        return jsonify({'error': 'Not found'}), 404
-
-    comment_id = db.add_comment(gen_id, user_id, content, username)
-    return jsonify({'success': True, 'comment_id': comment_id})
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 400
 
 
-@app.route('/api/library/<gen_id>/comments/<int:comment_id>', methods=['DELETE'])
-def api_delete_comment(gen_id, comment_id):
-    """Delete a comment (only by owner)."""
-    user_id = request.args.get('user_id')
+@app.route('/api/library/<gen_id>/tag-suggestions')
+def api_get_tag_suggestions(gen_id):
+    """
+    Get all tag suggestions for a generation with vote counts.
+    """
+    user_id = request.args.get('user_id') or request.remote_addr
 
-    if not user_id:
-        return jsonify({'error': 'user_id required'}), 400
+    # Get all suggestions with counts
+    suggestions = db.get_tag_suggestions(gen_id)
 
-    deleted = db.delete_comment(comment_id, user_id)
-    if deleted:
-        return jsonify({'success': True})
-    return jsonify({'error': 'Comment not found or not owned by user'}), 404
+    # Get user's own suggestions
+    user_suggestions = db.get_user_suggestions(gen_id, user_id)
+
+    # Get the generation info
+    with db.get_db() as conn:
+        gen = conn.execute(
+            "SELECT model, category FROM generations WHERE id = ?",
+            (gen_id,)
+        ).fetchone()
+
+    if not gen:
+        return jsonify({'error': 'Generation not found'}), 404
+
+    current_categories = json.loads(gen['category'] or '[]')
+
+    return jsonify({
+        'suggestions': suggestions,
+        'user_suggestions': user_suggestions,
+        'current_categories': current_categories,
+        'threshold': db.TAG_CONSENSUS_THRESHOLD
+    })
+
+
+@app.route('/api/categories/<model>')
+def api_get_categories(model):
+    """
+    Get all available categories for a model type (music or audio).
+    """
+    if model not in ('music', 'audio'):
+        return jsonify({'error': 'Invalid model type'}), 400
+
+    categories = db.get_available_categories(model)
+    return jsonify({'categories': categories})
 
 
 # =============================================================================
@@ -782,6 +923,157 @@ def api_radio_shuffle():
             'model': model,
             'search': search
         }
+    })
+
+
+@app.route('/api/radio/next')
+def api_radio_next():
+    """
+    Get more tracks for continuous radio playback, excluding recently played.
+
+    Query params:
+        model: Filter by 'music' or 'audio'
+        search: Optional keyword filter
+        count: Number of tracks (default 5, max 20)
+        exclude: Comma-separated list of track IDs to exclude (recently played)
+    """
+    model = request.args.get('model')
+    search = request.args.get('search')
+    count = min(int(request.args.get('count', 5)), 20)
+    exclude_str = request.args.get('exclude', '')
+
+    # Parse exclude list
+    exclude_ids = [id.strip() for id in exclude_str.split(',') if id.strip()]
+
+    tracks = db.get_random_tracks_excluding(
+        model=model,
+        search=search,
+        count=count,
+        exclude_ids=exclude_ids if exclude_ids else None
+    )
+
+    return jsonify({
+        'tracks': tracks,
+        'filters': {
+            'model': model,
+            'search': search
+        }
+    })
+
+
+# =============================================================================
+# Favorites
+# =============================================================================
+
+@app.route('/api/favorites/<gen_id>', methods=['POST'])
+def api_add_favorite(gen_id):
+    """Add a generation to user's favorites."""
+    data = request.json or {}
+    user_id = data.get('user_id')
+
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    # Verify generation exists
+    generation = db.get_generation(gen_id)
+    if not generation:
+        return jsonify({'error': 'Not found'}), 404
+
+    added = db.add_favorite(user_id, gen_id)
+    return jsonify({
+        'success': True,
+        'favorited': True,
+        'was_new': added
+    })
+
+
+@app.route('/api/favorites/<gen_id>', methods=['DELETE'])
+def api_remove_favorite(gen_id):
+    """Remove a generation from user's favorites."""
+    data = request.json or {}
+    user_id = data.get('user_id')
+
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    removed = db.remove_favorite(user_id, gen_id)
+    return jsonify({
+        'success': True,
+        'favorited': False,
+        'was_removed': removed
+    })
+
+
+@app.route('/api/favorites')
+def api_get_favorites():
+    """Get user's favorites (paginated)."""
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 20))
+    model = request.args.get('model')
+
+    result = db.get_favorites(user_id, page=page, per_page=per_page, model=model)
+    return jsonify(result)
+
+
+@app.route('/api/favorites/check', methods=['POST'])
+def api_check_favorites():
+    """Check which generations are favorited by user."""
+    data = request.json or {}
+    user_id = data.get('user_id')
+    generation_ids = data.get('generation_ids', [])
+
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    favorites = db.get_user_favorites(user_id, generation_ids)
+    return jsonify({'favorites': list(favorites)})
+
+
+@app.route('/api/radio/favorites')
+def api_radio_favorites():
+    """Shuffle play user's favorites."""
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    model = request.args.get('model')
+    count = min(int(request.args.get('count', 10)), 50)
+
+    tracks = db.get_random_favorites(user_id, count=count, model=model)
+    return jsonify({
+        'tracks': tracks,
+        'source': 'favorites'
+    })
+
+
+@app.route('/api/radio/top-rated')
+def api_radio_top_rated():
+    """Get top rated tracks for radio."""
+    model = request.args.get('model')
+    count = min(int(request.args.get('count', 10)), 50)
+
+    tracks = db.get_top_rated_tracks(model=model, count=count)
+    return jsonify({
+        'tracks': tracks,
+        'source': 'top-rated'
+    })
+
+
+@app.route('/api/radio/new')
+def api_radio_new():
+    """Get recently created tracks for radio."""
+    model = request.args.get('model')
+    count = min(int(request.args.get('count', 10)), 50)
+    hours = int(request.args.get('hours', 168))  # Default 7 days
+
+    tracks = db.get_recent_tracks(model=model, count=count, hours=hours)
+    return jsonify({
+        'tracks': tracks,
+        'source': 'new'
     })
 
 
@@ -1304,6 +1596,7 @@ if __name__ == '__main__':
     # Initialize database and migrate from JSON if needed
     db.init_db()
     db.migrate_from_json()
+    db.migrate_categories()  # Categorize any uncategorized generations
 
     # Start model loader thread
     loader_thread = threading.Thread(target=load_models, daemon=True)
