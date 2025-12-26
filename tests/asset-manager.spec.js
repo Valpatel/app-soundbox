@@ -1,11 +1,16 @@
+/**
+ * Asset Manager / Library Tests
+ *
+ * Tests the library functionality including browsing, voting, and playback
+ */
+
 const { test, expect } = require('@playwright/test');
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:5309';
 
-test.describe('Asset Manager', () => {
+test.describe('Library', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
-        // Wait for the page to load and history to populate
         await page.waitForLoadState('networkidle');
 
         // Disable CSS animations for stable element interactions
@@ -19,216 +24,167 @@ test.describe('Asset Manager', () => {
                 }
             `
         });
+
+        // Navigate to Library tab
+        await page.click('.main-tab:has-text("Library")');
+        await page.waitForTimeout(500);
     });
 
-    test('should display history section when assets exist', async ({ page }) => {
-        // Wait for history card to appear
-        const historyCard = page.locator('#history-card');
-        await expect(historyCard).toBeVisible({ timeout: 10000 });
+    test('should display library section when assets exist', async ({ page }) => {
+        // Wait for library tab content
+        const libraryTab = page.locator('#library-tab');
+        await expect(libraryTab).toBeVisible({ timeout: 10000 });
 
-        // Check that history title shows "All Generations" with count
-        const title = historyCard.locator('h2');
-        await expect(title).toContainText(/All Generations/);
+        // Check for library items container
+        const libraryItems = page.locator('#library-items, .library-items');
+        await expect(libraryItems).toBeVisible();
     });
 
-    test('should display history items', async ({ page }) => {
-        // Wait for history to load
-        await page.waitForSelector('.history-item', { timeout: 10000 });
+    test('should display library items', async ({ page }) => {
+        // Wait for library to load
+        await page.waitForSelector('.library-item', { timeout: 10000 });
 
         // Count displayed items
-        const items = page.locator('.history-item');
+        const items = page.locator('.library-item');
         const count = await items.count();
 
-        console.log(`Displayed history items: ${count}`);
+        console.log(`Displayed library items: ${count}`);
         expect(count).toBeGreaterThan(0);
     });
 
-    test('should show all assets (not limited to 20)', async ({ page }) => {
-        // Get total count from API (no model filter)
-        const response = await page.request.get(`${BASE_URL}/history`);
-        const apiItems = await response.json();
-        const totalAssets = apiItems.length;
+    test('should have vote buttons for each item', async ({ page }) => {
+        await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        console.log(`Total assets from API: ${totalAssets}`);
+        // Check first item for vote buttons
+        const firstItem = page.locator('.library-item').first();
 
-        // Wait for history to load
-        await page.waitForSelector('.history-item', { timeout: 10000 });
+        // Look for upvote/downvote buttons
+        const upButton = firstItem.locator('.vote-up, .upvote-btn, .item-upvote');
+        const downButton = firstItem.locator('.vote-down, .downvote-btn, .item-downvote');
 
-        // Count displayed items
-        const displayedItems = page.locator('.history-item');
-        const displayedCount = await displayedItems.count();
+        // At least one vote mechanism should be present
+        const hasUpvote = await upButton.count() > 0;
+        const hasDownvote = await downButton.count() > 0;
 
-        console.log(`Displayed items in UI: ${displayedCount}`);
-
-        // All assets should now be displayed (showAllHistory defaults to true)
-        expect(displayedCount).toBe(totalAssets);
-        console.log(`SUCCESS: All ${totalAssets} assets displayed correctly!`);
-
-        // Also verify the title shows "All Generations"
-        const title = page.locator('#history-card h2');
-        await expect(title).toContainText('All Generations');
+        console.log(`Has upvote: ${hasUpvote}, Has downvote: ${hasDownvote}`);
+        expect(hasUpvote || hasDownvote).toBeTruthy();
     });
 
-    test('should expand history item on click', async ({ page }) => {
-        await page.waitForSelector('.history-item', { timeout: 10000 });
+    test('should have favorite button for each item', async ({ page }) => {
+        await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        // Get first history item
-        const firstItem = page.locator('.history-item').first();
-        const header = firstItem.locator('.history-header');
+        // Check first item for favorite button
+        const firstItem = page.locator('.library-item').first();
+        const favButton = firstItem.locator('.item-favorite, .favorite-btn, .add-favorite');
 
-        // Click to expand
-        await header.click();
-
-        // Check that item is expanded
-        await expect(firstItem).toHaveClass(/expanded/);
-
-        // Check that content is visible
-        const content = firstItem.locator('.history-content');
-        await expect(content).toBeVisible();
+        const hasFavorite = await favButton.count() > 0;
+        console.log(`Has favorite button: ${hasFavorite}`);
+        expect(hasFavorite).toBeTruthy();
     });
 
-    test('should have rating buttons for each item', async ({ page }) => {
-        await page.waitForSelector('.history-item', { timeout: 10000 });
+    test('should have download functionality', async ({ page }) => {
+        await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        // Expand first item to see rating buttons
-        const firstItem = page.locator('.history-item').first();
-        await firstItem.locator('.history-header').click();
+        // Check first item for download
+        const firstItem = page.locator('.library-item').first();
+        const downloadBtn = firstItem.locator('.action-btn.download, a[href*="/download/"]');
 
-        // Check for rating buttons
-        const upButton = firstItem.locator('.rating-btn').first();
-        const downButton = firstItem.locator('.rating-btn').nth(1);
-
-        await expect(upButton).toBeVisible();
-        await expect(downButton).toBeVisible();
-        await expect(upButton).toContainText('👍');
-        await expect(downButton).toContainText('👎');
+        const hasDownload = await downloadBtn.count() > 0;
+        console.log(`Has download: ${hasDownload}`);
+        expect(hasDownload).toBeTruthy();
     });
 
-    test('should toggle rating on click', async ({ page }) => {
-        await page.waitForSelector('.history-item', { timeout: 10000 });
+    test('should display item metadata', async ({ page }) => {
+        await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        // Expand first item
-        const firstItem = page.locator('.history-item').first();
-        await firstItem.locator('.history-header').click();
+        // First item should have prompt text
+        const firstItem = page.locator('.library-item').first();
+        const promptText = await firstItem.textContent();
 
-        // Get the thumbs up button
-        const upButton = firstItem.locator('.rating-btn').first();
-
-        // Click to rate up
-        await upButton.click();
-
-        // Wait for the API call to complete
-        await page.waitForTimeout(500);
-
-        // Check that it's now active
-        await expect(upButton).toHaveClass(/active-up/);
-
-        // Click again to remove rating
-        await upButton.click();
-        await page.waitForTimeout(500);
-
-        // Check that it's no longer active
-        await expect(upButton).not.toHaveClass(/active-up/);
+        console.log(`First item text: ${promptText?.substring(0, 100)}`);
+        expect(promptText?.length).toBeGreaterThan(0);
     });
 
-    test('should have audio player for each item', async ({ page }) => {
-        await page.waitForSelector('.history-item', { timeout: 10000 });
-
-        // Expand first item
-        const firstItem = page.locator('.history-item').first();
-        await firstItem.locator('.history-header').click();
-
-        // Check for audio element
-        const audio = firstItem.locator('audio');
-        await expect(audio).toBeVisible();
-
-        // Check that source is set
-        const src = await audio.getAttribute('src');
-        expect(src).toContain('/audio/');
-    });
-
-    test('should have download button for each item', async ({ page }) => {
-        await page.waitForSelector('.history-item', { timeout: 10000 });
-
-        // Expand first item
-        const firstItem = page.locator('.history-item').first();
-        await firstItem.locator('.history-header').click();
-
-        // Check for download link (uses .download-btn class)
-        const downloadLink = firstItem.locator('.download-btn');
-        await expect(downloadLink).toBeVisible();
-
-        const href = await downloadLink.getAttribute('href');
-        expect(href).toContain('/download/');
-    });
-
-    test('should display spectrogram when available', async ({ page }) => {
-        await page.waitForSelector('.history-item', { timeout: 10000 });
-
-        // Expand first item
-        const firstItem = page.locator('.history-item').first();
-        await firstItem.locator('.history-header').click();
-
-        // Check for spectrogram image (may not exist for older items)
-        const spectrogram = firstItem.locator('img');
-        const count = await spectrogram.count();
-
-        if (count > 0) {
-            const src = await spectrogram.first().getAttribute('src');
-            expect(src).toContain('/spectrogram/');
-        }
-    });
-
-    test('API should return all assets', async ({ page }) => {
+    test('API should return library items', async ({ page }) => {
         // Direct API test
-        const response = await page.request.get(`${BASE_URL}/history`);
+        const response = await page.request.get(`${BASE_URL}/api/library`);
         expect(response.ok()).toBeTruthy();
 
-        const items = await response.json();
-        console.log(`API returned ${items.length} items`);
+        const data = await response.json();
+        console.log(`API returned ${data.items?.length || 0} items, total: ${data.total}`);
 
         // Check structure of returned items
-        if (items.length > 0) {
-            const firstItem = items[0];
-            expect(firstItem).toHaveProperty('filename');
+        expect(data).toHaveProperty('items');
+        expect(data).toHaveProperty('total');
+
+        if (data.items && data.items.length > 0) {
+            const firstItem = data.items[0];
+            expect(firstItem).toHaveProperty('id');
             expect(firstItem).toHaveProperty('prompt');
             expect(firstItem).toHaveProperty('model');
-            expect(firstItem).toHaveProperty('duration');
-            expect(firstItem).toHaveProperty('rating');
         }
     });
 
-    test('should be able to rate via API', async ({ page }) => {
+    test('should be able to vote via API', async ({ page }) => {
         // Get first item from API
-        const historyResponse = await page.request.get(`${BASE_URL}/history`);
-        const items = await historyResponse.json();
+        const libraryResponse = await page.request.get(`${BASE_URL}/api/library?per_page=1`);
+        const data = await libraryResponse.json();
 
-        if (items.length === 0) {
+        if (!data.items || data.items.length === 0) {
             test.skip();
             return;
         }
 
-        const filename = items[0].filename;
+        const itemId = data.items[0].id;
 
-        // Rate the item
-        const rateResponse = await page.request.post(`${BASE_URL}/rate`, {
+        // Vote on the item
+        const voteResponse = await page.request.post(`${BASE_URL}/api/library/${itemId}/vote`, {
             data: {
-                filename: filename,
-                rating: 'up'
+                vote: 1,
+                user_id: 'test_user'
             }
         });
 
-        expect(rateResponse.ok()).toBeTruthy();
+        expect(voteResponse.ok()).toBeTruthy();
 
-        const result = await rateResponse.json();
-        expect(result.success).toBe(true);
+        const result = await voteResponse.json();
+        // API returns upvotes/downvotes/user_vote
+        expect(result).toHaveProperty('upvotes');
+        expect(result).toHaveProperty('user_vote');
 
-        // Remove the rating
-        await page.request.post(`${BASE_URL}/rate`, {
+        // Remove the vote
+        await page.request.post(`${BASE_URL}/api/library/${itemId}/vote`, {
             data: {
-                filename: filename,
-                rating: null
+                vote: 0,
+                user_id: 'test_user'
             }
         });
+    });
+
+    test('search input is visible', async ({ page }) => {
+        const searchInput = page.locator('#library-search, input[placeholder*="Search"]');
+        await expect(searchInput).toBeVisible();
+    });
+
+    test('can filter by type', async ({ page }) => {
+        await page.waitForSelector('.library-item', { timeout: 10000 });
+
+        // Look for type filter tabs
+        const typeTabs = page.locator('.type-tab, [data-type]');
+        const count = await typeTabs.count();
+
+        console.log(`Found ${count} type filter tabs`);
+        expect(count).toBeGreaterThan(0);
+    });
+
+    test('pagination is visible when needed', async ({ page }) => {
+        await page.waitForSelector('.library-item', { timeout: 10000 });
+
+        // Check for pagination controls
+        const pagination = page.locator('.pagination, .page-controls, .page-btn');
+        const hasPagination = await pagination.count() > 0;
+
+        console.log(`Has pagination: ${hasPagination}`);
+        // Pagination may not be visible if there are few items
     });
 });

@@ -4490,7 +4490,21 @@
             <!-- Library Layout with Sidebar -->
             <div class="library-layout">
                 <!-- Category Sidebar -->
-                <div class="category-sidebar" id="category-sidebar">
+                <div class="category-sidebar" id="category-sidebar" data-type="music">
+                    <!-- Type Tabs: Music vs SFX -->
+                    <div class="category-type-tabs">
+                        <button class="type-tab active" data-type="music" onclick="selectTypeTab('music')">
+                            <svg class="icon"><use href="#icon-music"/></svg>
+                            Music
+                            <span class="tab-count" id="music-count">0</span>
+                        </button>
+                        <button class="type-tab" data-type="audio" onclick="selectTypeTab('audio')">
+                            <svg class="icon"><use href="#icon-soundwave"/></svg>
+                            SFX
+                            <span class="tab-count" id="sfx-count">0</span>
+                        </button>
+                    </div>
+
                     <!-- Quick Filters -->
                     <div class="quick-filters">
                         <button class="quick-filter-btn" onclick="selectQuickFilter('favorites')" data-filter="favorites">
@@ -4899,6 +4913,7 @@
 
             // Load library if switching to library tab
             if (tabName === 'library') {
+                loadTypeCounts();  // Update Music/SFX counts
                 loadLibrary();
             }
         }
@@ -6286,6 +6301,27 @@
             libraryPage = page;
             loadLibrary();
             document.querySelector('.library-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Load and update type counts (Music/SFX)
+        async function loadTypeCounts() {
+            try {
+                const response = await fetch('/api/library/counts');
+                const counts = await response.json();
+
+                // Update the Music and SFX count badges
+                const musicCountEl = document.getElementById('music-count');
+                const sfxCountEl = document.getElementById('sfx-count');
+
+                if (musicCountEl) {
+                    musicCountEl.textContent = counts.music || 0;
+                }
+                if (sfxCountEl) {
+                    sfxCountEl.textContent = counts.audio || 0;
+                }
+            } catch (error) {
+                console.error('Error loading type counts:', error);
+            }
         }
 
         async function loadLibrary() {

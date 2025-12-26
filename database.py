@@ -692,6 +692,7 @@ def vote(generation_id, user_id, vote_value, feedback_reasons=None, notes=None, 
         ).fetchone()
 
         return {
+            'success': True,
             'upvotes': counts['upvotes'],
             'downvotes': counts['downvotes'],
             'user_vote': user_vote_row['vote'] if user_vote_row else 0
