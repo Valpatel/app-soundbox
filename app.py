@@ -198,7 +198,9 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["200 per day", "50 per hour"],
+    # No default limits - apply specific limits to sensitive endpoints only
+    # Default limits broke the frontend which polls /status every 3 seconds
+    default_limits=[],
     storage_uri="memory://",
 )
 
