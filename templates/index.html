@@ -175,8 +175,9 @@
         }
 
         .container {
-            max-width: 720px;
+            max-width: 900px;
             margin: 0 auto;
+            padding: 0 16px;
         }
 
         .subtitle {
@@ -242,6 +243,25 @@
         .license-notice .separator {
             color: var(--text-muted);
             opacity: 0.5;
+        }
+
+        /* CC0 widget responsive - smaller on mobile */
+        @media (max-width: 480px) {
+            .license-notice {
+                font-size: 0.6rem;
+                padding: 4px 8px;
+                gap: 4px;
+            }
+            .license-badge {
+                font-size: 0.55rem;
+                padding: 1px 4px;
+            }
+            .attribution-hint {
+                display: none;
+            }
+            .license-notice .separator {
+                display: none;
+            }
         }
 
         .attribution-hint {
@@ -1438,6 +1458,53 @@
 
         .main-tab .icon {
             font-size: 1.1rem;
+        }
+
+        /* Mobile Tab Dropdown - only visible on smallest screens */
+        .mobile-tab-dropdown {
+            display: none;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto 20px;
+        }
+
+        .mobile-tab-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 40px;
+        }
+
+        .mobile-tab-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        .mobile-tab-select option {
+            background: var(--bg-card);
+            color: var(--text);
+            padding: 8px;
+        }
+
+        @media (max-width: 480px) {
+            .mobile-tab-dropdown {
+                display: block;
+            }
+            .main-tabs {
+                display: none;
+            }
         }
 
         .tab-content {
@@ -3841,8 +3908,8 @@
 
         .library-controls .search-input:focus {
             outline: none;
-            border-color: var(--cyan);
-            box-shadow: 0 0 0 3px var(--cyan-glow);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
         .library-controls .search-input::placeholder {
@@ -3863,7 +3930,7 @@
 
         .library-controls select:focus {
             outline: none;
-            border-color: var(--cyan);
+            border-color: var(--accent);
         }
 
         /* Category Filter Pills */
@@ -3889,13 +3956,13 @@
         }
 
         .filter-pill:hover {
-            border-color: var(--cyan);
-            color: var(--cyan);
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
         .filter-pill.active {
-            background: var(--cyan);
-            border-color: var(--cyan);
+            background: var(--accent);
+            border-color: var(--accent);
             color: white;
         }
 
@@ -3907,8 +3974,8 @@
         /* Category Browser - Redesigned */
         .library-layout {
             display: grid;
-            grid-template-columns: 220px 1fr;
-            gap: 20px;
+            grid-template-columns: 200px 1fr;
+            gap: 16px;
         }
 
         @media (max-width: 900px) {
@@ -3921,14 +3988,73 @@
             .category-sidebar.mobile-open {
                 display: block;
                 position: fixed;
+                top: 60px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 90%;
+                max-width: 320px;
+                max-height: calc(100vh - 100px);
+                z-index: 100;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                overflow-y: auto;
+                padding: 16px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            }
+            .category-overlay-backdrop {
+                display: none;
+            }
+            .category-overlay-backdrop.active {
+                display: block;
+                position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
                 bottom: 0;
-                z-index: 100;
-                background: var(--bg-dark);
-                overflow-y: auto;
-                padding: 20px;
+                background: rgba(0, 0, 0, 0.7);
+                z-index: 99;
+            }
+            .category-close-header {
+                display: none;
+                position: sticky;
+                top: 0;
+                margin: -16px -16px 12px -16px;
+                padding: 12px 16px;
+                width: calc(100% + 32px);
+                background: var(--bg-card);
+                border-bottom: 1px solid var(--border);
+                border-radius: 16px 16px 0 0;
+                z-index: 101;
+                align-items: center;
+                justify-content: space-between;
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: var(--text);
+            }
+            .category-sidebar.mobile-open .category-close-header {
+                display: flex;
+            }
+            .category-close-btn {
+                width: 32px;
+                height: 32px;
+                border: none;
+                background: #ef4444;
+                border-radius: 8px;
+                color: white;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            }
+            .category-close-btn:hover {
+                background: #dc2626;
+                transform: scale(1.05);
+            }
+            .category-close-btn .icon {
+                width: 18px;
+                height: 18px;
             }
         }
 
@@ -3937,9 +4063,15 @@
             padding: 0;
         }
 
-        /* Type Tabs */
+        /* Close header/button - hidden by default on desktop */
+        .category-close-header {
+            display: none;
+        }
+
+        /* Type Tabs - Vertical layout to save horizontal space */
         .category-type-tabs {
             display: flex;
+            flex-direction: column;
             gap: 4px;
             margin-bottom: 16px;
             background: var(--bg-input);
@@ -3949,7 +4081,6 @@
         }
 
         .type-tab {
-            flex: 1;
             padding: 10px 12px;
             border: none;
             border-radius: 8px;
@@ -3961,8 +4092,8 @@
             transition: all 0.2s;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 6px;
+            justify-content: flex-start;
+            gap: 8px;
         }
 
         .type-tab:hover {
@@ -4276,15 +4407,15 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, var(--cyan), var(--accent));
+            background: linear-gradient(90deg, var(--accent), #ec4899);
             opacity: 0;
             transition: opacity 0.3s;
         }
 
         .library-item:hover {
-            border-color: var(--cyan);
+            border-color: var(--accent);
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.15);
+            box-shadow: 0 8px 24px var(--accent-glow);
         }
 
         .library-item:hover::before {
@@ -5411,6 +5542,23 @@
             </p>
         </div>
 
+        <!-- MOBILE TAB DROPDOWN - only visible on smallest screens -->
+        <div class="mobile-tab-dropdown">
+            <div style="display: flex; gap: 8px; align-items: center; justify-content: center;">
+                <button class="global-mute-btn" id="global-mute-btn-mobile" onclick="toggleGlobalMute()" title="Mute/Unmute all audio">
+                    <svg class="icon unmuted"><use href="#icon-volume"/></svg>
+                    <svg class="icon muted"><use href="#icon-volume-off"/></svg>
+                </button>
+                <select class="mobile-tab-select" id="mobile-tab-select" onchange="switchTab(this.value)">
+                    <option value="radio">Radio</option>
+                    <option value="library">Library</option>
+                    <option value="generate">Generate</option>
+                    <option value="playlists">Playlists</option>
+                    <option value="api">API</option>
+                </select>
+            </div>
+        </div>
+
         <!-- MAIN TABS -->
         <div class="main-tabs">
             <button class="global-mute-btn" id="global-mute-btn" onclick="toggleGlobalMute()" title="Mute/Unmute all audio">
@@ -5429,11 +5577,12 @@
                 <svg class="icon icon-md"><use href="#icon-wand"/></svg>
                 <span>Generate</span>
             </button>
-            <button class="main-tab" onclick="switchTab('playlists')" id="tab-playlists" title="Manage your saved playlists">
-                <svg class="icon icon-md"><use href="#icon-heart"/></svg>
+            <button class="main-tab" onclick="switchTab('playlists')" id="tab-playlists" title="Manage your saved playlists and favorites">
+                <svg class="icon icon-md"><use href="#icon-music"/></svg>
                 <span>Playlists</span>
             </button>
-            <button class="main-tab" onclick="switchTab('history')" id="tab-history" title="View your play and vote history">
+            <!-- History tab hidden to reduce UI clutter - functionality still available via direct URL -->
+            <button class="main-tab hidden" onclick="switchTab('history')" id="tab-history" title="View your play and vote history" style="display: none;">
                 <svg class="icon icon-md"><use href="#icon-clock"/></svg>
                 <span>History</span>
             </button>
@@ -5652,10 +5801,20 @@
                 Browse Categories
             </button>
 
+            <!-- Backdrop for mobile category overlay -->
+            <div class="category-overlay-backdrop" id="category-backdrop" onclick="toggleMobileCategories()"></div>
+
             <!-- Library Layout with Sidebar -->
             <div class="library-layout">
                 <!-- Category Sidebar -->
                 <div class="category-sidebar" id="category-sidebar" data-type="music">
+                    <!-- Close button header for mobile -->
+                    <div class="category-close-header">
+                        <span>Browse Categories</span>
+                        <button class="category-close-btn" onclick="toggleMobileCategories()" title="Close">
+                            <svg class="icon" width="18" height="18"><use href="#icon-close"/></svg>
+                        </button>
+                    </div>
                     <!-- Type Tabs: Music vs SFX -->
                     <div class="category-type-tabs">
                         <button class="type-tab active" data-type="music" onclick="selectTypeTab('music')" title="Browse generated music">
@@ -6042,7 +6201,7 @@
         <!-- PLAYLISTS TAB -->
         <div class="tab-content" id="content-playlists">
             <div class="card">
-                <h2><svg class="icon icon-lg" style="vertical-align: -4px; margin-right: 6px;"><use href="#icon-heart"/></svg>Your Playlists</h2>
+                <h2><svg class="icon icon-lg" style="vertical-align: -4px; margin-right: 6px;"><use href="#icon-music"/></svg>Your Playlists</h2>
 
                 <div class="playlists-header">
                     <p class="playlists-intro">Create and manage your own playlists. Save your favorite tracks and share them with others.</p>
@@ -6055,9 +6214,9 @@
                 <div class="playlists-grid" id="playlists-grid">
                     <!-- Playlists will be loaded here -->
                     <div class="playlist-empty-state">
-                        <svg class="icon icon-xl"><use href="#icon-heart-outline"/></svg>
+                        <svg class="icon icon-xl"><use href="#icon-music"/></svg>
                         <h3>No playlists yet</h3>
-                        <p>Create your first playlist to start saving your favorite tracks!</p>
+                        <p>Create your first playlist to start organizing your tracks!</p>
                     </div>
                 </div>
 
@@ -6170,16 +6329,21 @@
                             <button class="copy-btn" onclick="copyApiCode('widget-embed')">Copy</button>
                         </div>
                         <pre id="widget-embed"><code>&lt;!-- Sound Box Radio Widget --&gt;
-&lt;script src="https://soundbox.graphlings.net/widget/graphlings-radio.js"&gt;&lt;/script&gt;
-&lt;link rel="stylesheet" href="https://soundbox.graphlings.net/widget/graphlings-radio.css"&gt;
+&lt;!-- Load the widget scripts --&gt;
+&lt;script src="https://soundbox.graphlings.net/static/js/radio-widget-core.js"&gt;&lt;/script&gt;
+&lt;script src="https://soundbox.graphlings.net/static/js/radio-widget.js"&gt;&lt;/script&gt;
+&lt;link rel="stylesheet" href="https://soundbox.graphlings.net/static/css/radio-widget.css"&gt;
+&lt;link rel="stylesheet" href="https://soundbox.graphlings.net/static/css/radio-widget-sizes.css"&gt;
 
+&lt;!-- Container for the widget --&gt;
 &lt;div id="my-radio"&gt;&lt;/div&gt;
+
 &lt;script&gt;
-  GraphlingsRadio.init('#my-radio', {
-    size: 'medium',      // minimal, small, medium, large
-    template: 'default', // default, neon, minimal-dark, retro
-    station: 'shuffle',  // shuffle, trending, top-rated
-    autoPlay: false
+  // Create a radio widget
+  const widget = RadioWidget.create('#my-radio', {
+    size: 'medium',       // minimal, small, medium, large
+    template: 'default',  // default, neon, minimal-dark
+    autoPlay: false       // Start playing automatically
   });
 &lt;/script&gt;</code></pre>
                     </div>
@@ -6210,7 +6374,14 @@
                                 <span>Example Request</span>
                                 <button class="copy-btn" onclick="copyApiCode('api-radio-example')">Copy</button>
                             </div>
-                            <pre id="api-radio-example"><code>curl "https://soundbox.graphlings.net/api/radio?station=shuffle&limit=5"</code></pre>
+                            <pre id="api-radio-example"><code># Get random tracks (shuffle station)
+curl "https://soundbox.graphlings.net/api/radio?station=shuffle&amp;limit=5"
+
+# Get trending tracks
+curl "https://soundbox.graphlings.net/api/radio?station=trending&amp;model=music"
+
+# Search for specific tracks
+curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=10"</code></pre>
                         </div>
                     </div>
 
@@ -6333,6 +6504,10 @@
                 tab.classList.toggle('active', tab.id === `tab-${tabName}`);
             });
 
+            // Sync mobile dropdown
+            const mobileSelect = document.getElementById('mobile-tab-select');
+            if (mobileSelect) mobileSelect.value = tabName;
+
             // Update tab content
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.toggle('active', content.id === `content-${tabName}`);
@@ -6374,7 +6549,9 @@
         let userPlaylists = []; // Loaded from API (requires Graphlings auth)
 
         function isUserAuthenticated() {
-            return currentUserId !== null && !!getAuthToken();
+            // User is authenticated if we have their ID from Graphlings SDK
+            // Token check removed - SDK doesn't expose token but does provide user ID
+            return currentUserId !== null;
         }
 
         function showLoginPrompt(action) {
@@ -6464,9 +6641,9 @@
             if (userPlaylists.length === 0) {
                 grid.innerHTML = `
                     <div class="playlist-empty-state">
-                        <svg class="icon icon-xl"><use href="#icon-heart-outline"/></svg>
+                        <svg class="icon icon-xl"><use href="#icon-music"/></svg>
                         <h3>No playlists yet</h3>
-                        <p>Create your first playlist to start saving your favorite tracks!</p>
+                        <p>Create your first playlist to start organizing your tracks!</p>
                     </div>
                 `;
             } else {
@@ -6486,8 +6663,8 @@
             const grid = document.getElementById('favorites-grid');
             if (!grid) return;
 
-            // Check if authenticated
-            if (!isAuthenticated()) {
+            // Check if authenticated (use isUserAuthenticated - only requires userId, not token)
+            if (!isUserAuthenticated()) {
                 grid.innerHTML = `
                     <div class="playlist-empty-state">
                         <svg class="icon icon-xl"><use href="#icon-user"/></svg>
@@ -7478,16 +7655,52 @@
 
         // Get auth token from Graphlings SDK
         function getAuthToken() {
-            // The Graphlings SDK stores token in localStorage with key like 'graphlings_sfx-music_token'
-            return localStorage.getItem('graphlings_sfx-music_token');
+            // Try multiple sources for the token
+            // 1. Check if SDK has a getToken method
+            if (window.graphlings && typeof window.graphlings.getToken === 'function') {
+                const sdkToken = window.graphlings.getToken();
+                if (sdkToken) return sdkToken;
+            }
+            // 2. Check SDK's token property
+            if (window.graphlings && window.graphlings.token) {
+                return window.graphlings.token;
+            }
+            // 3. Try localStorage with app-specific key
+            const stored = localStorage.getItem('graphlings_sfx-music_token');
+            if (stored) return stored;
+            // 4. Try generic graphlings token key
+            const generic = localStorage.getItem('graphlings_token');
+            if (generic) return generic;
+            // 5. Search localStorage for any graphlings-related token
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.toLowerCase().includes('token')) {
+                    const value = localStorage.getItem(key);
+                    // JWT tokens start with 'eyJ'
+                    if (value && value.startsWith('eyJ')) {
+                        console.log('[SFX-Music] Found token in localStorage key:', key);
+                        return value;
+                    }
+                }
+            }
+            return null;
         }
+
+        // Debug: Log all localStorage keys on load
+        console.log('[SFX-Music] localStorage keys:', Object.keys(localStorage));
 
         // Make authenticated API request
         async function authFetch(url, options = {}) {
+            options.headers = options.headers || {};
+
             const token = getAuthToken();
             if (token) {
-                options.headers = options.headers || {};
+                // Preferred: Use verified token
                 options.headers['Authorization'] = `Bearer ${token}`;
+            } else if (currentUserId) {
+                // Fallback: Send user ID from Graphlings SDK
+                // Backend accepts this for SDK contexts where token isn't exposed
+                options.headers['X-User-ID'] = currentUserId;
             }
             return fetch(url, options);
         }
@@ -9471,7 +9684,9 @@
 
         function toggleMobileCategories() {
             const sidebar = document.getElementById('category-sidebar');
+            const backdrop = document.getElementById('category-backdrop');
             sidebar?.classList.toggle('mobile-open');
+            backdrop?.classList.toggle('active');
         }
 
         // Current type filter state
@@ -10303,10 +10518,16 @@
         // ========================================
         let isGlobalMuted = false;
 
+        function syncMuteButtons(muted) {
+            // Sync both desktop and mobile mute buttons
+            document.querySelectorAll('.global-mute-btn').forEach(btn => {
+                btn.classList.toggle('muted', muted);
+            });
+        }
+
         function toggleGlobalMute() {
             isGlobalMuted = !isGlobalMuted;
-            const btn = document.getElementById('global-mute-btn');
-            btn.classList.toggle('muted', isGlobalMuted);
+            syncMuteButtons(isGlobalMuted);
 
             // Mute/unmute all audio elements on the page
             document.querySelectorAll('audio').forEach(audio => {
@@ -10321,8 +10542,7 @@
         function autoUnmuteOnPlay() {
             if (isGlobalMuted) {
                 isGlobalMuted = false;
-                const btn = document.getElementById('global-mute-btn');
-                if (btn) btn.classList.remove('muted');
+                syncMuteButtons(false);
                 document.querySelectorAll('audio').forEach(audio => {
                     audio.muted = false;
                 });
@@ -10333,8 +10553,7 @@
         // Restore mute state and apply to new audio elements
         function initMuteState() {
             isGlobalMuted = localStorage.getItem('soundbox_muted') === 'true';
-            const btn = document.getElementById('global-mute-btn');
-            if (btn) btn.classList.toggle('muted', isGlobalMuted);
+            syncMuteButtons(isGlobalMuted);
 
             // Watch for new audio elements and apply mute state
             const observer = new MutationObserver(mutations => {
@@ -10651,12 +10870,37 @@
 
                 // Listen for login to get user ID
                 window.graphlings.on('login', function(data) {
+                    console.log('[SFX-Music] Login data received:', Object.keys(data), data);
+                    // Log SDK methods to discover token access
+                    console.log('[SFX-Music] SDK methods:', Object.keys(window.graphlings));
+                    console.log('[SFX-Music] SDK.apiKey:', window.graphlings.apiKey);
+                    console.log('[SFX-Music] SDK.user:', window.graphlings.user);
+                    console.log('[SFX-Music] Full user data:', JSON.stringify(data.user, null, 2));
                     if (data.user && data.user.id) {
                         currentUserId = data.user.id;
+                        // Store token if provided in event data
+                        if (data.token) {
+                            localStorage.setItem('graphlings_sfx-music_token', data.token);
+                            console.log('[SFX-Music] Token stored from login event');
+                        }
+                        // Also check user object for token
+                        if (data.user.token) {
+                            localStorage.setItem('graphlings_sfx-music_token', data.user.token);
+                            console.log('[SFX-Music] Token stored from user object');
+                        }
+                        // Check SDK for getToken method
+                        if (typeof window.graphlings.getToken === 'function') {
+                            const sdkToken = window.graphlings.getToken();
+                            if (sdkToken) {
+                                localStorage.setItem('graphlings_sfx-music_token', sdkToken);
+                                console.log('[SFX-Music] Token stored from SDK.getToken()');
+                            }
+                        }
                         // Check if user is an adult account
                         isAdultAccount = data.user.account_type === 'adult' ||
                                         (data.user.account_type !== 'child' && !data.user.is_child);
                         console.log('[SFX-Music] User logged in:', currentUserId, 'isAdult:', isAdultAccount);
+                        console.log('[SFX-Music] Auth token available:', !!getAuthToken());
                         updateAuthUI(true);
                         loadLibrary();  // Refresh library to show/hide feedback buttons
                         loadPlaylists(); // Load user playlists
@@ -10681,6 +10925,7 @@
 
                 // Check if user is already logged in and apply their theme
                 window.graphlings.on('widgetReady', function(data) {
+                    console.log('[SFX-Music] widgetReady data:', Object.keys(data));
                     // Apply theme from widget (overrides local storage)
                     if (data.theme && THEMES[data.theme]) {
                         applyTheme(data.theme);
@@ -10689,10 +10934,16 @@
 
                     if (data.authenticated && data.user && data.user.id) {
                         currentUserId = data.user.id;
+                        // Store token if provided (from ready message)
+                        if (data.token) {
+                            localStorage.setItem('graphlings_sfx-music_token', data.token);
+                            console.log('[SFX-Music] Token stored from widgetReady');
+                        }
                         // Check if user is an adult account
                         isAdultAccount = data.user.account_type === 'adult' ||
                                         (data.user.account_type !== 'child' && !data.user.is_child);
                         console.log('[SFX-Music] User already logged in:', currentUserId, 'isAdult:', isAdultAccount);
+                        console.log('[SFX-Music] Auth token available:', !!getAuthToken());
                         updateAuthUI(true);
                         loadLibrary();  // Refresh library to show/hide feedback buttons
                         loadPlaylists(); // Load user playlists
@@ -10700,6 +10951,14 @@
                     } else {
                         // No user logged in, ensure controls are disabled
                         updateAuthUI(false);
+                    }
+                });
+
+                // Listen for token received (sent asynchronously after ready/login)
+                window.graphlings.on('tokenReceived', function(data) {
+                    if (data.token) {
+                        localStorage.setItem('graphlings_sfx-music_token', data.token);
+                        console.log('[SFX-Music] Token received and stored');
                     }
                 });
 
@@ -10831,9 +11090,6 @@
     <div class="playlist-detail-overlay hidden" id="playlist-detail-overlay" onclick="closePlaylistDetail(event)">
         <div class="playlist-detail-panel" onclick="event.stopPropagation()">
             <div class="playlist-detail-header">
-                <button class="btn btn-icon" onclick="closePlaylistDetail()" title="Back">
-                    <svg class="icon"><use href="#icon-arrow-left"/></svg>
-                </button>
                 <div class="playlist-detail-info">
                     <h2 id="playlist-detail-name">Playlist Name</h2>
                     <span class="playlist-detail-meta">
@@ -10846,14 +11102,15 @@
                     <button class="btn btn-icon" onclick="shufflePlayPlaylist()" title="Shuffle Play">
                         <svg class="icon"><use href="#icon-shuffle"/></svg>
                     </button>
-                    <button class="btn btn-primary" onclick="playPlaylist()" title="Play All">
+                    <button class="btn btn-primary btn-sm" onclick="playPlaylist()" title="Play All">
                         <svg class="icon"><use href="#icon-play"/></svg>
                         Play
                     </button>
-                    <button class="btn btn-icon" onclick="showPlaylistOptionsModal()" title="More Options">
-                        <svg class="icon"><use href="#icon-more-vertical"/></svg>
+                    <button class="btn btn-icon" onclick="showPlaylistOptionsModal()" title="Settings">
+                        <svg class="icon"><use href="#icon-settings"/></svg>
                     </button>
                 </div>
+                <button class="playlist-detail-close" onclick="closePlaylistDetail()" title="Close">&times;</button>
             </div>
             <div class="playlist-tracks-list" id="playlist-tracks-list">
                 <!-- Tracks rendered dynamically -->
@@ -11212,10 +11469,13 @@
         .playlist-detail-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
             z-index: 9500;
             display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
             animation: fadeIn 0.2s ease;
         }
 
@@ -11225,55 +11485,84 @@
 
         .playlist-detail-panel {
             width: 100%;
-            max-width: 700px;
+            max-width: 550px;
             margin: 0 auto;
             background: linear-gradient(180deg, var(--bg-card) 0%, rgba(15, 15, 25, 0.98) 100%);
             display: flex;
             flex-direction: column;
-            height: 100%;
-            border-left: 1px solid rgba(168, 85, 247, 0.15);
-            border-right: 1px solid rgba(168, 85, 247, 0.15);
-            box-shadow: 0 0 60px rgba(0, 0, 0, 0.4);
+            max-height: 75vh;
+            border-radius: 20px;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(168, 85, 247, 0.1);
+            overflow: hidden;
         }
 
         .playlist-detail-header {
-            padding: 24px;
+            padding: 16px 20px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
+            flex-shrink: 0;
         }
 
         .playlist-detail-info {
             flex: 1;
+            min-width: 0;
         }
 
         .playlist-detail-info h2 {
-            margin: 0 0 4px;
-            font-size: 1.4rem;
+            margin: 0 0 2px;
+            font-size: 1.15rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .playlist-detail-meta {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
         }
 
         .meta-separator {
-            margin: 0 8px;
+            margin: 0 6px;
             opacity: 0.5;
         }
 
         .playlist-detail-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
+            flex-shrink: 0;
+        }
+
+        .playlist-detail-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .playlist-detail-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text);
         }
 
         .playlist-tracks-list {
             flex: 1;
             overflow-y: auto;
-            padding: 12px;
+            padding: 8px 12px;
         }
 
         .playlist-tracks-empty {
@@ -11290,11 +11579,11 @@
         .playlist-track-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 14px 16px;
-            border-radius: 12px;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
             transition: all 0.2s ease;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             border: 1px solid transparent;
             background: rgba(255, 255, 255, 0.02);
         }

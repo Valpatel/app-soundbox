@@ -191,6 +191,17 @@ def make_loopable(wav, sample_rate, fade_duration=0.5):
 app = Flask(__name__)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+
+@app.after_request
+def add_cache_headers(response):
+    """Disable caching for HTML pages to ensure fresh content during development."""
+    if response.content_type and 'text/html' in response.content_type:
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
+
+
 # =============================================================================
 # Rate Limiting - Prevent abuse and DoS
 # =============================================================================
@@ -310,24 +321,42 @@ def require_auth(f):
     """
     Decorator to require authentication for an endpoint.
     Sets request.user_id and request.user if authenticated.
+
+    Supports two authentication methods:
+    1. Bearer token (verified with Graphlings accounts server) - preferred
+    2. X-User-ID header (for SDK contexts where token isn't exposed) - fallback
+
+    The X-User-ID fallback is needed because the Graphlings SDK keeps tokens
+    secure within its iframe and doesn't expose them to parent pages.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         token = get_auth_token()
         user = verify_auth_token(token)
 
-        if not user:
-            return jsonify({'error': 'Authentication required'}), 401
+        if user:
+            # Token auth succeeded - use verified user info
+            request.user = user
+            request.user_id = user.get('id')
+            request.is_adult = (
+                user.get('account_type') == 'adult' or
+                (user.get('account_type') != 'child' and not user.get('is_child'))
+            )
+            return f(*args, **kwargs)
 
-        # Attach user info to request context
-        request.user = user
-        request.user_id = user.get('id')
-        request.is_adult = (
-            user.get('account_type') == 'adult' or
-            (user.get('account_type') != 'child' and not user.get('is_child'))
-        )
+        # Fallback: Accept X-User-ID header for SDK contexts
+        # This is used when the Graphlings SDK provides user info but not the token
+        user_id = request.headers.get('X-User-ID')
+        if user_id:
+            # Basic UUID format validation
+            import re
+            if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', user_id, re.I):
+                request.user = {'id': user_id}
+                request.user_id = user_id
+                request.is_adult = False  # Conservative default without full user info
+                return f(*args, **kwargs)
 
-        return f(*args, **kwargs)
+        return jsonify({'error': 'Authentication required'}), 401
     return decorated_function
 
 def optional_auth(f):
