@@ -7764,6 +7764,20 @@
             return div.innerHTML;
         }
 
+        // Escape string for safe use in JavaScript string literals (e.g., onclick handlers)
+        function escapeJsString(str) {
+            if (typeof str !== 'string') return '';
+            return str
+                .replace(/\\/g, '\\\\')     // Backslash first
+                .replace(/'/g, "\\'")        // Single quotes
+                .replace(/"/g, '\\"')        // Double quotes
+                .replace(/\n/g, '\\n')       // Newlines
+                .replace(/\r/g, '\\r')       // Carriage returns
+                .replace(/\t/g, '\\t')       // Tabs
+                .replace(/</g, '\\x3c')      // Prevent </script> injection
+                .replace(/>/g, '\\x3e');     // Prevent HTML context breakout
+        }
+
         function showFeedbackToast(message, type = 'success') {
             // type can be: 'success', 'error', 'warning'
             // Remove existing toast if any
@@ -8328,15 +8342,14 @@
                 return;
             }
 
-            const userId = getEffectiveUserId();
             const btn = document.getElementById('radio-favorite-btn');
 
             try {
                 const method = isCurrentTrackFavorited ? 'DELETE' : 'POST';
-                const response = await fetch(`/api/favorites/${currentRadioTrack.id}`, {
+                // Use authFetch - user_id is derived from verified auth token on server
+                const response = await authFetch(`/api/favorites/${currentRadioTrack.id}`, {
                     method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId })
+                    headers: { 'Content-Type': 'application/json' }
                 });
                 const data = await response.json();
 
@@ -9888,24 +9901,21 @@
             const isFavorited = userFavorites.has(genId);
             const actionBtn = document.querySelector(`.library-item[data-id="${genId}"] .action-btn.favorite-btn`);
             const actionIcon = actionBtn?.querySelector('use');
-            const userId = getEffectiveUserId();
-
             try {
+                // Use authFetch - user_id is derived from verified auth token on server
                 if (isFavorited) {
-                    await fetch(`/api/favorites/${genId}`, {
+                    await authFetch(`/api/favorites/${genId}`, {
                         method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: userId })
+                        headers: { 'Content-Type': 'application/json' }
                     });
                     userFavorites.delete(genId);
                     actionBtn?.classList.remove('favorited');
                     if (actionIcon) actionIcon.setAttribute('href', '#icon-heart-outline');
                     showFeedbackToast('Removed from favorites');
                 } else {
-                    await fetch(`/api/favorites/${genId}`, {
+                    await authFetch(`/api/favorites/${genId}`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: userId })
+                        headers: { 'Content-Type': 'application/json' }
                     });
                     userFavorites.add(genId);
                     actionBtn?.classList.add('favorited');
@@ -10253,10 +10263,10 @@
             if (!confirm('Cancel this generation?')) return;
 
             try {
-                const response = await fetch(`/api/queue/${jobId}/cancel`, {
+                // Use authFetch - user_id is now verified from auth token on server
+                const response = await authFetch(`/api/queue/${jobId}/cancel`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: getEffectiveUserId() })
+                    headers: { 'Content-Type': 'application/json' }
                 });
 
                 const data = await response.json();
@@ -12388,7 +12398,7 @@
                 container.innerHTML = currentTrackCustomTags.map(tag => `
                     <span class="custom-tag">
                         ${escapeHtml(tag)}
-                        <button class="custom-tag-remove" onclick="removeCustomTag('${escapeHtml(tag)}')" title="Remove tag">
+                        <button class="custom-tag-remove" onclick="removeCustomTag('${escapeJsString(tag)}')" title="Remove tag">
                             <svg class="icon"><use href="#icon-close"/></svg>
                         </button>
                     </span>

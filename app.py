@@ -203,6 +203,34 @@ limiter = Limiter(
 )
 
 # =============================================================================
+# Global Error Handlers - Prevent information leakage
+# =============================================================================
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Global exception handler to prevent information leakage."""
+    # Log the full error for debugging
+    import traceback
+    print(f"[Error] Unhandled exception: {e}")
+    traceback.print_exc()
+
+    # Return a generic error message
+    return jsonify({
+        'error': 'An unexpected error occurred',
+        'success': False
+    }), 500
+
+@app.errorhandler(404)
+def handle_not_found(e):
+    """Handle 404 errors."""
+    return jsonify({'error': 'Not found'}), 404
+
+@app.errorhandler(429)
+def handle_rate_limit(e):
+    """Handle rate limit errors."""
+    return jsonify({'error': 'Too many requests - please wait before trying again'}), 429
+
+# =============================================================================
 # Authentication - Verify tokens with Graphlings accounts server
 # =============================================================================
 
@@ -322,6 +350,199 @@ def optional_auth(f):
     return decorated_function
 
 # =============================================================================
+# Input Validation & Content Moderation
+# =============================================================================
+
+import re
+from werkzeug.utils import secure_filename
+
+# Maximum lengths for various inputs
+MAX_PROMPT_LENGTH = 500
+MAX_PLAYLIST_NAME_LENGTH = 100
+MAX_DESCRIPTION_LENGTH = 500
+MAX_NOTES_LENGTH = 1000
+
+# Allowed filename characters (alphanumeric, dash, underscore, dot)
+SAFE_FILENAME_PATTERN = re.compile(r'^[a-zA-Z0-9_\-\.]+$')
+
+# Profanity/explicit content word list (basic list - expand as needed)
+# This is intentionally a minimal set - add more as needed
+BLOCKED_WORDS = {
+    # Explicit/sexual terms
+    'porn', 'xxx', 'nsfw', 'nude', 'naked', 'sex', 'sexual', 'erotic',
+    'hentai', 'orgasm', 'masturbat', 'genital', 'penis', 'vagina',
+    # Slurs and hate speech (abbreviated to avoid full words in code)
+    'nigger', 'nigga', 'faggot', 'retard', 'kike', 'spic', 'chink',
+    # Violence/harmful
+    'kill yourself', 'kys', 'suicide', 'rape', 'molest', 'pedophil',
+    # Drug references (for child safety)
+    'cocaine', 'heroin', 'meth', 'crack',
+}
+
+# Patterns that indicate explicit content
+EXPLICIT_PATTERNS = [
+    re.compile(r'\b(fuck|shit|bitch|ass|dick|cock|pussy|cunt)\b', re.IGNORECASE),
+    re.compile(r'\b(porn|xxx|nsfw|nude|naked)\b', re.IGNORECASE),
+    re.compile(r'\b(kill\s*(your)?self|kys)\b', re.IGNORECASE),
+]
+
+
+def is_safe_filename(filename):
+    """
+    Check if a filename is safe (no path traversal, valid characters).
+    Returns True if safe, False otherwise.
+    """
+    if not filename:
+        return False
+
+    # Check for path traversal attempts
+    if '..' in filename or '/' in filename or '\\' in filename:
+        return False
+
+    # Check for valid characters
+    if not SAFE_FILENAME_PATTERN.match(filename):
+        return False
+
+    # Must have a valid extension
+    if not (filename.endswith('.wav') or filename.endswith('.png')):
+        return False
+
+    return True
+
+
+def sanitize_filename(filename):
+    """
+    Sanitize a filename to prevent path traversal.
+    Returns sanitized filename or None if invalid.
+    """
+    if not filename:
+        return None
+
+    # Use werkzeug's secure_filename first
+    safe = secure_filename(filename)
+
+    # Additional checks
+    if not safe or safe != filename:
+        return None
+
+    if not is_safe_filename(safe):
+        return None
+
+    return safe
+
+
+def contains_blocked_content(text):
+    """
+    Check if text contains blocked/explicit content.
+    Returns (is_blocked, reason) tuple.
+    """
+    if not text:
+        return False, None
+
+    text_lower = text.lower()
+
+    # Check blocked words
+    for word in BLOCKED_WORDS:
+        if word in text_lower:
+            return True, f"Content contains prohibited term"
+
+    # Check explicit patterns
+    for pattern in EXPLICIT_PATTERNS:
+        if pattern.search(text):
+            return True, f"Content contains explicit language"
+
+    return False, None
+
+
+def validate_prompt(prompt, is_adult=False):
+    """
+    Validate and sanitize a generation prompt.
+    Returns (is_valid, cleaned_prompt, error_message) tuple.
+    """
+    if not prompt:
+        return False, None, "Prompt is required"
+
+    if not isinstance(prompt, str):
+        return False, None, "Prompt must be a string"
+
+    # Strip and check length
+    prompt = prompt.strip()
+    if len(prompt) < 3:
+        return False, None, "Prompt too short (minimum 3 characters)"
+
+    if len(prompt) > MAX_PROMPT_LENGTH:
+        return False, None, f"Prompt too long (maximum {MAX_PROMPT_LENGTH} characters)"
+
+    # Check for blocked content (skip for adult accounts - they can use mild profanity)
+    if not is_adult:
+        is_blocked, reason = contains_blocked_content(prompt)
+        if is_blocked:
+            return False, None, reason
+
+    # Remove control characters
+    prompt = ''.join(char for char in prompt if ord(char) >= 32 or char in '\n\t')
+
+    return True, prompt, None
+
+
+def validate_text_input(text, field_name, max_length, required=True, allow_empty=False):
+    """
+    Validate a generic text input field.
+    Returns (is_valid, cleaned_text, error_message) tuple.
+    """
+    if text is None:
+        if required:
+            return False, None, f"{field_name} is required"
+        return True, None, None
+
+    if not isinstance(text, str):
+        return False, None, f"{field_name} must be a string"
+
+    text = text.strip()
+
+    if not text and not allow_empty:
+        if required:
+            return False, None, f"{field_name} cannot be empty"
+        return True, None, None
+
+    if len(text) > max_length:
+        return False, None, f"{field_name} too long (maximum {max_length} characters)"
+
+    # Check for blocked content
+    is_blocked, reason = contains_blocked_content(text)
+    if is_blocked:
+        return False, None, f"{field_name}: {reason}"
+
+    # Remove control characters
+    text = ''.join(char for char in text if ord(char) >= 32 or char in '\n\t')
+
+    return True, text, None
+
+
+def validate_integer(value, field_name, min_val=None, max_val=None, default=None):
+    """
+    Validate an integer input.
+    Returns (is_valid, int_value, error_message) tuple.
+    """
+    if value is None:
+        if default is not None:
+            return True, default, None
+        return False, None, f"{field_name} is required"
+
+    try:
+        int_val = int(value)
+    except (ValueError, TypeError):
+        return False, None, f"{field_name} must be an integer"
+
+    if min_val is not None and int_val < min_val:
+        return False, None, f"{field_name} must be at least {min_val}"
+
+    if max_val is not None and int_val > max_val:
+        return False, None, f"{field_name} must be at most {max_val}"
+
+    return True, int_val, None
+
+# =============================================================================
 
 # Model state
 models = {}
@@ -358,7 +579,8 @@ def get_gpu_info():
             'busy': current_job is not None
         }
     except Exception as e:
-        return {'available': True, 'error': str(e)}
+        print(f"[GPU] Status check error: {e}")
+        return {'available': True, 'error': 'GPU status check failed'}
 
 
 def process_queue():
@@ -486,7 +708,16 @@ def process_queue():
 
             except Exception as e:
                 job['status'] = 'failed'
-                job['error'] = str(e)
+                # Log full error for debugging, but show generic message to user
+                print(f"[Generation] Job {job_id} failed: {e}")
+                # Sanitize error - only show safe generic messages
+                error_str = str(e).lower()
+                if 'cuda' in error_str or 'gpu' in error_str or 'memory' in error_str:
+                    job['error'] = 'GPU memory error - try a shorter duration'
+                elif 'model' in error_str or 'load' in error_str:
+                    job['error'] = 'Model temporarily unavailable'
+                else:
+                    job['error'] = 'Generation failed - please try again'
 
             finally:
                 with queue_lock:
@@ -510,7 +741,8 @@ def load_models():
         loading_status['music'] = 'ready'
         print("MusicGen loaded!", flush=True)
     except Exception as e:
-        loading_status['music'] = f'error: {e}'
+        # Log full error internally but show generic message
+        loading_status['music'] = 'error: failed to load'
         print(f"MusicGen failed: {e}", flush=True)
 
     print("Loading AudioGen model...", flush=True)
@@ -521,7 +753,8 @@ def load_models():
         print("AudioGen loaded!", flush=True)
     except Exception as e:
         import traceback
-        loading_status['audio'] = f'error: {e}'
+        # Log full error internally but show generic message
+        loading_status['audio'] = 'error: failed to load'
         print(f"AudioGen failed: {e}", flush=True)
         traceback.print_exc()
 
@@ -616,13 +849,11 @@ def api_queue():
 
 
 @app.route('/api/queue/<job_id>/cancel', methods=['POST'])
+@require_auth
 def api_cancel_job(job_id):
     """Cancel a queued job. Only the job owner can cancel."""
-    data = request.json or {}
-    user_id = data.get('user_id')
-
-    if not user_id:
-        return jsonify({'error': 'user_id required'}), 400
+    # Use verified user_id from auth token, not client request
+    user_id = request.user_id
 
     with queue_lock:
         if job_id not in jobs:
@@ -674,12 +905,32 @@ def job_status(job_id):
 @limiter.limit("10 per hour")  # Limit generation requests (resource intensive)
 @optional_auth
 def generate():
-    data = request.json
-    prompt = data.get('prompt', 'upbeat electronic music')
-    duration = min(int(data.get('duration', 8)), 120)
+    data = request.json or {}
+
+    # Validate prompt with content moderation
+    raw_prompt = data.get('prompt', 'upbeat electronic music')
+    is_adult = getattr(request, 'is_adult', False)
+    is_valid, prompt, error = validate_prompt(raw_prompt, is_adult=is_adult)
+    if not is_valid:
+        return jsonify({'success': False, 'error': error}), 400
+
+    # Validate duration
+    is_valid, duration, error = validate_integer(
+        data.get('duration', 8), 'duration', min_val=1, max_val=120, default=8
+    )
+    if not is_valid:
+        return jsonify({'success': False, 'error': error}), 400
+
+    # Validate model type
     model_type = data.get('model', 'music')
-    make_loop = data.get('loop', False)
+    if model_type not in ['music', 'audio', 'magnet-music', 'magnet-audio']:
+        return jsonify({'success': False, 'error': 'Invalid model type'}), 400
+
+    make_loop = bool(data.get('loop', False))
     priority = data.get('priority', 'standard')
+    if priority not in PRIORITY_LEVELS:
+        priority = 'standard'
+
     # Use verified user_id from auth token, fallback to provided user_id for backwards compat
     user_id = request.user_id or data.get('user_id')
 
@@ -724,27 +975,60 @@ def generate():
 
 @app.route('/audio/<filename>')
 def serve_audio(filename):
+    # Security: Validate filename to prevent path traversal
+    if not is_safe_filename(filename) or not filename.endswith('.wav'):
+        return jsonify({'error': 'Invalid filename'}), 400
+
     filepath = os.path.join(OUTPUT_DIR, filename)
+
+    # Additional security: Ensure resolved path is within OUTPUT_DIR
+    real_path = os.path.realpath(filepath)
+    real_output_dir = os.path.realpath(OUTPUT_DIR)
+    if not real_path.startswith(real_output_dir + os.sep):
+        return jsonify({'error': 'Invalid path'}), 400
+
     if os.path.exists(filepath):
         response = send_file(filepath, mimetype='audio/wav')
         # Add CORS headers for embedded widget support
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-    return "Not found", 404
+    return jsonify({'error': 'Not found'}), 404
 
 
 @app.route('/spectrogram/<filename>')
 def serve_spectrogram(filename):
+    # Security: Validate filename to prevent path traversal
+    if not is_safe_filename(filename) or not filename.endswith('.png'):
+        return jsonify({'error': 'Invalid filename'}), 400
+
     filepath = os.path.join(SPECTROGRAMS_DIR, filename)
+
+    # Additional security: Ensure resolved path is within SPECTROGRAMS_DIR
+    real_path = os.path.realpath(filepath)
+    real_spec_dir = os.path.realpath(SPECTROGRAMS_DIR)
+    if not real_path.startswith(real_spec_dir + os.sep):
+        return jsonify({'error': 'Invalid path'}), 400
+
     if os.path.exists(filepath):
         return send_file(filepath, mimetype='image/png')
-    return "Not found", 404
+    return jsonify({'error': 'Not found'}), 404
 
 
 @app.route('/generate-spectrogram/<audio_filename>')
 def generate_spectrogram_for_file(audio_filename):
     """Generate spectrogram for an existing audio file on demand."""
+    # Security: Validate filename to prevent path traversal
+    if not is_safe_filename(audio_filename) or not audio_filename.endswith('.wav'):
+        return jsonify({'error': 'Invalid filename'}), 400
+
     audio_path = os.path.join(OUTPUT_DIR, audio_filename)
+
+    # Additional security: Ensure resolved path is within OUTPUT_DIR
+    real_path = os.path.realpath(audio_path)
+    real_output_dir = os.path.realpath(OUTPUT_DIR)
+    if not real_path.startswith(real_output_dir + os.sep):
+        return jsonify({'error': 'Invalid path'}), 400
+
     if not os.path.exists(audio_path):
         return jsonify({'error': 'Audio file not found'}), 404
 
@@ -924,6 +1208,30 @@ def api_vote(gen_id):
     # Validate suggested_model if provided
     if suggested_model and suggested_model not in ('music', 'audio'):
         return jsonify({'error': 'suggested_model must be "music" or "audio"'}), 400
+
+    # Validate notes if provided (with content moderation)
+    if notes:
+        is_valid, notes, error = validate_text_input(
+            notes, 'Notes', MAX_NOTES_LENGTH, required=False
+        )
+        if not is_valid:
+            return jsonify({'error': error}), 400
+
+    # Validate feedback_reasons if provided
+    if feedback_reasons:
+        if not isinstance(feedback_reasons, list):
+            return jsonify({'error': 'feedback_reasons must be a list'}), 400
+        if len(feedback_reasons) > 10:
+            return jsonify({'error': 'Too many feedback reasons (max 10)'}), 400
+        # Validate each reason is a string and reasonable length
+        validated_reasons = []
+        for reason in feedback_reasons:
+            if not isinstance(reason, str):
+                return jsonify({'error': 'Each feedback reason must be a string'}), 400
+            reason = reason.strip()[:50]  # Limit reason length
+            if reason:
+                validated_reasons.append(reason)
+        feedback_reasons = validated_reasons if validated_reasons else None
 
     # Verify generation exists
     generation = db.get_generation(gen_id)
@@ -1278,16 +1586,25 @@ def api_create_playlist():
     """Create a new playlist. Requires authentication."""
     data = request.get_json() or {}
     user_id = request.user_id  # From verified auth token
-    name = data.get('name', '').strip()
-    description = data.get('description', '').strip()
 
-    if not name:
-        return jsonify({'error': 'Playlist name is required'}), 400
+    # Validate name with content moderation
+    is_valid, name, error = validate_text_input(
+        data.get('name'), 'Playlist name', MAX_PLAYLIST_NAME_LENGTH, required=True
+    )
+    if not is_valid:
+        return jsonify({'error': error}), 400
+
+    # Validate description (optional)
+    is_valid, description, error = validate_text_input(
+        data.get('description'), 'Description', MAX_DESCRIPTION_LENGTH, required=False
+    )
+    if not is_valid:
+        return jsonify({'error': error}), 400
 
     # Generate unique playlist ID
     playlist_id = 'pl_' + uuid.uuid4().hex[:12]
 
-    result = db.create_playlist(playlist_id, user_id, name, description or None)
+    result = db.create_playlist(playlist_id, user_id, name, description)
     if result:
         return jsonify(result), 201
     return jsonify({'error': 'Failed to create playlist'}), 500
@@ -1331,8 +1648,23 @@ def api_update_playlist(playlist_id):
     data = request.get_json() or {}
     user_id = request.user_id  # From verified auth token
 
-    name = data.get('name')
-    description = data.get('description')
+    # Validate name if provided
+    name = None
+    if 'name' in data:
+        is_valid, name, error = validate_text_input(
+            data.get('name'), 'Playlist name', MAX_PLAYLIST_NAME_LENGTH, required=True
+        )
+        if not is_valid:
+            return jsonify({'error': error}), 400
+
+    # Validate description if provided
+    description = None
+    if 'description' in data:
+        is_valid, description, error = validate_text_input(
+            data.get('description'), 'Description', MAX_DESCRIPTION_LENGTH, required=False
+        )
+        if not is_valid:
+            return jsonify({'error': error}), 400
 
     result = db.update_playlist(playlist_id, user_id, name, description)
     if result:
@@ -1482,20 +1814,23 @@ def api_most_played():
 
 
 @app.route('/api/log-error', methods=['POST'])
+@limiter.limit("10 per minute")  # Strict rate limit to prevent log flooding
 def api_log_error():
     """Log frontend errors to backend."""
     data = request.get_json() or {}
-    message = data.get('message', 'Unknown error')
-    url = data.get('url', '')
-    user_agent = data.get('userAgent', '')
-    timestamp = data.get('timestamp', '')
+
+    # Truncate all inputs to prevent log flooding attacks
+    message = str(data.get('message', 'Unknown error'))[:500]
+    url = str(data.get('url', ''))[:200]
+    user_agent = str(data.get('userAgent', ''))[:100]
+    timestamp = str(data.get('timestamp', ''))[:50]
 
     # Log to console with formatting
     print(f"\n{'='*60}")
     print(f"[FRONTEND ERROR] {timestamp}")
     print(f"Message: {message}")
     print(f"URL: {url}")
-    print(f"User-Agent: {user_agent[:80]}...")
+    print(f"User-Agent: {user_agent}...")
     print(f"{'='*60}\n")
 
     return jsonify({'logged': True})
@@ -1518,7 +1853,18 @@ def slugify_prompt(prompt, max_length=30):
 
 @app.route('/download/<filename>')
 def download(filename):
+    # Security: Validate filename to prevent path traversal
+    if not is_safe_filename(filename) or not filename.endswith('.wav'):
+        return jsonify({'error': 'Invalid filename'}), 400
+
     filepath = os.path.join(OUTPUT_DIR, filename)
+
+    # Additional security: Ensure resolved path is within OUTPUT_DIR
+    real_path = os.path.realpath(filepath)
+    real_output_dir = os.path.realpath(OUTPUT_DIR)
+    if not real_path.startswith(real_output_dir + os.sep):
+        return jsonify({'error': 'Invalid path'}), 400
+
     if os.path.exists(filepath):
         # Generate a clean download name from metadata
         metadata = load_metadata()
@@ -1540,7 +1886,7 @@ def download(filename):
         db.record_download(gen_id, user_id, 'wav')
 
         return send_file(filepath, as_attachment=True, download_name=clean_name)
-    return "Not found", 404
+    return jsonify({'error': 'Not found'}), 404
 
 
 @app.route('/random-prompt', methods=['POST'])
