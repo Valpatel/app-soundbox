@@ -280,6 +280,28 @@ CREATE TABLE IF NOT EXISTS tag_consensus (
     UNIQUE(generation_id, category, action)
 );
 
+-- Playlists table
+CREATE TABLE IF NOT EXISTS playlists (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Playlist tracks junction table
+CREATE TABLE IF NOT EXISTS playlist_tracks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    playlist_id TEXT NOT NULL,
+    generation_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
+    FOREIGN KEY (generation_id) REFERENCES generations(id) ON DELETE CASCADE,
+    UNIQUE(playlist_id, generation_id)
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_generations_model ON generations(model);
 CREATE INDEX IF NOT EXISTS idx_generations_created ON generations(created_at DESC);
@@ -289,6 +311,9 @@ CREATE INDEX IF NOT EXISTS idx_favorites_generation ON favorites(generation_id);
 CREATE INDEX IF NOT EXISTS idx_tag_suggestions_generation ON tag_suggestions(generation_id);
 CREATE INDEX IF NOT EXISTS idx_tag_suggestions_category ON tag_suggestions(suggested_category);
 CREATE INDEX IF NOT EXISTS idx_tag_consensus_generation ON tag_consensus(generation_id);
+CREATE INDEX IF NOT EXISTS idx_playlists_user ON playlists(user_id);
+CREATE INDEX IF NOT EXISTS idx_playlist_tracks_playlist ON playlist_tracks(playlist_id);
+CREATE INDEX IF NOT EXISTS idx_playlist_tracks_position ON playlist_tracks(playlist_id, position);
 """
 
 # Full-text search table (created separately due to IF NOT EXISTS limitation)
@@ -1644,6 +1669,370 @@ def get_available_categories(model):
         cat: cat.replace('_', ' ').title()
         for cat in categories.keys()
     }
+
+
+# =============================================================================
+# Playlists - Requires authenticated user_id from Graphlings widget
+# =============================================================================
+
+def create_playlist(playlist_id, user_id, name, description=None):
+    """
+    Create a new playlist.
+
+    Args:
+        playlist_id: Unique playlist ID (e.g., 'pl_abc123')
+        user_id: Authenticated user ID from Graphlings widget
+        name: Playlist name
+        description: Optional description
+
+    Returns:
+        dict with playlist info or None on error
+    """
+    if not user_id:
+        return None  # Require authenticated user
+
+    with get_db() as conn:
+        try:
+            conn.execute("""
+                INSERT INTO playlists (id, user_id, name, description)
+                VALUES (?, ?, ?, ?)
+            """, (playlist_id, user_id, name, description))
+            conn.commit()
+
+            return {
+                'id': playlist_id,
+                'user_id': user_id,
+                'name': name,
+                'description': description,
+                'track_count': 0
+            }
+        except sqlite3.IntegrityError:
+            return None
+
+
+def get_playlist(playlist_id):
+    """Get a single playlist by ID."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM playlists WHERE id = ?", (playlist_id,)
+        ).fetchone()
+
+        if not row:
+            return None
+
+        playlist = dict(row)
+
+        # Get track count
+        count = conn.execute(
+            "SELECT COUNT(*) FROM playlist_tracks WHERE playlist_id = ?",
+            (playlist_id,)
+        ).fetchone()[0]
+        playlist['track_count'] = count
+
+        return playlist
+
+
+def get_user_playlists(user_id, page=1, per_page=50):
+    """
+    Get all playlists for a user.
+
+    Args:
+        user_id: Authenticated user ID from Graphlings widget
+        page: Page number
+        per_page: Items per page
+
+    Returns:
+        dict with playlists list and pagination info
+    """
+    if not user_id:
+        return {'playlists': [], 'total': 0, 'page': 1, 'pages': 0}
+
+    per_page = min(per_page, 100)
+    offset = (page - 1) * per_page
+
+    with get_db() as conn:
+        # Get total count
+        total = conn.execute(
+            "SELECT COUNT(*) FROM playlists WHERE user_id = ?",
+            (user_id,)
+        ).fetchone()[0]
+
+        # Get playlists with track counts
+        rows = conn.execute("""
+            SELECT p.*,
+                   (SELECT COUNT(*) FROM playlist_tracks pt WHERE pt.playlist_id = p.id) as track_count
+            FROM playlists p
+            WHERE p.user_id = ?
+            ORDER BY p.updated_at DESC
+            LIMIT ? OFFSET ?
+        """, (user_id, per_page, offset)).fetchall()
+
+    playlists = [dict(row) for row in rows]
+    pages = (total + per_page - 1) // per_page if total > 0 else 0
+
+    return {
+        'playlists': playlists,
+        'total': total,
+        'page': page,
+        'pages': pages
+    }
+
+
+def update_playlist(playlist_id, user_id, name=None, description=None):
+    """
+    Update playlist metadata.
+
+    Args:
+        playlist_id: Playlist ID
+        user_id: Must match playlist owner
+        name: New name (optional)
+        description: New description (optional)
+
+    Returns:
+        Updated playlist dict or None if not found/unauthorized
+    """
+    with get_db() as conn:
+        # Verify ownership
+        existing = conn.execute(
+            "SELECT * FROM playlists WHERE id = ? AND user_id = ?",
+            (playlist_id, user_id)
+        ).fetchone()
+
+        if not existing:
+            return None
+
+        # Build update
+        updates = []
+        params = []
+
+        if name is not None:
+            updates.append("name = ?")
+            params.append(name)
+        if description is not None:
+            updates.append("description = ?")
+            params.append(description)
+
+        if updates:
+            updates.append("updated_at = CURRENT_TIMESTAMP")
+            params.extend([playlist_id, user_id])
+
+            conn.execute(f"""
+                UPDATE playlists SET {', '.join(updates)}
+                WHERE id = ? AND user_id = ?
+            """, params)
+            conn.commit()
+
+        return get_playlist(playlist_id)
+
+
+def delete_playlist(playlist_id, user_id):
+    """
+    Delete a playlist (cascades to playlist_tracks).
+
+    Args:
+        playlist_id: Playlist ID
+        user_id: Must match playlist owner
+
+    Returns:
+        True if deleted, False otherwise
+    """
+    with get_db() as conn:
+        cursor = conn.execute(
+            "DELETE FROM playlists WHERE id = ? AND user_id = ?",
+            (playlist_id, user_id)
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+
+
+def add_track_to_playlist(playlist_id, generation_id, user_id, position=None):
+    """
+    Add a track to a playlist.
+
+    Args:
+        playlist_id: Playlist ID
+        generation_id: Track ID to add
+        user_id: Must match playlist owner
+        position: Optional position (appends to end if not specified)
+
+    Returns:
+        dict with success status and track info
+    """
+    with get_db() as conn:
+        # Verify ownership
+        playlist = conn.execute(
+            "SELECT * FROM playlists WHERE id = ? AND user_id = ?",
+            (playlist_id, user_id)
+        ).fetchone()
+
+        if not playlist:
+            return {'success': False, 'error': 'Playlist not found or unauthorized'}
+
+        # Verify track exists
+        track = conn.execute(
+            "SELECT id FROM generations WHERE id = ?",
+            (generation_id,)
+        ).fetchone()
+
+        if not track:
+            return {'success': False, 'error': 'Track not found'}
+
+        # Get next position if not specified
+        if position is None:
+            max_pos = conn.execute(
+                "SELECT COALESCE(MAX(position), 0) FROM playlist_tracks WHERE playlist_id = ?",
+                (playlist_id,)
+            ).fetchone()[0]
+            position = max_pos + 1
+
+        try:
+            conn.execute("""
+                INSERT INTO playlist_tracks (playlist_id, generation_id, position)
+                VALUES (?, ?, ?)
+            """, (playlist_id, generation_id, position))
+
+            # Update playlist's updated_at
+            conn.execute(
+                "UPDATE playlists SET updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (playlist_id,)
+            )
+            conn.commit()
+
+            return {'success': True, 'position': position}
+        except sqlite3.IntegrityError:
+            return {'success': False, 'error': 'Track already in playlist'}
+
+
+def remove_track_from_playlist(playlist_id, generation_id, user_id):
+    """
+    Remove a track from a playlist.
+
+    Args:
+        playlist_id: Playlist ID
+        generation_id: Track ID to remove
+        user_id: Must match playlist owner
+
+    Returns:
+        True if removed, False otherwise
+    """
+    with get_db() as conn:
+        # Verify ownership
+        playlist = conn.execute(
+            "SELECT * FROM playlists WHERE id = ? AND user_id = ?",
+            (playlist_id, user_id)
+        ).fetchone()
+
+        if not playlist:
+            return False
+
+        cursor = conn.execute(
+            "DELETE FROM playlist_tracks WHERE playlist_id = ? AND generation_id = ?",
+            (playlist_id, generation_id)
+        )
+
+        if cursor.rowcount > 0:
+            # Update playlist's updated_at
+            conn.execute(
+                "UPDATE playlists SET updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (playlist_id,)
+            )
+            conn.commit()
+            return True
+
+        return False
+
+
+def get_playlist_tracks(playlist_id, include_metadata=True):
+    """
+    Get all tracks in a playlist, ordered by position.
+
+    Args:
+        playlist_id: Playlist ID
+        include_metadata: If True, include full track metadata
+
+    Returns:
+        List of track dicts
+    """
+    with get_db() as conn:
+        if include_metadata:
+            rows = conn.execute("""
+                SELECT g.*, pt.position, pt.added_at as added_to_playlist
+                FROM playlist_tracks pt
+                JOIN generations g ON pt.generation_id = g.id
+                WHERE pt.playlist_id = ?
+                ORDER BY pt.position ASC
+            """, (playlist_id,)).fetchall()
+        else:
+            rows = conn.execute("""
+                SELECT generation_id, position, added_at
+                FROM playlist_tracks
+                WHERE playlist_id = ?
+                ORDER BY position ASC
+            """, (playlist_id,)).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+def reorder_playlist_tracks(playlist_id, user_id, track_order):
+    """
+    Reorder tracks in a playlist.
+
+    Args:
+        playlist_id: Playlist ID
+        user_id: Must match playlist owner
+        track_order: List of generation_ids in new order
+
+    Returns:
+        True if reordered, False otherwise
+    """
+    with get_db() as conn:
+        # Verify ownership
+        playlist = conn.execute(
+            "SELECT * FROM playlists WHERE id = ? AND user_id = ?",
+            (playlist_id, user_id)
+        ).fetchone()
+
+        if not playlist:
+            return False
+
+        # Update positions
+        for position, generation_id in enumerate(track_order, start=1):
+            conn.execute("""
+                UPDATE playlist_tracks
+                SET position = ?
+                WHERE playlist_id = ? AND generation_id = ?
+            """, (position, playlist_id, generation_id))
+
+        conn.execute(
+            "UPDATE playlists SET updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (playlist_id,)
+        )
+        conn.commit()
+        return True
+
+
+def get_playlist_for_radio(playlist_id, shuffle=False):
+    """
+    Get playlist tracks formatted for radio playback.
+
+    Args:
+        playlist_id: Playlist ID
+        shuffle: If True, return tracks in random order
+
+    Returns:
+        List of track dicts ready for radio queue
+    """
+    with get_db() as conn:
+        order = "RANDOM()" if shuffle else "pt.position ASC"
+        rows = conn.execute(f"""
+            SELECT g.*
+            FROM playlist_tracks pt
+            JOIN generations g ON pt.generation_id = g.id
+            WHERE pt.playlist_id = ?
+            ORDER BY {order}
+        """, (playlist_id,)).fetchall()
+
+    return [dict(row) for row in rows]
 
 
 if __name__ == '__main__':

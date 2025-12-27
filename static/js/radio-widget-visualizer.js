@@ -18,7 +18,7 @@ class RadioWidgetVisualizer {
         this.source = null;
 
         // Visualization settings
-        this.mode = 'bars';
+        this.mode = 'random';
         this.colors = {
             primary: '#a855f7',
             secondary: '#6366f1',
@@ -132,11 +132,14 @@ class RadioWidgetVisualizer {
     }
 
     start() {
+        console.log('[Visualizer] start() called');
+
         if (!this.audioContext) {
             this.init();
         }
 
         if (this.audioContext?.state === 'suspended') {
+            console.log('[Visualizer] Resuming suspended audio context');
             this.audioContext.resume();
         }
 
@@ -148,6 +151,19 @@ class RadioWidgetVisualizer {
         this.isActive = true;
         this._resize();
         this._initParallaxLayers();
+
+        console.log('[Visualizer] Canvas dimensions:', this.canvas.width, 'x', this.canvas.height);
+        console.log('[Visualizer] Audio context state:', this.audioContext?.state);
+
+        // Ensure we have valid dimensions - if not, wait and retry
+        if (this.canvas.width === 0 || this.canvas.height === 0) {
+            console.warn('[Visualizer] Canvas has 0 dimensions, retrying resize');
+            setTimeout(() => {
+                this._resize();
+                console.log('[Visualizer] Retry - Canvas dimensions:', this.canvas.width, 'x', this.canvas.height);
+            }, 100);
+        }
+
         this._draw();
     }
 
@@ -179,9 +195,9 @@ class RadioWidgetVisualizer {
             purple: { primary: '#a855f7', secondary: '#6366f1', tertiary: '#22d3ee' },
             blue: { primary: '#3b82f6', secondary: '#06b6d4', tertiary: '#22d3ee' },
             green: { primary: '#22c55e', secondary: '#10b981', tertiary: '#6ee7b7' },
-            orange: { primary: '#f97316', secondary: '#eab308', tertiary: '#fcd34d' },
+            cyan: { primary: '#00d4ff', secondary: '#0ea5e9', tertiary: '#67e8f9' },
             pink: { primary: '#ec4899', secondary: '#f43f5e', tertiary: '#fb7185' },
-            rainbow: { primary: '#f43f5e', secondary: '#22c55e', tertiary: '#3b82f6' }
+            rainbow: { primary: '#a855f7', secondary: '#22c55e', tertiary: '#00d4ff' }
         };
 
         if (themes[theme]) {
@@ -211,9 +227,19 @@ class RadioWidgetVisualizer {
     _resize() {
         const parent = this.canvas.parentElement || document.body;
         const rect = parent.getBoundingClientRect();
-        this.canvas.width = rect.width * window.devicePixelRatio;
-        this.canvas.height = rect.height * window.devicePixelRatio;
+
+        // Use window dimensions if parent has no size (e.g., in fullscreen)
+        const width = rect.width || window.innerWidth;
+        const height = rect.height || window.innerHeight;
+
+        this.canvas.width = width * window.devicePixelRatio;
+        this.canvas.height = height * window.devicePixelRatio;
+
+        // Reset transform before scaling (prevents accumulation on multiple resizes)
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
         this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+        console.log('[Visualizer] Resized to:', width, 'x', height);
         this._initParallaxLayers();
     }
 
@@ -590,10 +616,8 @@ class RadioWidgetVisualizer {
         const shadowEnabled = this.targetComplexity >= 0.5;
         const drawReflections = this.targetComplexity >= 0.6;
 
-        // Mirror effect - draw from center
+        // Mirror effect - draw from center outward (no gap in middle)
         for (let side = 0; side < 2; side++) {
-            let x = side === 0 ? width / 2 : width / 2 - barWidth;
-
             for (let i = 0; i < bufferLength / 2; i += step) {
                 const barHeight = (this.dataArray[i] / 255) * height * 0.6;
 
@@ -608,8 +632,11 @@ class RadioWidgetVisualizer {
                     this.ctx.shadowBlur = 15 * avgFreq * this.targetComplexity;
                 }
 
-                // Rounded bar
-                const barX = side === 0 ? x : x - barWidth;
+                // Calculate bar position - side 0 goes right, side 1 goes left
+                const barIndex = i / step;
+                const barX = side === 0
+                    ? width / 2 + barIndex * barWidth
+                    : width / 2 - (barIndex + 1) * barWidth;
                 const barY = height - barHeight;
                 const radius = Math.min(barWidth / 2, 4);
 
@@ -626,8 +653,6 @@ class RadioWidgetVisualizer {
                     this.ctx.fill();
                     this.ctx.globalAlpha = 1;
                 }
-
-                x += side === 0 ? barWidth : -barWidth;
             }
         }
 
@@ -1016,13 +1041,14 @@ class RadioWidgetVisualizer {
 
     // ========================================
     // TEMPEST VECTOR VISUALIZATION
+    // Classic arcade-style tube shooter with vector graphics
     // ========================================
 
     _drawTempest(width, height) {
         const centerX = width / 2;
         const centerY = height / 2;
-        const outerRadius = Math.min(width, height) * 0.45;
-        const innerRadius = outerRadius * 0.08; // Vanishing point
+        const outerRadius = Math.min(width, height) * 0.42;
+        const innerRadius = outerRadius * 0.03; // Tiny vanishing point like the arcade
 
         const avgFreq = this.dataArray ?
             this.dataArray.reduce((a, b) => a + b, 0) / this.dataArray.length / 255 : 0.5;
@@ -1031,70 +1057,101 @@ class RadioWidgetVisualizer {
         const trebleFreq = this.dataArray ?
             this.dataArray.slice(-20).reduce((a, b) => a + b, 0) / 20 / 255 : 0.5;
 
-        // Get segments based on current shape
+        // Get segments based on current level shape
         const segments = this._getTempestSegments();
-        const depthLevels = 12;
 
-        // Slow rotation for atmosphere
-        this.tempestAngle += 0.003 + bassFreq * 0.005;
+        // Scale depth levels with complexity for performance
+        const depthLevels = Math.floor(6 + 10 * this.targetComplexity);
 
-        // Draw the 3D tunnel from back to front
-        for (let d = 0; d < depthLevels; d++) {
-            const depthRatio = d / depthLevels;
-            const nextDepthRatio = (d + 1) / depthLevels;
+        // Subtle rotation like the game
+        this.tempestAngle += 0.002;
 
-            // Exponential scaling for better perspective
-            const radius = innerRadius + (outerRadius - innerRadius) * Math.pow(depthRatio, 0.7);
-            const nextRadius = innerRadius + (outerRadius - innerRadius) * Math.pow(nextDepthRatio, 0.7);
+        // Use classic Tempest colors - bright vector-style
+        const webColor = '#00ffff';  // Cyan for the web
+        const laneColor = '#0088ff'; // Blue for lane dividers
 
-            const alpha = 0.2 + depthRatio * 0.6;
-            const lineWidth = 1 + depthRatio * 2;
+        // PERFORMANCE: Batch all web lines into single paths
+        // Draw rings (the horizontal web lines)
+        this.ctx.strokeStyle = webColor;
+        this.ctx.lineWidth = 1.5;
+        this.ctx.globalAlpha = 0.9;
 
-            // Draw segment edges (the "lanes" of the tunnel)
-            for (let i = 0; i < segments; i++) {
-                const angle = this._getTempestAngle(i, segments) + this.tempestAngle;
-                const nextAngle = this._getTempestAngle(i + 1, segments) + this.tempestAngle;
-
-                // Current depth ring points
-                const x1 = centerX + Math.cos(angle) * radius;
-                const y1 = centerY + Math.sin(angle) * radius;
-                const x2 = centerX + Math.cos(nextAngle) * radius;
-                const y2 = centerY + Math.sin(nextAngle) * radius;
-
-                // Next depth ring points
-                const nx1 = centerX + Math.cos(angle) * nextRadius;
-                const ny1 = centerY + Math.sin(angle) * nextRadius;
-
-                // Draw the ring segment
-                this.ctx.strokeStyle = this.colors.primary;
-                this.ctx.lineWidth = lineWidth;
-                this.ctx.globalAlpha = alpha;
-
-                if (this.targetComplexity >= 0.5) {
-                    this.ctx.shadowColor = this.colors.primary;
-                    this.ctx.shadowBlur = 5 + avgFreq * 8;
-                }
-
-                this.ctx.beginPath();
-                this.ctx.moveTo(x1, y1);
-                this.ctx.lineTo(x2, y2);
-                this.ctx.stroke();
-
-                // Draw the depth line (connecting rings)
-                if (d < depthLevels - 1) {
-                    this.ctx.strokeStyle = this.colors.secondary;
-                    this.ctx.lineWidth = lineWidth * 0.7;
-                    this.ctx.globalAlpha = alpha * 0.7;
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(x1, y1);
-                    this.ctx.lineTo(nx1, ny1);
-                    this.ctx.stroke();
-                }
-            }
+        if (this.targetComplexity >= 0.4) {
+            this.ctx.shadowColor = webColor;
+            this.ctx.shadowBlur = 8;
         }
 
-        // Update player position based on audio
-        this.tempestPlayerPos += (trebleFreq - 0.5) * 0.08;
+        for (let d = 0; d < depthLevels; d++) {
+            const depthRatio = d / depthLevels;
+            // Exponential perspective - lines closer together near center
+            const radius = innerRadius + (outerRadius - innerRadius) * Math.pow(depthRatio, 0.6);
+
+            // Alpha fades toward center (depth)
+            this.ctx.globalAlpha = 0.3 + depthRatio * 0.7;
+
+            // Draw complete ring as single path
+            this.ctx.beginPath();
+            for (let i = 0; i <= segments; i++) {
+                const angle = this._getTempestAngle(i, segments) + this.tempestAngle;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                if (i === 0) {
+                    this.ctx.moveTo(x, y);
+                } else {
+                    this.ctx.lineTo(x, y);
+                }
+            }
+            this.ctx.stroke();
+        }
+
+        // Draw lane dividers (lines from center to edge) - batched
+        this.ctx.strokeStyle = laneColor;
+        this.ctx.lineWidth = 1.5;
+        this.ctx.globalAlpha = 0.8;
+
+        if (this.targetComplexity >= 0.4) {
+            this.ctx.shadowColor = laneColor;
+            this.ctx.shadowBlur = 6;
+        }
+
+        this.ctx.beginPath();
+        for (let i = 0; i < segments; i++) {
+            const angle = this._getTempestAngle(i, segments) + this.tempestAngle;
+            const innerX = centerX + Math.cos(angle) * innerRadius;
+            const innerY = centerY + Math.sin(angle) * innerRadius;
+            const outerX = centerX + Math.cos(angle) * outerRadius;
+            const outerY = centerY + Math.sin(angle) * outerRadius;
+
+            this.ctx.moveTo(innerX, innerY);
+            this.ctx.lineTo(outerX, outerY);
+        }
+        this.ctx.stroke();
+
+        // Draw rim (outer edge) brighter
+        this.ctx.strokeStyle = '#ffff00'; // Yellow rim like the game
+        this.ctx.lineWidth = 2.5;
+        this.ctx.globalAlpha = 1;
+        if (this.targetComplexity >= 0.4) {
+            this.ctx.shadowColor = '#ffff00';
+            this.ctx.shadowBlur = 12;
+        }
+
+        this.ctx.beginPath();
+        for (let i = 0; i <= segments; i++) {
+            const angle = this._getTempestAngle(i, segments) + this.tempestAngle;
+            const x = centerX + Math.cos(angle) * outerRadius;
+            const y = centerY + Math.sin(angle) * outerRadius;
+            if (i === 0) {
+                this.ctx.moveTo(x, y);
+            } else {
+                this.ctx.lineTo(x, y);
+            }
+        }
+        this.ctx.stroke();
+
+        // Update player position based on audio (smoother)
+        const targetPos = this.tempestPlayerPos + (trebleFreq - 0.5) * 0.12;
+        this.tempestPlayerPos += (targetPos - this.tempestPlayerPos) * 0.3;
         if (this.tempestPlayerPos < 0) this.tempestPlayerPos += 1;
         if (this.tempestPlayerPos > 1) this.tempestPlayerPos -= 1;
 
@@ -1102,11 +1159,11 @@ class RadioWidgetVisualizer {
         const playerSegment = Math.round(this.tempestPlayerPos * segments) % segments;
         const playerAngle = this._getTempestAngle(playerSegment + 0.5, segments) + this.tempestAngle;
 
-        // Draw player ship (claw shape at outer edge)
-        const px = centerX + Math.cos(playerAngle) * outerRadius;
-        const py = centerY + Math.sin(playerAngle) * outerRadius;
+        // Draw player ship (Blaster - the classic claw)
+        const px = centerX + Math.cos(playerAngle) * (outerRadius + 8);
+        const py = centerY + Math.sin(playerAngle) * (outerRadius + 8);
 
-        this._drawTempestPlayer(px, py, playerAngle, bassFreq);
+        this._drawTempestPlayer(px, py, playerAngle, bassFreq, segments);
 
         // Spawn and update enemies
         this._updateTempestEnemies(centerX, centerY, innerRadius, outerRadius, segments, bassFreq);
@@ -1117,16 +1174,21 @@ class RadioWidgetVisualizer {
         // Draw explosions
         this._drawTempestExplosions(centerX, centerY, innerRadius, outerRadius);
 
-        // Draw score and level
-        this.ctx.font = 'bold 20px monospace';
-        this.ctx.fillStyle = this.colors.tertiary;
-        this.ctx.globalAlpha = 0.8;
-        this.ctx.textAlign = 'left';
+        // Draw HUD - classic arcade style
         this.ctx.shadowBlur = 0;
-        this.ctx.fillText(`LEVEL ${this.tempestLevel + 1}`, 20, 35);
-        this.ctx.fillText(`SCORE ${this.tempestScore}`, 20, 60);
+        this.ctx.font = 'bold 16px "Courier New", monospace';
+        this.ctx.textAlign = 'left';
 
-        // Level up when enough enemies killed
+        // Level indicator
+        this.ctx.fillStyle = '#00ff00';
+        this.ctx.globalAlpha = 0.9;
+        this.ctx.fillText(`LEVEL ${this.tempestLevel + 1}`, 20, 30);
+
+        // Score
+        this.ctx.fillStyle = '#ffff00';
+        this.ctx.fillText(`${this.tempestScore.toString().padStart(6, '0')}`, 20, 52);
+
+        // Level up every 500 points
         if (this.tempestScore > 0 && this.tempestScore % 500 === 0) {
             this.tempestLevel = Math.min(this.tempestLevel + 1, this.tempestShapes.length - 1);
             this.tempestCurrentShape = this.tempestShapes[this.tempestLevel % this.tempestShapes.length];
@@ -1137,6 +1199,7 @@ class RadioWidgetVisualizer {
     }
 
     _getTempestSegments() {
+        // Classic Tempest levels had different web shapes
         switch (this.tempestCurrentShape) {
             case 'hexagon': return 6;
             case 'octagon': return 8;
@@ -1148,55 +1211,63 @@ class RadioWidgetVisualizer {
     }
 
     _getTempestAngle(segment, totalSegments) {
-        // For star shape, alternate radius
-        return (segment / totalSegments) * Math.PI * 2;
+        return (segment / totalSegments) * Math.PI * 2 - Math.PI / 2; // Start from top
     }
 
-    _drawTempestPlayer(x, y, angle, intensity) {
+    _drawTempestPlayer(x, y, angle, intensity, segments) {
         this.ctx.save();
         this.ctx.translate(x, y);
-        this.ctx.rotate(angle + Math.PI / 2); // Point inward
+        this.ctx.rotate(angle + Math.PI / 2);
 
-        // Claw/ship shape
-        const size = 12 + intensity * 8;
+        // Classic Blaster claw - yellow vector lines
+        const size = 18 + intensity * 6;
 
-        this.ctx.fillStyle = this.colors.tertiary;
-        this.ctx.strokeStyle = this.colors.tertiary;
-        this.ctx.lineWidth = 3;
+        this.ctx.strokeStyle = '#ffff00';
+        this.ctx.fillStyle = '#ffff00';
+        this.ctx.lineWidth = 2.5;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
         this.ctx.globalAlpha = 1;
-        this.ctx.shadowColor = this.colors.tertiary;
-        this.ctx.shadowBlur = 20 + intensity * 15;
 
-        // Main body (triangle pointing down the tunnel)
+        if (this.targetComplexity >= 0.4) {
+            this.ctx.shadowColor = '#ffff00';
+            this.ctx.shadowBlur = 15 + intensity * 10;
+        }
+
+        // The Blaster shape - classic claw pointing into tunnel
         this.ctx.beginPath();
-        this.ctx.moveTo(0, -size);
-        this.ctx.lineTo(-size * 0.7, size * 0.5);
-        this.ctx.lineTo(0, size * 0.2);
-        this.ctx.lineTo(size * 0.7, size * 0.5);
-        this.ctx.closePath();
+        // Left claw
+        this.ctx.moveTo(-size * 0.8, 0);
+        this.ctx.lineTo(-size * 0.4, -size * 0.6);
+        this.ctx.lineTo(0, -size * 0.2);
+        // Right claw
+        this.ctx.lineTo(size * 0.4, -size * 0.6);
+        this.ctx.lineTo(size * 0.8, 0);
+        // Center point (tip into tunnel)
+        this.ctx.moveTo(0, -size * 0.2);
+        this.ctx.lineTo(0, size * 0.4);
+        this.ctx.stroke();
+
+        // Center dot
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, 3, 0, Math.PI * 2);
         this.ctx.fill();
-        this.ctx.stroke();
-
-        // Side claws
-        this.ctx.beginPath();
-        this.ctx.moveTo(-size * 0.5, size * 0.3);
-        this.ctx.lineTo(-size, 0);
-        this.ctx.moveTo(size * 0.5, size * 0.3);
-        this.ctx.lineTo(size, 0);
-        this.ctx.stroke();
 
         this.ctx.restore();
     }
 
     _updateTempestEnemies(cx, cy, innerRadius, outerRadius, segments, bassFreq) {
-        // Spawn enemies from the center on bass hits
-        if (bassFreq > 0.5 && Math.random() < 0.12 * this.targetComplexity) {
+        // Spawn enemies from the center on bass hits (Flippers, Tankers, Spikers)
+        if (bassFreq > 0.45 && Math.random() < 0.15 * this.targetComplexity) {
             const segment = Math.floor(Math.random() * segments);
+            const types = ['flipper', 'tanker', 'spiker'];
             this.tempestEnemies.push({
                 segment: segment,
                 depth: 0, // 0 = center, 1 = outer edge
-                speed: 0.008 + Math.random() * 0.012 + this.tempestLevel * 0.002,
-                type: Math.random() < 0.3 ? 'spinner' : 'flipper'
+                speed: 0.006 + Math.random() * 0.01 + this.tempestLevel * 0.002,
+                type: types[Math.floor(Math.random() * types.length)],
+                flip: 0, // For flipper animation
+                lane: segment // Flippers can change lanes
             });
         }
 
@@ -1205,62 +1276,98 @@ class RadioWidgetVisualizer {
             enemy.depth += enemy.speed;
 
             if (enemy.depth >= 1) {
-                // Enemy reached player - could add damage logic
                 return false;
             }
 
+            // Flippers randomly change lanes
+            if (enemy.type === 'flipper' && Math.random() < 0.02) {
+                enemy.flip += 1;
+                enemy.lane = (enemy.lane + (Math.random() < 0.5 ? 1 : -1) + segments) % segments;
+                enemy.segment = enemy.lane;
+            }
+
             const angle = this._getTempestAngle(enemy.segment + 0.5, segments) + this.tempestAngle;
-            const radius = innerRadius + (outerRadius - innerRadius) * Math.pow(enemy.depth, 0.7);
+            const radius = innerRadius + (outerRadius - innerRadius) * Math.pow(enemy.depth, 0.6);
             const x = cx + Math.cos(angle) * radius;
             const y = cy + Math.sin(angle) * radius;
-            const size = 4 + enemy.depth * 12;
+            const size = 3 + enemy.depth * 14;
 
-            // Draw enemy based on type
             this.ctx.save();
             this.ctx.translate(x, y);
+            this.ctx.rotate(angle + Math.PI / 2);
 
-            if (enemy.type === 'spinner') {
-                // Spinning enemy
-                this.ctx.rotate(this.time * 5);
-                this.ctx.fillStyle = this.colors.primary;
-                this.ctx.strokeStyle = this.colors.primary;
-                this.ctx.shadowColor = this.colors.primary;
-            } else {
-                // Flipper enemy
-                this.ctx.rotate(angle);
-                this.ctx.fillStyle = '#ff4444';
-                this.ctx.strokeStyle = '#ff4444';
-                this.ctx.shadowColor = '#ff4444';
+            // Different enemy types with classic Tempest colors
+            switch (enemy.type) {
+                case 'flipper':
+                    // Red flipper - walks along lanes
+                    this.ctx.strokeStyle = '#ff0000';
+                    this.ctx.fillStyle = '#ff0000';
+                    if (this.targetComplexity >= 0.4) {
+                        this.ctx.shadowColor = '#ff0000';
+                        this.ctx.shadowBlur = 8;
+                    }
+                    this.ctx.lineWidth = 2;
+                    this.ctx.globalAlpha = 0.9;
+
+                    // Flipper shape - walking legs
+                    const flipAngle = Math.sin(this.time * 8 + enemy.flip) * 0.5;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(-size * 0.5, -size * 0.3);
+                    this.ctx.lineTo(0, size * 0.3);
+                    this.ctx.lineTo(size * 0.5, -size * 0.3);
+                    this.ctx.moveTo(-size * 0.3 + flipAngle * size * 0.2, size * 0.3);
+                    this.ctx.lineTo(size * 0.3 - flipAngle * size * 0.2, size * 0.3);
+                    this.ctx.stroke();
+                    break;
+
+                case 'tanker':
+                    // Green tanker - splits when shot
+                    this.ctx.strokeStyle = '#00ff00';
+                    this.ctx.fillStyle = '#00ff00';
+                    if (this.targetComplexity >= 0.4) {
+                        this.ctx.shadowColor = '#00ff00';
+                        this.ctx.shadowBlur = 8;
+                    }
+                    this.ctx.lineWidth = 2;
+                    this.ctx.globalAlpha = 0.9;
+
+                    // Diamond shape
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, -size * 0.5);
+                    this.ctx.lineTo(size * 0.4, 0);
+                    this.ctx.lineTo(0, size * 0.5);
+                    this.ctx.lineTo(-size * 0.4, 0);
+                    this.ctx.closePath();
+                    this.ctx.stroke();
+                    break;
+
+                case 'spiker':
+                    // Purple spiker - leaves spikes on the lane
+                    this.ctx.strokeStyle = '#ff00ff';
+                    this.ctx.fillStyle = '#ff00ff';
+                    if (this.targetComplexity >= 0.4) {
+                        this.ctx.shadowColor = '#ff00ff';
+                        this.ctx.shadowBlur = 8;
+                    }
+                    this.ctx.lineWidth = 2;
+                    this.ctx.globalAlpha = 0.9;
+
+                    // Spiky shape
+                    this.ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const a = (i / 6) * Math.PI * 2;
+                        const r = i % 2 === 0 ? size * 0.5 : size * 0.25;
+                        const px = Math.cos(a) * r;
+                        const py = Math.sin(a) * r;
+                        if (i === 0) this.ctx.moveTo(px, py);
+                        else this.ctx.lineTo(px, py);
+                    }
+                    this.ctx.closePath();
+                    this.ctx.stroke();
+                    break;
             }
 
-            this.ctx.lineWidth = 2;
-            this.ctx.globalAlpha = 0.9;
-            this.ctx.shadowBlur = 10;
-
-            // Draw as geometric shape
-            this.ctx.beginPath();
-            if (enemy.type === 'spinner') {
-                // Star shape
-                for (let i = 0; i < 4; i++) {
-                    const a = (i / 4) * Math.PI * 2;
-                    const px = Math.cos(a) * size;
-                    const py = Math.sin(a) * size;
-                    if (i === 0) this.ctx.moveTo(px, py);
-                    else this.ctx.lineTo(px, py);
-                }
-                this.ctx.closePath();
-            } else {
-                // Diamond/arrow shape pointing outward
-                this.ctx.moveTo(0, -size);
-                this.ctx.lineTo(size * 0.5, 0);
-                this.ctx.lineTo(0, size * 0.5);
-                this.ctx.lineTo(-size * 0.5, 0);
-                this.ctx.closePath();
-            }
-            this.ctx.fill();
-            this.ctx.stroke();
             this.ctx.restore();
-
             return true;
         });
     }
@@ -1269,34 +1376,36 @@ class RadioWidgetVisualizer {
         const bassFreq = this.dataArray ?
             this.dataArray.slice(0, 10).reduce((a, b) => a + b, 0) / 10 / 255 : 0.5;
 
-        // Auto-fire on beat
-        if (bassFreq > 0.4 && Math.random() < 0.2) {
+        // Auto-fire on beat - yellow bolts like the game
+        if (bassFreq > 0.35 && Math.random() < 0.25) {
             this.tempestBullets.push({
                 segment: playerSegment,
-                depth: 1, // Start at outer edge
-                speed: 0.05
+                depth: 1,
+                speed: 0.08 // Fast bullets
             });
         }
 
-        // Update and draw bullets, check for hits
+        // Update and draw bullets
         this.tempestBullets = this.tempestBullets.filter(bullet => {
             bullet.depth -= bullet.speed;
 
-            if (bullet.depth <= 0) return false;
+            if (bullet.depth <= 0.05) return false;
 
             // Check collision with enemies
             for (let i = this.tempestEnemies.length - 1; i >= 0; i--) {
                 const enemy = this.tempestEnemies[i];
                 if (enemy.segment === bullet.segment &&
-                    Math.abs(enemy.depth - bullet.depth) < 0.1) {
+                    Math.abs(enemy.depth - bullet.depth) < 0.12) {
                     // Hit! Create explosion
                     const angle = this._getTempestAngle(enemy.segment + 0.5, segments) + this.tempestAngle;
-                    const radius = innerRadius + (outerRadius - innerRadius) * Math.pow(enemy.depth, 0.7);
+                    const radius = innerRadius + (outerRadius - innerRadius) * Math.pow(enemy.depth, 0.6);
                     this.tempestExplosions.push({
                         x: cx + Math.cos(angle) * radius,
                         y: cy + Math.sin(angle) * radius,
                         life: 1,
-                        size: 15 + enemy.depth * 20
+                        size: 12 + enemy.depth * 18,
+                        color: enemy.type === 'flipper' ? '#ff0000' :
+                               enemy.type === 'tanker' ? '#00ff00' : '#ff00ff'
                     });
                     this.tempestEnemies.splice(i, 1);
                     this.tempestScore += 10 + this.tempestLevel * 5;
@@ -1305,21 +1414,24 @@ class RadioWidgetVisualizer {
             }
 
             const angle = this._getTempestAngle(bullet.segment + 0.5, segments) + this.tempestAngle;
-            const radius = innerRadius + (outerRadius - innerRadius) * Math.pow(bullet.depth, 0.7);
+            const radius = innerRadius + (outerRadius - innerRadius) * Math.pow(bullet.depth, 0.6);
             const x = cx + Math.cos(angle) * radius;
             const y = cy + Math.sin(angle) * radius;
 
-            // Draw bullet as a line/bolt
-            const prevRadius = innerRadius + (outerRadius - innerRadius) * Math.pow(bullet.depth + 0.05, 0.7);
+            // Draw bullet - bright yellow bolt
+            const prevRadius = innerRadius + (outerRadius - innerRadius) * Math.pow(bullet.depth + 0.08, 0.6);
             const px = cx + Math.cos(angle) * prevRadius;
             const py = cy + Math.sin(angle) * prevRadius;
 
-            this.ctx.strokeStyle = this.colors.tertiary;
+            this.ctx.strokeStyle = '#ffff00';
             this.ctx.lineWidth = 3;
-            this.ctx.globalAlpha = bullet.depth;
-            this.ctx.shadowColor = this.colors.tertiary;
-            this.ctx.shadowBlur = 15;
+            this.ctx.globalAlpha = 0.9;
             this.ctx.lineCap = 'round';
+
+            if (this.targetComplexity >= 0.4) {
+                this.ctx.shadowColor = '#ffff00';
+                this.ctx.shadowBlur = 12;
+            }
 
             this.ctx.beginPath();
             this.ctx.moveTo(px, py);
@@ -1332,33 +1444,37 @@ class RadioWidgetVisualizer {
 
     _drawTempestExplosions(cx, cy, innerRadius, outerRadius) {
         this.tempestExplosions = this.tempestExplosions.filter(exp => {
-            exp.life -= 0.05;
+            exp.life -= 0.06;
             if (exp.life <= 0) return false;
 
-            const particleCount = Math.floor(8 * this.targetComplexity);
+            const particleCount = Math.floor(6 + 6 * this.targetComplexity);
+            const color = exp.color || '#ffff00';
 
-            for (let i = 0; i < particleCount; i++) {
-                const angle = (i / particleCount) * Math.PI * 2 + this.time * 3;
-                const dist = exp.size * (1 - exp.life) * 1.5;
-                const px = exp.x + Math.cos(angle) * dist;
-                const py = exp.y + Math.sin(angle) * dist;
-                const size = 3 + exp.life * 5;
+            // Vector-style explosion - radiating lines
+            this.ctx.strokeStyle = color;
+            this.ctx.lineWidth = 2;
+            this.ctx.globalAlpha = exp.life;
 
-                this.ctx.fillStyle = i % 2 === 0 ? this.colors.primary : this.colors.tertiary;
-                this.ctx.globalAlpha = exp.life * 0.8;
-                this.ctx.shadowColor = this.ctx.fillStyle;
+            if (this.targetComplexity >= 0.4) {
+                this.ctx.shadowColor = color;
                 this.ctx.shadowBlur = 10;
-                this.ctx.beginPath();
-                this.ctx.arc(px, py, size, 0, Math.PI * 2);
-                this.ctx.fill();
             }
 
-            // Central flash
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.globalAlpha = exp.life * 0.5;
             this.ctx.beginPath();
-            this.ctx.arc(exp.x, exp.y, exp.size * exp.life, 0, Math.PI * 2);
-            this.ctx.fill();
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (i / particleCount) * Math.PI * 2;
+                const innerDist = exp.size * (1 - exp.life) * 0.5;
+                const outerDist = exp.size * (1 - exp.life) * 1.5;
+
+                const ix = exp.x + Math.cos(angle) * innerDist;
+                const iy = exp.y + Math.sin(angle) * innerDist;
+                const ox = exp.x + Math.cos(angle) * outerDist;
+                const oy = exp.y + Math.sin(angle) * outerDist;
+
+                this.ctx.moveTo(ix, iy);
+                this.ctx.lineTo(ox, oy);
+            }
+            this.ctx.stroke();
 
             return true;
         });
@@ -1585,7 +1701,7 @@ class RadioWidgetVisualizer {
 
         // Paddle collision
         const paddleX = this.breakoutPaddle * width - paddleWidth / 2;
-        const paddleY = height - 40;
+        // paddleY already defined above
         if (this.breakoutBall.y >= paddleY - ballSize &&
             this.breakoutBall.y <= paddleY + paddleHeight &&
             this.breakoutBall.x >= paddleX &&

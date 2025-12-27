@@ -427,6 +427,51 @@
     color: var(--rw-error);
 }
 
+/* Voting animation - glow pulse while processing */
+.radio-widget .rw-vote-up.voting {
+    animation: voteGlowUp 0.6s ease-out;
+    color: var(--rw-success);
+}
+
+.radio-widget .rw-vote-down.voting {
+    animation: voteGlowDown 0.6s ease-out;
+    color: var(--rw-error);
+}
+
+@keyframes voteGlowUp {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+    }
+    50% {
+        transform: scale(1.15);
+        box-shadow: 0 0 20px 5px rgba(34, 197, 94, 0.6);
+        background: rgba(34, 197, 94, 0.3);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 10px 2px rgba(34, 197, 94, 0.3);
+        background: rgba(34, 197, 94, 0.2);
+    }
+}
+
+@keyframes voteGlowDown {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+    }
+    50% {
+        transform: scale(1.15);
+        box-shadow: 0 0 20px 5px rgba(239, 68, 68, 0.6);
+        background: rgba(239, 68, 68, 0.3);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.3);
+        background: rgba(239, 68, 68, 0.2);
+    }
+}
+
 .radio-widget .rw-vote-up svg,
 .radio-widget .rw-vote-down svg {
     width: 16px;
@@ -765,27 +810,7 @@
     letter-spacing: 0.3px;
 }
 
-/* Ultra-minimal branding - show under play button */
-.radio-widget-ultra-minimal .rw-branding {
-    position: absolute;
-    bottom: -24px;
-    left: 50%;
-    transform: translateX(-50%);
-    border: none;
-    padding: 0;
-    white-space: nowrap;
-}
-
-.radio-widget-ultra-minimal .rw-branding-logo {
-    display: none;
-}
-
-.radio-widget-ultra-minimal .rw-branding-text {
-    font-size: 10px;
-    opacity: 0.7;
-}
-
-/* Minimal branding - centered at bottom */
+/* Minimal branding - logo only to save space */
 .radio-widget-minimal .rw-branding {
     border: none;
     padding: 4px 0 0;
@@ -794,12 +819,12 @@
 }
 
 .radio-widget-minimal .rw-branding-logo {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }
 
 .radio-widget-minimal .rw-branding-text {
-    font-size: 10px;
+    display: none;
 }
 
 /* Small branding - compact */
@@ -823,4 +848,82 @@
 /* Disable branding for internal use */
 .radio-widget[data-branding="false"] .rw-branding {
     display: none !important;
+}
+
+/* ========================================
+   TOOLTIPS
+   ======================================== */
+
+.radio-widget [title] {
+    position: relative;
+}
+
+.radio-widget [data-tooltip] {
+    position: relative;
+}
+
+.radio-widget [data-tooltip]::before,
+.radio-widget [data-tooltip]::after {
+    position: absolute;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 1000;
+}
+
+/* Tooltip text */
+.radio-widget [data-tooltip]::after {
+    content: attr(data-tooltip);
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    padding: 6px 10px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--rw-border);
+    border-radius: 6px;
+    color: var(--rw-text);
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+}
+
+/* Tooltip arrow */
+.radio-widget [data-tooltip]::before {
+    content: '';
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    border: 6px solid transparent;
+    border-top-color: rgba(15, 23, 42, 0.95);
+}
+
+/* Show tooltip on hover */
+.radio-widget [data-tooltip]:hover::before,
+.radio-widget [data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Bottom tooltip variant */
+.radio-widget [data-tooltip-position="bottom"]::after {
+    bottom: auto;
+    top: calc(100% + 8px);
+    transform: translateX(-50%) translateY(-4px);
+}
+
+.radio-widget [data-tooltip-position="bottom"]::before {
+    bottom: auto;
+    top: calc(100% + 2px);
+    border-top-color: transparent;
+    border-bottom-color: rgba(15, 23, 42, 0.95);
+    transform: translateX(-50%) translateY(-4px);
+}
+
+.radio-widget [data-tooltip-position="bottom"]:hover::before,
+.radio-widget [data-tooltip-position="bottom"]:hover::after {
+    transform: translateX(-50%) translateY(0);
 }

@@ -264,6 +264,9 @@ class RadioWidgetCore {
                 case 'recent':
                     tracks = await this._fetchRecent(options);
                     break;
+                case 'playlist':
+                    tracks = await this._fetchPlaylistTracks(options);
+                    break;
                 default:
                     throw new Error(`Unknown station: ${station}`);
             }
@@ -569,10 +572,14 @@ class RadioWidgetCore {
             this.volume = parseFloat(savedVolume);
             this.audioElement.volume = this.volume;
         }
+        // Emit volume event so UI updates
+        this._events.emit('volumeChange', this.volume);
 
         // Restore mute state
         this.isMuted = localStorage.getItem('soundbox_muted') === 'true';
         this.audioElement.muted = this.isMuted;
+        // Emit mute event so UI updates
+        this._events.emit('muteChange', this.isMuted);
     }
 
     _autoUnmute() {
@@ -743,6 +750,30 @@ class RadioWidgetCore {
         if (options.model) params.set('model', options.model);
 
         const response = await fetch(`${this.apiBaseUrl}/api/radio/shuffle?${params}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        return data.tracks || [];
+    }
+
+    /**
+     * Fetch tracks from a playlist
+     * @param {Object} options - Playlist options
+     * @param {string} options.playlistId - Playlist ID to load
+     * @param {boolean} [options.shuffle=false] - Shuffle the tracks
+     * @returns {Promise<Array>} Track list
+     */
+    async _fetchPlaylistTracks(options = {}) {
+        if (!options.playlistId) {
+            throw new Error('playlistId is required');
+        }
+
+        const params = new URLSearchParams();
+        if (options.shuffle) params.set('shuffle', 'true');
+
+        const response = await fetch(
+            `${this.apiBaseUrl}/api/radio/playlist/${options.playlistId}?${params}`
+        );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();

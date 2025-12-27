@@ -52,8 +52,8 @@
     left: 0;
     width: 100% !important;
     height: 100% !important;
-    z-index: 0;
-    opacity: 0.8;
+    z-index: 1;
+    opacity: 1;
     pointer-events: none;
 }
 
@@ -160,11 +160,17 @@
    CENTER CONTENT - TRACK INFO
    ======================================== */
 
+/* Track info - positioned at bottom above branding, centered horizontally */
 .radio-widget-fullscreen .rw-fs-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: fixed;
+    bottom: 180px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     z-index: 10;
     pointer-events: none;
@@ -174,31 +180,39 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    color: var(--rw-accent);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    margin-bottom: 16px;
-    text-shadow: 0 0 20px var(--rw-accent-glow);
+    gap: 6px;
+    color: var(--rw-text-muted);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+    opacity: 0.7;
 }
 
 .radio-widget-fullscreen .rw-fs-center .rw-now-playing-indicator::before {
     content: '';
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     background: var(--rw-accent);
     border-radius: 50%;
     animation: fsNowPlayingPulse 1.5s ease-in-out infinite;
 }
 
+.radio-widget-fullscreen .rw-fs-track {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
 .radio-widget-fullscreen .rw-fs-track .rw-track-title {
-    font-size: clamp(24px, 5vw, 48px);
-    font-weight: 700;
-    color: var(--rw-text);
-    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
-    max-width: 80vw;
+    font-size: clamp(14px, 2vw, 20px);
+    font-weight: 500;
+    color: var(--rw-text-dim);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    max-width: 60vw;
     line-height: 1.3;
+    opacity: 0.8;
+    text-align: center;
 }
 
 /* ========================================
@@ -306,17 +320,23 @@
     height: 22px;
 }
 
-/* Vote buttons have more whitespace in icon design, increase size to match heart visually */
+/* Vote buttons - scale to match other dock buttons visually */
+.radio-widget-fullscreen .rw-vote-up,
+.radio-widget-fullscreen .rw-vote-down {
+    width: 48px;
+    height: 48px;
+}
+
 .radio-widget-fullscreen .rw-vote-up svg,
 .radio-widget-fullscreen .rw-vote-down svg {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
 }
 
 /* Ensure favorite heart icon matches other dock buttons */
 .radio-widget-fullscreen .rw-favorite-btn svg {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
 }
 
 .radio-widget-fullscreen .rw-dock-btn.voted,
@@ -324,6 +344,64 @@
     background: var(--rw-accent);
     border-color: var(--rw-accent);
     color: white;
+}
+
+/* Voting animation in fullscreen */
+.radio-widget-fullscreen .rw-vote-up.voting {
+    animation: fsVoteGlowUp 0.6s ease-out;
+}
+
+.radio-widget-fullscreen .rw-vote-down.voting {
+    animation: fsVoteGlowDown 0.6s ease-out;
+}
+
+@keyframes fsVoteGlowUp {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+    }
+    50% {
+        transform: scale(1.2);
+        box-shadow: 0 0 30px 8px rgba(34, 197, 94, 0.7);
+        background: rgba(34, 197, 94, 0.4);
+        border-color: rgba(34, 197, 94, 0.8);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 15px 3px rgba(34, 197, 94, 0.4);
+        background: rgba(34, 197, 94, 0.3);
+    }
+}
+
+@keyframes fsVoteGlowDown {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+    }
+    50% {
+        transform: scale(1.2);
+        box-shadow: 0 0 30px 8px rgba(239, 68, 68, 0.7);
+        background: rgba(239, 68, 68, 0.4);
+        border-color: rgba(239, 68, 68, 0.8);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 15px 3px rgba(239, 68, 68, 0.4);
+        background: rgba(239, 68, 68, 0.3);
+    }
+}
+
+/* Color-specific voted states for fullscreen */
+.radio-widget-fullscreen .rw-vote-up.voted {
+    background: rgba(34, 197, 94, 0.3);
+    border-color: rgba(34, 197, 94, 0.6);
+    color: #22c55e;
+}
+
+.radio-widget-fullscreen .rw-vote-down.voted {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.6);
+    color: #ef4444;
 }
 
 /* Main play button in dock */
@@ -901,16 +979,35 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 50;
-    pointer-events: none;
+    pointer-events: auto;
+}
+
+.radio-widget-fullscreen .rw-fs-brand-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+}
+
+.radio-widget-fullscreen .rw-fs-brand-link:hover {
+    opacity: 1 !important;
+}
+
+.radio-widget-fullscreen .rw-fs-brand-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));
 }
 
 .radio-widget-fullscreen .rw-fs-brand-text {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
-    letter-spacing: 3px;
-    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.6);
     text-transform: uppercase;
-    text-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+    text-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
 }
 
 /* ========================================
@@ -936,9 +1033,9 @@
 .radio-widget-fullscreen .rw-color-btn[data-theme="purple"] { background: linear-gradient(135deg, #a855f7, #6366f1); }
 .radio-widget-fullscreen .rw-color-btn[data-theme="blue"] { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
 .radio-widget-fullscreen .rw-color-btn[data-theme="green"] { background: linear-gradient(135deg, #22c55e, #10b981); }
-.radio-widget-fullscreen .rw-color-btn[data-theme="orange"] { background: linear-gradient(135deg, #f97316, #eab308); }
+.radio-widget-fullscreen .rw-color-btn[data-theme="cyan"] { background: linear-gradient(135deg, #00d4ff, #0ea5e9); }
 .radio-widget-fullscreen .rw-color-btn[data-theme="pink"] { background: linear-gradient(135deg, #ec4899, #f43f5e); }
-.radio-widget-fullscreen .rw-color-btn[data-theme="rainbow"] { background: linear-gradient(135deg, #f43f5e, #f97316, #eab308, #22c55e, #3b82f6, #a855f7); }
+.radio-widget-fullscreen .rw-color-btn[data-theme="rainbow"] { background: linear-gradient(135deg, #f43f5e, #ec4899, #a855f7, #22c55e, #3b82f6, #00d4ff); }
 
 /* ========================================
    TOOLTIPS
@@ -1049,4 +1146,85 @@
 
 .radio-widget-fullscreen .rw-fps-counter.fps-bad {
     color: #ef4444;
+}
+
+/* ========================================
+   AUTO-DIM MODE - Immersive Experience
+   ======================================== */
+
+/* Elements that should dim */
+.radio-widget-fullscreen .rw-controls-dock,
+.radio-widget-fullscreen .rw-viz-panel,
+.radio-widget-fullscreen .rw-exit-btn,
+.radio-widget-fullscreen .rw-fps-counter,
+.radio-widget-fullscreen .rw-shortcuts-hint,
+.radio-widget-fullscreen .rw-fs-branding,
+.radio-widget-fullscreen .rw-fs-center {
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Dimmed state - activated after inactivity */
+.radio-widget-fullscreen.ui-dimmed .rw-controls-dock {
+    opacity: 0;
+    transform: translateY(100%);
+    pointer-events: none;
+}
+
+.radio-widget-fullscreen.ui-dimmed .rw-viz-panel {
+    opacity: 0;
+    transform: translateX(-100%);
+    pointer-events: none;
+}
+
+.radio-widget-fullscreen.ui-dimmed .rw-exit-btn {
+    opacity: 0.1;
+}
+
+.radio-widget-fullscreen.ui-dimmed .rw-exit-btn:hover {
+    opacity: 1;
+}
+
+.radio-widget-fullscreen.ui-dimmed .rw-fps-counter {
+    opacity: 0;
+}
+
+.radio-widget-fullscreen.ui-dimmed .rw-shortcuts-hint {
+    opacity: 0;
+}
+
+.radio-widget-fullscreen.ui-dimmed .rw-fs-branding {
+    opacity: 0.4;
+    pointer-events: auto;
+}
+
+.radio-widget-fullscreen.ui-dimmed .rw-fs-center {
+    opacity: 0.8;
+}
+
+/* Cursor hide when dimmed */
+.radio-widget-fullscreen.ui-dimmed {
+    cursor: none;
+}
+
+/* Re-show on interaction */
+.radio-widget-fullscreen.ui-active .rw-controls-dock,
+.radio-widget-fullscreen.ui-active .rw-viz-panel,
+.radio-widget-fullscreen.ui-active .rw-exit-btn,
+.radio-widget-fullscreen.ui-active .rw-fps-counter,
+.radio-widget-fullscreen.ui-active .rw-shortcuts-hint,
+.radio-widget-fullscreen.ui-active .rw-fs-center {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+}
+
+/* Branding needs to keep its centering transform */
+.radio-widget-fullscreen.ui-active .rw-fs-branding {
+    opacity: 1;
+    transform: translateX(-50%);
+    pointer-events: auto;
+}
+
+.radio-widget-fullscreen.ui-active {
+    cursor: default;
 }

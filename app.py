@@ -1102,6 +1102,158 @@ def api_radio_new():
 
 
 # =============================================================================
+# Playlists - Requires authenticated user from Graphlings/Valnet widget
+# =============================================================================
+
+@app.route('/api/playlists', methods=['POST'])
+def api_create_playlist():
+    """Create a new playlist."""
+    data = request.get_json() or {}
+    user_id = data.get('user_id')
+    name = data.get('name', '').strip()
+    description = data.get('description', '').strip()
+
+    if not user_id:
+        return jsonify({'error': 'Authentication required. Please log in via Graphlings.'}), 401
+    if not name:
+        return jsonify({'error': 'Playlist name is required'}), 400
+
+    # Generate unique playlist ID
+    playlist_id = 'pl_' + uuid.uuid4().hex[:12]
+
+    result = db.create_playlist(playlist_id, user_id, name, description or None)
+    if result:
+        return jsonify(result), 201
+    return jsonify({'error': 'Failed to create playlist'}), 500
+
+
+@app.route('/api/playlists')
+def api_get_playlists():
+    """Get user's playlists."""
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'Authentication required. Please log in via Graphlings.'}), 401
+
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 50, type=int)
+
+    result = db.get_user_playlists(user_id, page, per_page)
+    return jsonify(result)
+
+
+@app.route('/api/playlists/<playlist_id>')
+def api_get_playlist(playlist_id):
+    """Get a playlist with its tracks."""
+    playlist = db.get_playlist(playlist_id)
+    if not playlist:
+        return jsonify({'error': 'Playlist not found'}), 404
+
+    tracks = db.get_playlist_tracks(playlist_id, include_metadata=True)
+    playlist['tracks'] = tracks
+
+    return jsonify(playlist)
+
+
+@app.route('/api/playlists/<playlist_id>', methods=['PUT'])
+def api_update_playlist(playlist_id):
+    """Update playlist name/description."""
+    data = request.get_json() or {}
+    user_id = data.get('user_id')
+
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    name = data.get('name')
+    description = data.get('description')
+
+    result = db.update_playlist(playlist_id, user_id, name, description)
+    if result:
+        return jsonify(result)
+    return jsonify({'error': 'Playlist not found or not authorized'}), 404
+
+
+@app.route('/api/playlists/<playlist_id>', methods=['DELETE'])
+def api_delete_playlist(playlist_id):
+    """Delete a playlist."""
+    data = request.get_json() or {}
+    user_id = data.get('user_id')
+
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    if db.delete_playlist(playlist_id, user_id):
+        return jsonify({'success': True})
+    return jsonify({'error': 'Playlist not found or not authorized'}), 404
+
+
+@app.route('/api/playlists/<playlist_id>/tracks', methods=['POST'])
+def api_add_playlist_track(playlist_id):
+    """Add a track to a playlist."""
+    data = request.get_json() or {}
+    user_id = data.get('user_id')
+    generation_id = data.get('generation_id')
+
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+    if not generation_id:
+        return jsonify({'error': 'generation_id required'}), 400
+
+    result = db.add_track_to_playlist(playlist_id, generation_id, user_id)
+    if result['success']:
+        return jsonify(result)
+    return jsonify(result), 400
+
+
+@app.route('/api/playlists/<playlist_id>/tracks/<generation_id>', methods=['DELETE'])
+def api_remove_playlist_track(playlist_id, generation_id):
+    """Remove a track from a playlist."""
+    data = request.get_json() or {}
+    user_id = data.get('user_id')
+
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    if db.remove_track_from_playlist(playlist_id, generation_id, user_id):
+        return jsonify({'success': True})
+    return jsonify({'error': 'Track not found in playlist or not authorized'}), 404
+
+
+@app.route('/api/playlists/<playlist_id>/reorder', methods=['PUT'])
+def api_reorder_playlist(playlist_id):
+    """Reorder tracks in a playlist."""
+    data = request.get_json() or {}
+    user_id = data.get('user_id')
+    track_order = data.get('track_order', [])
+
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+    if not track_order:
+        return jsonify({'error': 'track_order required'}), 400
+
+    if db.reorder_playlist_tracks(playlist_id, user_id, track_order):
+        return jsonify({'success': True})
+    return jsonify({'error': 'Playlist not found or not authorized'}), 404
+
+
+@app.route('/api/radio/playlist/<playlist_id>')
+def api_radio_playlist(playlist_id):
+    """Get playlist tracks for radio playback."""
+    shuffle = request.args.get('shuffle', 'false').lower() == 'true'
+
+    playlist = db.get_playlist(playlist_id)
+    if not playlist:
+        return jsonify({'error': 'Playlist not found'}), 404
+
+    tracks = db.get_playlist_for_radio(playlist_id, shuffle=shuffle)
+    return jsonify({
+        'tracks': tracks,
+        'source': 'playlist',
+        'playlist_id': playlist_id,
+        'playlist_name': playlist['name']
+    })
+
+
+# =============================================================================
 # Database Stats
 # =============================================================================
 

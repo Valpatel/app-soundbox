@@ -9,7 +9,7 @@ test('inspect API page widgets', async ({ page }) => {
     await page.waitForTimeout(3000);
 
     // Inspect each widget demo
-    const sizes = ['ultra-minimal', 'minimal', 'small', 'medium', 'large'];
+    const sizes = ['minimal', 'small', 'medium', 'large'];
 
     for (const size of sizes) {
         const container = await page.$(`#demo-${size}`);

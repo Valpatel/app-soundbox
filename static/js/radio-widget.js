@@ -62,16 +62,6 @@ const RadioWidget = {
     },
 
     /**
-     * Create an ultra-minimal radio widget (just play button)
-     * @param {string|HTMLElement} container - Container element or selector
-     * @param {Object} options - Widget options
-     * @returns {RadioWidgetInstance} Widget instance
-     */
-    createUltraMinimal(container, options = {}) {
-        return this.create(container, { ...options, size: 'ultra-minimal' });
-    },
-
-    /**
      * Get an existing widget instance by ID
      * @param {string} id - Widget ID
      * @returns {RadioWidgetInstance|null} Widget instance or null
@@ -287,7 +277,22 @@ class RadioWidgetInstance {
             this._keyHandler = null;
         }
 
-        this.container.classList.remove('radio-widget', `radio-widget-${this.size}`);
+        // Clean up auto-dim handlers
+        if (this._dimTimer) {
+            clearTimeout(this._dimTimer);
+            this._dimTimer = null;
+        }
+        if (this._mouseMoveHandler) {
+            this.container.removeEventListener('mousemove', this._mouseMoveHandler);
+            this._mouseMoveHandler = null;
+        }
+        if (this._clickHandler) {
+            this.container.removeEventListener('click', this._clickHandler);
+            this.container.removeEventListener('touchstart', this._clickHandler);
+            this._clickHandler = null;
+        }
+
+        this.container.classList.remove('radio-widget', `radio-widget-${this.size}`, 'ui-dimmed', 'ui-active');
         this.container.innerHTML = '';
         this.core._events.emit('destroy');
     }
@@ -331,7 +336,6 @@ class RadioWidgetInstance {
 
     _getLayout() {
         const LAYOUTS = {
-            'ultra-minimal': ['playButton'],
             'minimal': ['playButton', 'skipButtons', 'trackInfo', 'voteButtons'],
             'small': ['playButton', 'trackInfo', 'voteButtons', 'progressBar'],
             'medium': ['stationSelector', 'visualizerSmall', 'trackInfo', 'progressBar', 'playButton', 'skipButtons', 'voteButtons', 'volumeControl'],
@@ -441,7 +445,7 @@ class RadioWidgetInstance {
                         <button class="rw-color-btn active" data-theme="purple" title="Purple" data-tooltip="Purple"></button>
                         <button class="rw-color-btn" data-theme="blue" title="Blue" data-tooltip="Blue"></button>
                         <button class="rw-color-btn" data-theme="green" title="Green" data-tooltip="Green"></button>
-                        <button class="rw-color-btn" data-theme="orange" title="Orange" data-tooltip="Orange"></button>
+                        <button class="rw-color-btn" data-theme="cyan" title="Cyan" data-tooltip="Cyan"></button>
                         <button class="rw-color-btn" data-theme="pink" title="Pink" data-tooltip="Pink"></button>
                         <button class="rw-color-btn" data-theme="rainbow" title="Rainbow" data-tooltip="Rainbow"></button>
                     </div>
@@ -538,14 +542,17 @@ class RadioWidgetInstance {
 
             <!-- Branding watermark -->
             <div class="rw-fs-branding">
-                <span class="rw-fs-brand-text">Graphlings.net</span>
+                <a href="https://graphlings.net" target="_blank" class="rw-fs-brand-link">
+                    <img src="/static/graphlings/logo-104.png" alt="Graphlings" class="rw-fs-brand-logo">
+                    <span class="rw-fs-brand-text">Graphlings.net</span>
+                </a>
             </div>
         `;
     }
 
     _renderPlayButton() {
         return `
-            <button class="rw-play-btn" data-action="toggle" title="Play/Pause">
+            <button class="rw-play-btn" data-action="toggle" title="Play/Pause" data-tooltip="Play/Pause">
                 <svg class="rw-icon rw-icon-play" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M8 5v14l11-7z"/>
                 </svg>
@@ -559,10 +566,10 @@ class RadioWidgetInstance {
     _renderSkipButtons() {
         return `
             <div class="rw-skip-buttons">
-                <button class="rw-btn rw-prev-btn" data-action="previous" title="Previous">
+                <button class="rw-btn rw-prev-btn" data-action="previous" title="Previous" data-tooltip="Previous">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
                 </button>
-                <button class="rw-btn rw-next-btn" data-action="next" title="Next">
+                <button class="rw-btn rw-next-btn" data-action="next" title="Next" data-tooltip="Next">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
                 </button>
             </div>
@@ -570,7 +577,7 @@ class RadioWidgetInstance {
     }
 
     _renderTrackInfo() {
-        const truncate = this.size === 'minimal' || this.size === 'ultra-minimal';
+        const truncate = this.size === 'minimal';
         return `
             <div class="rw-track-info ${truncate ? 'rw-truncate' : ''}">
                 <span class="rw-track-title">No track playing</span>
@@ -594,7 +601,7 @@ class RadioWidgetInstance {
     _renderVolumeControl() {
         return `
             <div class="rw-volume-control">
-                <button class="rw-btn rw-mute-btn" data-action="toggleMute" title="Mute">
+                <button class="rw-btn rw-mute-btn" data-action="toggleMute" title="Mute" data-tooltip="Mute">
                     <svg class="rw-icon-volume" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
                     </svg>
@@ -602,7 +609,7 @@ class RadioWidgetInstance {
                         <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
                     </svg>
                 </button>
-                <input type="range" class="rw-volume-slider" min="0" max="100" value="100" data-action="volume">
+                <input type="range" class="rw-volume-slider" min="0" max="100" value="100" data-action="volume" title="Volume">
             </div>
         `;
     }
@@ -621,7 +628,7 @@ class RadioWidgetInstance {
 
     _renderFavoriteButton() {
         return `
-            <button class="rw-btn rw-favorite-btn" data-action="favorite" title="Add to favorites">
+            <button class="rw-btn rw-favorite-btn" data-action="favorite" title="Add to favorites" data-tooltip="Favorite">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
@@ -632,11 +639,11 @@ class RadioWidgetInstance {
     _renderVoteButtons() {
         return `
             <div class="rw-vote-buttons">
-                <button class="rw-btn rw-vote-up" data-action="upvote" title="Upvote">
+                <button class="rw-btn rw-vote-up" data-action="upvote" title="Like" data-tooltip="Like">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
                     <span class="rw-vote-count rw-upvotes">0</span>
                 </button>
-                <button class="rw-btn rw-vote-down" data-action="downvote" title="Downvote">
+                <button class="rw-btn rw-vote-down" data-action="downvote" title="Dislike" data-tooltip="Dislike">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
                     <span class="rw-vote-count rw-downvotes">0</span>
                 </button>
@@ -687,7 +694,7 @@ class RadioWidgetInstance {
 
         return `
             <div class="rw-station-selector">
-                <button class="rw-station-dropdown-btn" data-action="toggleStations" title="Change Station">
+                <button class="rw-station-dropdown-btn" data-action="toggleStations" title="Change Station" data-tooltip="Station">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                         <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                     </svg>
@@ -739,7 +746,7 @@ class RadioWidgetInstance {
     _renderVisualizerModes() {
         return `
             <div class="rw-viz-modes">
-                <button class="rw-viz-mode-btn active" data-viz-mode="bars" title="Bars" data-tooltip="Bars">
+                <button class="rw-viz-mode-btn" data-viz-mode="bars" title="Bars" data-tooltip="Bars">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M4 18h2V8H4v10zm3 0h2V6H7v12zm3 0h2v-8h-2v8zm3 0h2V4h-2v14zm3 0h2v-4h-2v4z"/>
                     </svg>
@@ -784,7 +791,7 @@ class RadioWidgetInstance {
                         <path d="M20 12c0-1.1-.9-2-2-2h-2c0-1.1-.9-2-2-2h-2c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h2c0 1.1.9 2 2 2h2c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2v-2z"/>
                     </svg>
                 </button>
-                <button class="rw-viz-mode-btn" data-viz-mode="random" title="Random" data-tooltip="Random">
+                <button class="rw-viz-mode-btn active" data-viz-mode="random" title="Random" data-tooltip="Random">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>
                     </svg>
@@ -827,18 +834,38 @@ class RadioWidgetInstance {
         // Vote buttons with visual feedback
         this.container.querySelectorAll('[data-action="upvote"]').forEach(btn => {
             btn.addEventListener('click', () => {
+                // If already liked, do nothing (can't unlike for now)
+                if (btn.classList.contains('voted')) return;
+
+                // Add glow animation
+                btn.classList.add('voting');
                 this.core.vote(1);
-                // Show feedback then clear
-                btn.classList.add('voted');
-                setTimeout(() => btn.classList.remove('voted'), 1500);
+
+                // After glow animation, keep liked state
+                setTimeout(() => {
+                    btn.classList.remove('voting');
+                    btn.classList.add('voted');
+                }, 600);
             });
         });
         this.container.querySelectorAll('[data-action="downvote"]').forEach(btn => {
             btn.addEventListener('click', () => {
+                // If already disliked, do nothing
+                if (btn.classList.contains('voted')) return;
+
+                // Add glow animation
+                btn.classList.add('voting');
                 this.core.vote(-1);
-                // Show feedback then clear
-                btn.classList.add('voted');
-                setTimeout(() => btn.classList.remove('voted'), 1500);
+
+                // After glow animation, skip to next track
+                setTimeout(() => {
+                    btn.classList.remove('voting');
+                    btn.classList.add('voted');
+                    // Skip to next track after brief visual feedback
+                    setTimeout(() => {
+                        this.core.next();
+                    }, 400);
+                }, 600);
             });
         });
 
@@ -976,14 +1003,14 @@ class RadioWidgetInstance {
             });
         });
 
-        // Initialize visualizer for fullscreen
-        if (this.size === 'fullscreen') {
-            this._initVisualizer();
-        }
+        // NOTE: Don't auto-init visualizer for fullscreen here - it needs to be called
+        // AFTER the fullscreen transition completes (when container has proper dimensions).
+        // The caller (enterRadioFullscreen) will call _initVisualizer() explicitly.
 
         // Keyboard shortcuts for fullscreen
         if (this.size === 'fullscreen') {
             this._keyHandler = (e) => {
+                this._showUI(); // Any key press shows UI
                 switch (e.key) {
                     case 'Escape':
                         this.exitFullscreen();
@@ -1010,37 +1037,105 @@ class RadioWidgetInstance {
                 }
             };
             document.addEventListener('keydown', this._keyHandler);
+
+            // Auto-dim UI after inactivity
+            this._initAutoDim();
         }
+    }
+
+    /**
+     * Initialize auto-dim behavior for fullscreen mode
+     */
+    _initAutoDim() {
+        const DIM_TIMEOUT = 4000; // 4 seconds of inactivity
+        this._dimTimer = null;
+        this._isUIDimmed = false;
+
+        // Show UI and reset timer
+        this._showUI = () => {
+            this.container.classList.remove('ui-dimmed');
+            this.container.classList.add('ui-active');
+            this._isUIDimmed = false;
+
+            // Clear existing timer
+            if (this._dimTimer) {
+                clearTimeout(this._dimTimer);
+            }
+
+            // Start new timer
+            this._dimTimer = setTimeout(() => {
+                this._dimUI();
+            }, DIM_TIMEOUT);
+        };
+
+        // Dim the UI
+        this._dimUI = () => {
+            this.container.classList.remove('ui-active');
+            this.container.classList.add('ui-dimmed');
+            this._isUIDimmed = true;
+        };
+
+        // Listen for mouse movement and clicks
+        this._mouseMoveHandler = () => this._showUI();
+        this._clickHandler = () => this._showUI();
+
+        this.container.addEventListener('mousemove', this._mouseMoveHandler);
+        this.container.addEventListener('click', this._clickHandler);
+        this.container.addEventListener('touchstart', this._clickHandler);
+
+        // Start the initial timer
+        this._showUI();
     }
 
     _initVisualizer() {
         const canvas = this.container.querySelector('.rw-visualizer-canvas');
-        if (!canvas || !window.RadioWidgetVisualizer) return;
+        console.log('[RadioWidget] _initVisualizer called, canvas:', canvas, 'RadioWidgetVisualizer:', !!window.RadioWidgetVisualizer);
+        if (!canvas || !window.RadioWidgetVisualizer) {
+            console.warn('[RadioWidget] Missing canvas or visualizer class');
+            return;
+        }
 
         // Get the audio element from the core
         const audioElement = this.core.audioElement;
-        if (!audioElement) return;
+        console.log('[RadioWidget] Audio element:', audioElement, 'src:', audioElement?.src);
+        if (!audioElement) {
+            console.warn('[RadioWidget] No audio element found');
+            return;
+        }
+
+        // For fullscreen, use window dimensions
+        const container = this.container;
+        const isFullscreen = this.size === 'fullscreen';
+        const width = isFullscreen ? window.innerWidth : container.clientWidth;
+        const height = isFullscreen ? window.innerHeight : container.clientHeight;
+
+        console.log('[RadioWidget] Container dimensions:', width, 'x', height, 'isFullscreen:', isFullscreen);
 
         // Force canvas to full size immediately before creating visualizer
-        const container = this.container;
         canvas.style.width = '100%';
         canvas.style.height = '100%';
-        canvas.width = container.clientWidth * window.devicePixelRatio;
-        canvas.height = container.clientHeight * window.devicePixelRatio;
+        canvas.width = width * window.devicePixelRatio;
+        canvas.height = height * window.devicePixelRatio;
 
         this.visualizer = new RadioWidgetVisualizer(canvas, audioElement);
+        console.log('[RadioWidget] Visualizer created:', this.visualizer);
 
-        // Force another resize after a brief delay (for fullscreen transition)
-        requestAnimationFrame(() => {
-            if (this.visualizer) {
-                canvas.width = container.clientWidth * window.devicePixelRatio;
-                canvas.height = container.clientHeight * window.devicePixelRatio;
-                this.visualizer.start();
-            }
-        });
+        // Start the visualizer immediately
+        console.log('[RadioWidget] Starting visualizer, canvas size:', canvas.width, 'x', canvas.height);
+        this.visualizer.start();
+
+        // Also listen for resize events to update canvas size
+        if (isFullscreen) {
+            this._fullscreenResizeHandler = () => {
+                canvas.width = window.innerWidth * window.devicePixelRatio;
+                canvas.height = window.innerHeight * window.devicePixelRatio;
+            };
+            window.addEventListener('resize', this._fullscreenResizeHandler);
+        }
 
         // Sync visualizer with play state
         if (this.core.isPlaying) {
+            console.log('[RadioWidget] Audio playing, ensuring visualizer is started');
             this.visualizer.start();
         }
     }
@@ -1050,11 +1145,25 @@ class RadioWidgetInstance {
         const durationEl = this.container.querySelector('.rw-track-duration');
         const upvotesEl = this.container.querySelector('.rw-upvotes');
         const downvotesEl = this.container.querySelector('.rw-downvotes');
+        const upBtn = this.container.querySelector('.rw-vote-up');
+        const downBtn = this.container.querySelector('.rw-vote-down');
+        const favBtn = this.container.querySelector('.rw-favorite-btn');
 
         if (titleEl) titleEl.textContent = track.prompt || 'Unknown track';
         if (durationEl) durationEl.textContent = track.duration ? `${track.duration}s` : '';
         if (upvotesEl) upvotesEl.textContent = track.upvotes || 0;
         if (downvotesEl) downvotesEl.textContent = track.downvotes || 0;
+
+        // Clear vote/favorite states on track change - will be restored by _loadTrackVote/_loadTrackFavorite
+        if (upBtn) {
+            upBtn.classList.remove('voted', 'voting');
+        }
+        if (downBtn) {
+            downBtn.classList.remove('voted', 'voting');
+        }
+        if (favBtn) {
+            favBtn.classList.remove('favorited');
+        }
     }
 
     _updatePlayState(isPlaying) {
