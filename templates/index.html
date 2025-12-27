@@ -6374,7 +6374,7 @@
         let userPlaylists = []; // Loaded from API (requires Graphlings auth)
 
         function isUserAuthenticated() {
-            return currentUserId !== null;
+            return currentUserId !== null && !!getAuthToken();
         }
 
         function showLoginPrompt(action) {
@@ -7373,9 +7373,11 @@
         // Mini-player management
         function updateMiniPlayer() {
             const miniPlayer = document.getElementById('mini-player');
+            if (!miniPlayer) return; // Element not in DOM yet
+
             const miniTrack = document.getElementById('mini-player-track');
             const miniPlayBtn = document.getElementById('mini-player-play');
-            const miniEq = miniPlayer?.querySelector('.mini-eq');
+            const miniEq = miniPlayer.querySelector('.mini-eq');
             const miniProgress = document.getElementById('mini-progress-bar');
             const miniDuration = document.getElementById('mini-duration');
             const miniQueueCount = document.getElementById('mini-queue-count');
