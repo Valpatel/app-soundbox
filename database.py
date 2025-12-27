@@ -1327,6 +1327,77 @@ def record_download(generation_id, user_id=None, format='wav'):
         }
 
 
+def get_user_play_history(user_id, limit=50, offset=0):
+    """
+    Get play history for a user.
+
+    Args:
+        user_id: The user ID
+        limit: Maximum number of results (default 50)
+        offset: Pagination offset (default 0)
+
+    Returns:
+        List of play history entries with track metadata
+    """
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT
+                pe.id,
+                pe.generation_id,
+                pe.played_at,
+                pe.source,
+                g.prompt,
+                g.category,
+                g.model_type,
+                g.duration,
+                g.upvotes,
+                g.downvotes
+            FROM play_events pe
+            JOIN generations g ON pe.generation_id = g.id
+            WHERE pe.user_id = ?
+            ORDER BY pe.played_at DESC
+            LIMIT ? OFFSET ?
+        """, (user_id, limit, offset)).fetchall()
+
+        return [dict(row) for row in rows]
+
+
+def get_user_vote_history(user_id, limit=50, offset=0):
+    """
+    Get vote history for a user.
+
+    Args:
+        user_id: The user ID
+        limit: Maximum number of results (default 50)
+        offset: Pagination offset (default 0)
+
+    Returns:
+        List of vote history entries with track metadata
+    """
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT
+                v.id,
+                v.generation_id,
+                v.vote,
+                v.feedback_reasons,
+                v.created_at,
+                g.prompt,
+                g.category,
+                g.model_type,
+                g.duration,
+                g.upvotes,
+                g.downvotes
+            FROM votes v
+            JOIN generations g ON v.generation_id = g.id
+            WHERE v.user_id = ?
+            ORDER BY v.created_at DESC
+            LIMIT ? OFFSET ?
+        """, (user_id, limit, offset)).fetchall()
+
+        return [dict(row) for row in rows]
+
+
 def get_play_stats(generation_id):
     """Get detailed play statistics for a track."""
     with get_db() as conn:

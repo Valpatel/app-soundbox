@@ -1102,6 +1102,48 @@ def api_radio_new():
 
 
 # =============================================================================
+# User History - Requires authenticated user from Graphlings/Valnet widget
+# =============================================================================
+
+@app.route('/api/history/plays')
+def api_play_history():
+    """Get user's play history."""
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    limit = min(int(request.args.get('limit', 50)), 100)
+    offset = int(request.args.get('offset', 0))
+
+    history = db.get_user_play_history(user_id, limit=limit, offset=offset)
+    return jsonify({
+        'history': history,
+        'limit': limit,
+        'offset': offset,
+        'has_more': len(history) == limit
+    })
+
+
+@app.route('/api/history/votes')
+def api_vote_history():
+    """Get user's vote history."""
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    limit = min(int(request.args.get('limit', 50)), 100)
+    offset = int(request.args.get('offset', 0))
+
+    history = db.get_user_vote_history(user_id, limit=limit, offset=offset)
+    return jsonify({
+        'history': history,
+        'limit': limit,
+        'offset': offset,
+        'has_more': len(history) == limit
+    })
+
+
+# =============================================================================
 # Playlists - Requires authenticated user from Graphlings/Valnet widget
 # =============================================================================
 

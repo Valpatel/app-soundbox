@@ -1528,6 +1528,220 @@
         }
 
         /* ========================================
+           HISTORY TAB
+           ======================================== */
+        .history-card {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .history-auth-gate {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .history-auth-gate .auth-gate-content {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .history-auth-gate .icon-xl {
+            font-size: 3rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .history-auth-gate h3 {
+            margin: 0 0 8px;
+            font-size: 1.2rem;
+        }
+
+        .history-auth-gate p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .history-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .history-tab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s ease;
+        }
+
+        .history-tab:hover {
+            color: var(--text);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .history-tab.active {
+            color: var(--accent);
+            background: rgba(168, 85, 247, 0.1);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .history-tab .icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .history-section {
+            display: none;
+        }
+
+        .history-section.active {
+            display: block;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            border-color: var(--accent);
+            background: rgba(168, 85, 247, 0.05);
+        }
+
+        .history-item-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .history-item-icon.play {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .history-item-icon.upvote {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .history-item-icon.downvote {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .history-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .history-item-prompt {
+            font-size: 0.95rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .history-item-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .history-item-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .history-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .history-item-actions button {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: none;
+            color: var(--text-muted);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .history-item-actions button:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .history-empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .history-empty-state .icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            opacity: 0.3;
+        }
+
+        .load-more-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 16px;
+            border: 1px solid var(--border);
+            background: none;
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .load-more-btn:hover {
+            border-color: var(--accent);
+            background: rgba(168, 85, 247, 0.05);
+        }
+
+        /* ========================================
            API DOCUMENTATION TAB
            ======================================== */
         .api-docs-card {
@@ -5219,6 +5433,10 @@
                 <svg class="icon icon-md"><use href="#icon-heart"/></svg>
                 <span>Playlists</span>
             </button>
+            <button class="main-tab" onclick="switchTab('history')" id="tab-history" title="View your play and vote history">
+                <svg class="icon icon-md"><use href="#icon-clock"/></svg>
+                <span>History</span>
+            </button>
             <button class="main-tab" onclick="switchTab('api')" id="tab-api" title="Developer API and embed documentation">
                 <svg class="icon icon-md"><use href="#icon-code"/></svg>
                 <span>API</span>
@@ -5856,6 +6074,63 @@
             </div>
         </div> <!-- /content-playlists -->
 
+        <!-- HISTORY TAB -->
+        <div class="tab-content" id="content-history">
+            <div class="card history-card">
+                <h2><svg class="icon icon-lg" style="vertical-align: -4px; margin-right: 6px;"><use href="#icon-clock"/></svg>Your History</h2>
+
+                <!-- Auth gate for history -->
+                <div class="history-auth-gate" id="history-auth-gate">
+                    <div class="auth-gate-content">
+                        <svg class="icon icon-xl"><use href="#icon-lock"/></svg>
+                        <h3>Sign in to view your history</h3>
+                        <p>Your play history and votes are saved when you're logged in via Graphlings.</p>
+                    </div>
+                </div>
+
+                <!-- History content (shown when authenticated) -->
+                <div class="history-content hidden" id="history-content">
+                    <!-- History sub-tabs -->
+                    <div class="history-tabs">
+                        <button class="history-tab active" data-tab="plays" onclick="switchHistoryTab('plays')">
+                            <svg class="icon"><use href="#icon-play"/></svg>
+                            Play History
+                        </button>
+                        <button class="history-tab" data-tab="votes" onclick="switchHistoryTab('votes')">
+                            <svg class="icon"><use href="#icon-thumbs-up"/></svg>
+                            Vote History
+                        </button>
+                    </div>
+
+                    <!-- Play History Section -->
+                    <div class="history-section active" id="history-plays">
+                        <div class="history-list" id="play-history-list">
+                            <div class="history-loading">
+                                <div class="loading-spinner"></div>
+                                <p>Loading play history...</p>
+                            </div>
+                        </div>
+                        <button class="load-more-btn hidden" id="load-more-plays" onclick="loadMorePlayHistory()">
+                            Load More
+                        </button>
+                    </div>
+
+                    <!-- Vote History Section -->
+                    <div class="history-section" id="history-votes">
+                        <div class="history-list" id="vote-history-list">
+                            <div class="history-loading">
+                                <div class="loading-spinner"></div>
+                                <p>Loading vote history...</p>
+                            </div>
+                        </div>
+                        <button class="load-more-btn hidden" id="load-more-votes" onclick="loadMoreVoteHistory()">
+                            Load More
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- /content-history -->
+
         <!-- API TAB -->
         <div class="tab-content" id="content-api">
             <div class="card api-docs-card">
@@ -6085,6 +6360,11 @@
             if (tabName === 'api') {
                 initApiDemoWidgets();
             }
+
+            // Load history if switching to history tab
+            if (tabName === 'history') {
+                updateHistoryAuthState();
+            }
         }
 
         // ========================================
@@ -6237,6 +6517,240 @@
                 }
             } catch (err) {
                 console.error('Failed to load favorites:', err);
+            }
+        }
+
+        // ========================================
+        // HISTORY TAB
+        // ========================================
+        let playHistoryOffset = 0;
+        let voteHistoryOffset = 0;
+        const historyLimit = 20;
+
+        function switchHistoryTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.history-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+
+            // Update tab sections
+            document.querySelectorAll('.history-section').forEach(section => {
+                section.classList.toggle('active', section.id === `history-${tabName}`);
+            });
+
+            // Load data if not already loaded
+            if (tabName === 'plays') {
+                const list = document.getElementById('play-history-list');
+                if (list.querySelector('.history-loading')) {
+                    loadPlayHistory();
+                }
+            } else if (tabName === 'votes') {
+                const list = document.getElementById('vote-history-list');
+                if (list.querySelector('.history-loading')) {
+                    loadVoteHistory();
+                }
+            }
+        }
+
+        async function loadPlayHistory(append = false) {
+            const userId = getEffectiveUserId();
+            if (!userId) return;
+
+            const list = document.getElementById('play-history-list');
+            const loadMoreBtn = document.getElementById('load-more-plays');
+
+            if (!append) {
+                playHistoryOffset = 0;
+                list.innerHTML = '<div class="history-loading"><div class="loading-spinner"></div><p>Loading play history...</p></div>';
+            }
+
+            try {
+                const res = await fetch(`/api/history/plays?user_id=${userId}&limit=${historyLimit}&offset=${playHistoryOffset}`);
+                const data = await res.json();
+
+                if (data.error) {
+                    list.innerHTML = '<div class="history-empty-state"><p>Failed to load history</p></div>';
+                    return;
+                }
+
+                if (!append) {
+                    list.innerHTML = '';
+                }
+
+                if (data.history.length === 0 && !append) {
+                    list.innerHTML = `
+                        <div class="history-empty-state">
+                            <svg class="icon"><use href="#icon-play"/></svg>
+                            <h3>No play history yet</h3>
+                            <p>Tracks you play will appear here</p>
+                        </div>
+                    `;
+                    loadMoreBtn.classList.add('hidden');
+                    return;
+                }
+
+                data.history.forEach(item => {
+                    const date = new Date(item.played_at);
+                    const timeAgo = formatTimeAgo(date);
+
+                    list.innerHTML += `
+                        <div class="history-item" data-id="${item.generation_id}">
+                            <div class="history-item-icon play">
+                                <svg class="icon"><use href="#icon-play"/></svg>
+                            </div>
+                            <div class="history-item-info">
+                                <div class="history-item-prompt">${escapeHtml(item.prompt || 'Untitled')}</div>
+                                <div class="history-item-meta">
+                                    <span><svg class="icon" style="width:12px;height:12px;"><use href="#icon-clock"/></svg> ${timeAgo}</span>
+                                    <span>${item.category || item.model_type}</span>
+                                    <span>${item.duration || 30}s</span>
+                                </div>
+                            </div>
+                            <div class="history-item-actions">
+                                <button onclick="playHistoryItem('${item.generation_id}')">Play</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                playHistoryOffset += data.history.length;
+                loadMoreBtn.classList.toggle('hidden', !data.has_more);
+
+            } catch (err) {
+                console.error('Failed to load play history:', err);
+                if (!append) {
+                    list.innerHTML = '<div class="history-empty-state"><p>Failed to load history</p></div>';
+                }
+            }
+        }
+
+        async function loadVoteHistory(append = false) {
+            const userId = getEffectiveUserId();
+            if (!userId) return;
+
+            const list = document.getElementById('vote-history-list');
+            const loadMoreBtn = document.getElementById('load-more-votes');
+
+            if (!append) {
+                voteHistoryOffset = 0;
+                list.innerHTML = '<div class="history-loading"><div class="loading-spinner"></div><p>Loading vote history...</p></div>';
+            }
+
+            try {
+                const res = await fetch(`/api/history/votes?user_id=${userId}&limit=${historyLimit}&offset=${voteHistoryOffset}`);
+                const data = await res.json();
+
+                if (data.error) {
+                    list.innerHTML = '<div class="history-empty-state"><p>Failed to load history</p></div>';
+                    return;
+                }
+
+                if (!append) {
+                    list.innerHTML = '';
+                }
+
+                if (data.history.length === 0 && !append) {
+                    list.innerHTML = `
+                        <div class="history-empty-state">
+                            <svg class="icon"><use href="#icon-thumbs-up"/></svg>
+                            <h3>No votes yet</h3>
+                            <p>Tracks you vote on will appear here</p>
+                        </div>
+                    `;
+                    loadMoreBtn.classList.add('hidden');
+                    return;
+                }
+
+                data.history.forEach(item => {
+                    const date = new Date(item.created_at);
+                    const timeAgo = formatTimeAgo(date);
+                    const isUpvote = item.vote > 0;
+
+                    list.innerHTML += `
+                        <div class="history-item" data-id="${item.generation_id}">
+                            <div class="history-item-icon ${isUpvote ? 'upvote' : 'downvote'}">
+                                <svg class="icon"><use href="#icon-thumbs-${isUpvote ? 'up' : 'down'}"/></svg>
+                            </div>
+                            <div class="history-item-info">
+                                <div class="history-item-prompt">${escapeHtml(item.prompt || 'Untitled')}</div>
+                                <div class="history-item-meta">
+                                    <span><svg class="icon" style="width:12px;height:12px;"><use href="#icon-clock"/></svg> ${timeAgo}</span>
+                                    <span>${item.category || item.model_type}</span>
+                                    <span>${item.duration || 30}s</span>
+                                </div>
+                            </div>
+                            <div class="history-item-actions">
+                                <button onclick="playHistoryItem('${item.generation_id}')">Play</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                voteHistoryOffset += data.history.length;
+                loadMoreBtn.classList.toggle('hidden', !data.has_more);
+
+            } catch (err) {
+                console.error('Failed to load vote history:', err);
+                if (!append) {
+                    list.innerHTML = '<div class="history-empty-state"><p>Failed to load history</p></div>';
+                }
+            }
+        }
+
+        function loadMorePlayHistory() {
+            loadPlayHistory(true);
+        }
+
+        function loadMoreVoteHistory() {
+            loadVoteHistory(true);
+        }
+
+        async function playHistoryItem(generationId) {
+            // Find the track and play it
+            try {
+                const res = await fetch(`/api/generation/${generationId}`);
+                if (!res.ok) {
+                    showToast('Track not found', 'error');
+                    return;
+                }
+                const track = await res.json();
+                // Use the radio widget to play
+                if (window.radioWidget && window.radioWidget.core) {
+                    await window.radioWidget.core.playTrack(track);
+                } else {
+                    // Fallback: play directly
+                    playLibraryItem(track.id, 'history');
+                }
+            } catch (err) {
+                console.error('Failed to play track:', err);
+                showToast('Failed to play track', 'error');
+            }
+        }
+
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            if (seconds < 60) return 'just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        function updateHistoryAuthState() {
+            const userId = getEffectiveUserId();
+            const authGate = document.getElementById('history-auth-gate');
+            const content = document.getElementById('history-content');
+
+            if (userId) {
+                authGate.classList.add('hidden');
+                content.classList.remove('hidden');
+                // Load initial data
+                loadPlayHistory();
+            } else {
+                authGate.classList.remove('hidden');
+                content.classList.add('hidden');
             }
         }
 
@@ -10116,6 +10630,8 @@
                         loadLibrary();  // Refresh library to show/hide feedback buttons
                         loadPlaylists(); // Load user playlists
                         loadFavorites(); // Load user favorites
+                        // Update history if on history tab
+                        if (currentTab === 'history') updateHistoryAuthState();
                     }
                 });
 
@@ -10128,6 +10644,8 @@
                     loadLibrary();  // Refresh library to update feedback button visibility
                     loadPlaylists(); // Clear playlists
                     loadFavorites(); // Clear favorites
+                    // Update history if on history tab
+                    if (currentTab === 'history') updateHistoryAuthState();
                 });
 
                 // Check if user is already logged in and apply their theme
