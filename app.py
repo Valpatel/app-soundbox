@@ -587,7 +587,10 @@ def generate():
 def serve_audio(filename):
     filepath = os.path.join(OUTPUT_DIR, filename)
     if os.path.exists(filepath):
-        return send_file(filepath, mimetype='audio/wav')
+        response = send_file(filepath, mimetype='audio/wav')
+        # Add CORS headers for embedded widget support
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
     return "Not found", 404
 
 
@@ -830,10 +833,11 @@ def api_get_feedback(gen_id):
 def api_suggest_tag(gen_id):
     """
     Submit a tag/category suggestion for a generation.
-    When 3+ users agree, the category is automatically applied.
+    When 3+ users agree, the category is automatically applied or removed.
 
     Body:
         category: The category to suggest
+        action: 'add' (default) or 'remove'
         user_id: (optional) User identifier
     """
     data = request.get_json()
@@ -844,7 +848,11 @@ def api_suggest_tag(gen_id):
     if not data or 'category' not in data:
         return jsonify({'error': 'Missing category'}), 400
 
-    result = db.submit_tag_suggestion(gen_id, user_id, data['category'])
+    action = data.get('action', 'add')
+    if action not in ('add', 'remove'):
+        return jsonify({'error': 'Invalid action. Must be "add" or "remove"'}), 400
+
+    result = db.submit_tag_suggestion(gen_id, user_id, data['category'], action)
 
     if result['success']:
         return jsonify(result)
@@ -889,12 +897,28 @@ def api_get_tag_suggestions(gen_id):
 def api_get_categories(model):
     """
     Get all available categories for a model type (music or audio).
+    Includes usage counts for sorting by popularity.
     """
     if model not in ('music', 'audio'):
         return jsonify({'error': 'Invalid model type'}), 400
 
     categories = db.get_available_categories(model)
-    return jsonify({'categories': categories})
+
+    # Get usage counts for each category
+    counts = db.get_category_counts(model)
+
+    # Build response with usage data
+    categories_with_counts = {}
+    for cat_key, display_name in categories.items():
+        categories_with_counts[cat_key] = {
+            'display': display_name,
+            'count': counts.get(cat_key, 0)
+        }
+
+    return jsonify({
+        'categories': categories,
+        'categories_with_counts': categories_with_counts
+    })
 
 
 # =============================================================================
@@ -1087,6 +1111,64 @@ def api_stats():
     return jsonify(db.get_stats())
 
 
+# =============================================================================
+# Play & Download Tracking
+# =============================================================================
+
+@app.route('/api/track/<gen_id>/play', methods=['POST', 'OPTIONS'])
+def api_record_play(gen_id):
+    """Record a play event for analytics."""
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        response = jsonify({})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+
+    data = request.get_json() or {}
+    user_id = data.get('user_id')
+    session_id = data.get('session_id')
+    play_duration = data.get('duration')
+    source = data.get('source', 'radio')
+
+    result = db.record_play(gen_id, user_id, session_id, play_duration, source)
+    response = jsonify(result)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+@app.route('/api/track/<gen_id>/stats')
+def api_play_stats(gen_id):
+    """Get play statistics for a track."""
+    stats = db.get_play_stats(gen_id)
+    if stats:
+        return jsonify(stats)
+    return jsonify({'error': 'Track not found'}), 404
+
+
+@app.route('/api/trending')
+def api_trending():
+    """Get trending tracks based on recent plays."""
+    hours = request.args.get('hours', 24, type=int)
+    limit = request.args.get('limit', 20, type=int)
+    model = request.args.get('model')
+
+    tracks = db.get_trending_tracks(hours, limit, model)
+    return jsonify({'tracks': tracks})
+
+
+@app.route('/api/most-played')
+def api_most_played():
+    """Get most played tracks."""
+    limit = request.args.get('limit', 50, type=int)
+    model = request.args.get('model')
+    days = request.args.get('days', type=int)
+
+    tracks = db.get_most_played(limit, model, days)
+    return jsonify({'tracks': tracks})
+
+
 @app.route('/api/log-error', methods=['POST'])
 def api_log_error():
     """Log frontend errors to backend."""
@@ -1139,6 +1221,11 @@ def download(filename):
             clean_name = f"{slug}_{short_id}.wav"
         else:
             clean_name = filename
+
+        # Track the download
+        gen_id = filename.replace('.wav', '')
+        user_id = request.args.get('user_id')
+        db.record_download(gen_id, user_id, 'wav')
 
         return send_file(filepath, as_attachment=True, download_name=clean_name)
     return "Not found", 404
@@ -1585,6 +1672,80 @@ def random_prompt():
         prompt = random.choice(patterns)()
 
     return jsonify({'success': True, 'prompt': prompt})
+
+
+# ========================================
+# WIDGET EMBED ENDPOINTS
+# ========================================
+
+@app.route('/widget/graphlings-radio.js')
+def widget_js():
+    """Serve the embeddable widget JavaScript with CORS headers."""
+    response = send_file('static/dist/graphlings-radio.js', mimetype='application/javascript')
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET'
+    response.headers['Cache-Control'] = 'public, max-age=3600'  # Cache for 1 hour
+    return response
+
+
+@app.route('/widget/graphlings-radio.css')
+def widget_css():
+    """Serve the embeddable widget CSS with CORS headers."""
+    response = send_file('static/dist/graphlings-radio.css', mimetype='text/css')
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET'
+    response.headers['Cache-Control'] = 'public, max-age=3600'  # Cache for 1 hour
+    return response
+
+
+@app.route('/api/radio')
+def api_radio():
+    """Universal radio API endpoint for widget and internal use."""
+    station = request.args.get('station', 'shuffle')
+    limit = min(int(request.args.get('limit', 10)), 50)
+    model = request.args.get('model', 'music')
+
+    # Map station names to search queries
+    station_searches = {
+        'ambient': 'ambient OR soundscape OR atmospheric',
+        'lofi': 'lo-fi OR chill beats OR relaxed',
+        'retro': 'chiptune OR 8-bit OR retro',
+        'piano': 'piano OR keyboard OR gentle',
+        'happy': 'happy OR upbeat OR bouncy',
+        'dreamy': 'dreamy OR ethereal OR atmospheric'
+    }
+
+    # Get tracks based on station type
+    if station == 'favorites':
+        user_id = request.args.get('user_id')
+        if user_id:
+            tracks = db.get_random_favorites(user_id, count=limit, model=model)
+        else:
+            tracks = []
+    elif station == 'trending':
+        tracks = db.get_trending_tracks(limit=limit, model=model)
+    elif station == 'top-rated':
+        tracks = db.get_top_rated_tracks(model=model, count=limit)
+    elif station == 'new':
+        tracks = db.get_recent_tracks(model=model, count=limit)
+    elif station in station_searches:
+        # Search-based stations
+        tracks = db.get_random_tracks(
+            model=model,
+            search=station_searches[station],
+            count=limit
+        )
+    else:
+        # Default shuffle - random tracks
+        tracks = db.get_random_tracks(model=model, count=limit)
+
+    # Add CORS headers for external widget use
+    response = jsonify({
+        'station': station,
+        'queue': tracks
+    })
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 if __name__ == '__main__':

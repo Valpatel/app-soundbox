@@ -169,6 +169,17 @@ test.describe('Orientation Changes', () => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
 
+        // Disable animations for stability
+        await page.addStyleTag({
+            content: `*, *::before, *::after {
+                animation-duration: 0s !important;
+                transition-duration: 0s !important;
+            }`
+        });
+
+        // Verify content is visible in portrait
+        await expect(page.locator('.main-tab').first()).toBeVisible();
+
         await page.screenshot({
             path: 'test-results/orientation-portrait.png',
             fullPage: true
@@ -176,15 +187,15 @@ test.describe('Orientation Changes', () => {
 
         // Switch to landscape
         await page.setViewportSize({ width: 667, height: 375 });
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(800);
 
         await page.screenshot({
             path: 'test-results/orientation-landscape.png',
             fullPage: true
         });
 
-        // Content should still be visible
-        await expect(page.locator('.main-tab')).toBeVisible();
+        // Content should still be visible after orientation change
+        await expect(page.locator('.main-tab').first()).toBeVisible();
     });
 });
 

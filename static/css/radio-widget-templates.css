@@ -1,0 +1,368 @@
+/**
+ * Radio Widget - Theme Templates
+ * User-selectable visual themes for the widget
+ */
+
+/* ========================================
+   DEFAULT (Dark Purple Glow)
+   ======================================== */
+
+.radio-widget[data-template="default"] {
+    --rw-bg: #0a0e17;
+    --rw-bg-card: rgba(15, 23, 42, 0.95);
+    --rw-accent: #a855f7;
+    --rw-accent-glow: rgba(168, 85, 247, 0.4);
+    --rw-accent-secondary: #22d3ee;
+    --rw-gradient-primary: linear-gradient(135deg, #a855f7, #6366f1);
+}
+
+/* ========================================
+   MINIMAL DARK (Clean, subtle)
+   ======================================== */
+
+.radio-widget[data-template="minimal-dark"] {
+    --rw-bg: #111111;
+    --rw-bg-card: rgba(20, 20, 20, 0.98);
+    --rw-bg-hover: rgba(40, 40, 40, 0.8);
+    --rw-border: rgba(50, 50, 50, 0.6);
+    --rw-border-hover: rgba(80, 80, 80, 0.8);
+    --rw-accent: #ffffff;
+    --rw-accent-glow: rgba(255, 255, 255, 0.15);
+    --rw-accent-secondary: #888888;
+    --rw-gradient-primary: linear-gradient(135deg, #333333, #222222);
+    --rw-text: #ffffff;
+    --rw-text-dim: #999999;
+    --rw-text-muted: #666666;
+    --rw-radius: 8px;
+    --rw-radius-sm: 4px;
+}
+
+.radio-widget[data-template="minimal-dark"] .rw-play-btn {
+    background: #ffffff;
+    color: #111111;
+    box-shadow: none;
+}
+
+.radio-widget[data-template="minimal-dark"] .rw-play-btn:hover {
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+}
+
+.radio-widget[data-template="minimal-dark"] .rw-eq-bar {
+    background: #ffffff;
+}
+
+/* ========================================
+   MINIMAL LIGHT (Light theme)
+   ======================================== */
+
+.radio-widget[data-template="minimal-light"] {
+    --rw-bg: #f8fafc;
+    --rw-bg-card: rgba(255, 255, 255, 0.98);
+    --rw-bg-hover: rgba(241, 245, 249, 0.9);
+    --rw-border: rgba(226, 232, 240, 0.8);
+    --rw-border-hover: rgba(168, 85, 247, 0.4);
+    --rw-accent: #7c3aed;
+    --rw-accent-glow: rgba(124, 58, 237, 0.2);
+    --rw-accent-secondary: #06b6d4;
+    --rw-gradient-primary: linear-gradient(135deg, #7c3aed, #4f46e5);
+    --rw-text: #1e293b;
+    --rw-text-dim: #475569;
+    --rw-text-muted: #94a3b8;
+    --rw-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.radio-widget[data-template="minimal-light"] .rw-progress-bar {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.radio-widget[data-template="minimal-light"] .rw-volume-slider {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.radio-widget[data-template="minimal-light"] .rw-queue-item {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.radio-widget[data-template="minimal-light"] .rw-queue-item:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+/* ========================================
+   NEON (Cyberpunk vibes)
+   ======================================== */
+
+.radio-widget[data-template="neon"] {
+    --rw-bg: #0d0d0d;
+    --rw-bg-card: rgba(10, 10, 10, 0.95);
+    --rw-bg-hover: rgba(30, 30, 30, 0.8);
+    --rw-border: rgba(0, 255, 136, 0.2);
+    --rw-border-hover: rgba(0, 255, 136, 0.5);
+    --rw-accent: #00ff88;
+    --rw-accent-glow: rgba(0, 255, 136, 0.4);
+    --rw-accent-secondary: #ff00ff;
+    --rw-gradient-primary: linear-gradient(135deg, #00ff88, #00ccff);
+    --rw-text: #00ff88;
+    --rw-text-dim: #00cc6a;
+    --rw-text-muted: #008855;
+    --rw-favorite: #ff00ff;
+    --rw-success: #00ff88;
+    --rw-error: #ff0044;
+}
+
+.radio-widget[data-template="neon"] {
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.2), inset 0 0 60px rgba(0, 255, 136, 0.03);
+}
+
+.radio-widget[data-template="neon"] .rw-play-btn {
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+}
+
+.radio-widget[data-template="neon"] .rw-track-title {
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+.radio-widget[data-template="neon"] .rw-eq-bar {
+    background: linear-gradient(180deg, #00ff88, #00ccff);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+.radio-widget[data-template="neon"] .rw-progress-fill {
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+/* ========================================
+   SUNSET (Warm orange/pink gradient)
+   ======================================== */
+
+.radio-widget[data-template="sunset"] {
+    --rw-bg: #1a0a15;
+    --rw-bg-card: rgba(30, 15, 25, 0.95);
+    --rw-bg-hover: rgba(50, 25, 40, 0.8);
+    --rw-border: rgba(255, 100, 100, 0.2);
+    --rw-border-hover: rgba(255, 150, 100, 0.4);
+    --rw-accent: #ff6b35;
+    --rw-accent-glow: rgba(255, 107, 53, 0.4);
+    --rw-accent-secondary: #ff9a8b;
+    --rw-gradient-primary: linear-gradient(135deg, #ff6b35, #f72585);
+    --rw-text: #fff1e6;
+    --rw-text-dim: #ffb4a2;
+    --rw-text-muted: #b5838d;
+    --rw-favorite: #ff006e;
+}
+
+.radio-widget[data-template="sunset"] .rw-eq-bar {
+    background: linear-gradient(180deg, #ff6b35, #f72585);
+}
+
+/* ========================================
+   OCEAN (Cool blue tones)
+   ======================================== */
+
+.radio-widget[data-template="ocean"] {
+    --rw-bg: #0a1628;
+    --rw-bg-card: rgba(10, 25, 45, 0.95);
+    --rw-bg-hover: rgba(20, 40, 70, 0.8);
+    --rw-border: rgba(56, 189, 248, 0.2);
+    --rw-border-hover: rgba(56, 189, 248, 0.4);
+    --rw-accent: #38bdf8;
+    --rw-accent-glow: rgba(56, 189, 248, 0.4);
+    --rw-accent-secondary: #22d3ee;
+    --rw-gradient-primary: linear-gradient(135deg, #0ea5e9, #6366f1);
+    --rw-text: #e0f2fe;
+    --rw-text-dim: #7dd3fc;
+    --rw-text-muted: #38bdf8;
+    --rw-favorite: #f472b6;
+}
+
+.radio-widget[data-template="ocean"] .rw-eq-bar {
+    background: linear-gradient(180deg, #38bdf8, #6366f1);
+}
+
+/* ========================================
+   FOREST (Natural green tones)
+   ======================================== */
+
+.radio-widget[data-template="forest"] {
+    --rw-bg: #0f1f13;
+    --rw-bg-card: rgba(15, 35, 20, 0.95);
+    --rw-bg-hover: rgba(25, 50, 30, 0.8);
+    --rw-border: rgba(34, 197, 94, 0.2);
+    --rw-border-hover: rgba(34, 197, 94, 0.4);
+    --rw-accent: #22c55e;
+    --rw-accent-glow: rgba(34, 197, 94, 0.4);
+    --rw-accent-secondary: #86efac;
+    --rw-gradient-primary: linear-gradient(135deg, #22c55e, #059669);
+    --rw-text: #dcfce7;
+    --rw-text-dim: #86efac;
+    --rw-text-muted: #4ade80;
+    --rw-favorite: #f472b6;
+}
+
+.radio-widget[data-template="forest"] .rw-eq-bar {
+    background: linear-gradient(180deg, #22c55e, #059669);
+}
+
+/* ========================================
+   RETRO (80s arcade vibes)
+   ======================================== */
+
+.radio-widget[data-template="retro"] {
+    --rw-bg: #1a0033;
+    --rw-bg-card: rgba(30, 0, 60, 0.95);
+    --rw-bg-hover: rgba(50, 0, 100, 0.8);
+    --rw-border: rgba(255, 0, 255, 0.3);
+    --rw-border-hover: rgba(0, 255, 255, 0.5);
+    --rw-accent: #ff00ff;
+    --rw-accent-glow: rgba(255, 0, 255, 0.5);
+    --rw-accent-secondary: #00ffff;
+    --rw-gradient-primary: linear-gradient(135deg, #ff00ff, #00ffff);
+    --rw-text: #ffffff;
+    --rw-text-dim: #ff99ff;
+    --rw-text-muted: #cc66cc;
+    --rw-radius: 0;
+    --rw-radius-sm: 0;
+    --rw-radius-lg: 0;
+}
+
+.radio-widget[data-template="retro"] {
+    border: 3px solid;
+    border-image: linear-gradient(135deg, #ff00ff, #00ffff) 1;
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.3), 0 0 40px rgba(0, 255, 255, 0.2);
+}
+
+.radio-widget[data-template="retro"] .rw-play-btn {
+    border-radius: 0;
+}
+
+.radio-widget[data-template="retro"] .rw-eq-bar {
+    background: linear-gradient(180deg, #ff00ff, #00ffff);
+    border-radius: 0;
+}
+
+.radio-widget[data-template="retro"] .rw-progress-bar,
+.radio-widget[data-template="retro"] .rw-progress-fill {
+    border-radius: 0;
+}
+
+/* ========================================
+   GLASS (Frosted glass effect)
+   ======================================== */
+
+.radio-widget[data-template="glass"] {
+    --rw-bg: transparent;
+    --rw-bg-card: rgba(255, 255, 255, 0.1);
+    --rw-bg-hover: rgba(255, 255, 255, 0.15);
+    --rw-border: rgba(255, 255, 255, 0.2);
+    --rw-border-hover: rgba(255, 255, 255, 0.4);
+    --rw-accent: #ffffff;
+    --rw-accent-glow: rgba(255, 255, 255, 0.3);
+    --rw-accent-secondary: rgba(255, 255, 255, 0.7);
+    --rw-gradient-primary: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    --rw-text: #ffffff;
+    --rw-text-dim: rgba(255, 255, 255, 0.8);
+    --rw-text-muted: rgba(255, 255, 255, 0.5);
+}
+
+.radio-widget[data-template="glass"] {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+}
+
+.radio-widget[data-template="glass"] .rw-play-btn {
+    background: rgba(255, 255, 255, 0.9);
+    color: #1a1a2e;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.radio-widget[data-template="glass"] .rw-eq-bar {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.radio-widget[data-template="glass"] .rw-progress-bar {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.radio-widget[data-template="glass"] .rw-progress-fill {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* ========================================
+   SPOTIFY-LIKE (Green accent, dark bg)
+   ======================================== */
+
+.radio-widget[data-template="spotify"] {
+    --rw-bg: #121212;
+    --rw-bg-card: #181818;
+    --rw-bg-hover: #282828;
+    --rw-border: #282828;
+    --rw-border-hover: #1db954;
+    --rw-accent: #1db954;
+    --rw-accent-glow: rgba(29, 185, 84, 0.3);
+    --rw-accent-secondary: #1ed760;
+    --rw-gradient-primary: linear-gradient(135deg, #1db954, #1ed760);
+    --rw-text: #ffffff;
+    --rw-text-dim: #b3b3b3;
+    --rw-text-muted: #727272;
+    --rw-favorite: #1db954;
+    --rw-radius: 8px;
+    --rw-radius-sm: 4px;
+}
+
+.radio-widget[data-template="spotify"] .rw-play-btn {
+    box-shadow: none;
+}
+
+.radio-widget[data-template="spotify"] .rw-play-btn:hover {
+    transform: scale(1.06);
+}
+
+.radio-widget[data-template="spotify"] .rw-eq-bar {
+    background: #1db954;
+}
+
+/* ========================================
+   MONOCHROME (Pure black and white)
+   ======================================== */
+
+.radio-widget[data-template="monochrome"] {
+    --rw-bg: #000000;
+    --rw-bg-card: #0a0a0a;
+    --rw-bg-hover: #1a1a1a;
+    --rw-border: #333333;
+    --rw-border-hover: #555555;
+    --rw-accent: #ffffff;
+    --rw-accent-glow: rgba(255, 255, 255, 0.1);
+    --rw-accent-secondary: #cccccc;
+    --rw-gradient-primary: linear-gradient(135deg, #ffffff, #cccccc);
+    --rw-text: #ffffff;
+    --rw-text-dim: #aaaaaa;
+    --rw-text-muted: #666666;
+    --rw-success: #ffffff;
+    --rw-error: #888888;
+    --rw-favorite: #ffffff;
+}
+
+.radio-widget[data-template="monochrome"] .rw-play-btn {
+    background: #ffffff;
+    color: #000000;
+    box-shadow: none;
+}
+
+.radio-widget[data-template="monochrome"] .rw-eq-bar {
+    background: #ffffff;
+}
+
+.radio-widget[data-template="monochrome"] .rw-vote-up:hover,
+.radio-widget[data-template="monochrome"] .rw-vote-up.voted {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #ffffff;
+    color: #ffffff;
+}
+
+.radio-widget[data-template="monochrome"] .rw-vote-down:hover,
+.radio-widget[data-template="monochrome"] .rw-vote-down.voted {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #888888;
+    color: #888888;
+}

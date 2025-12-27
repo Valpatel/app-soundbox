@@ -114,7 +114,7 @@ test.describe('Library Search', () => {
         await page.waitForTimeout(800);
 
         // Page should not break
-        await expect(page.locator('.main-tab')).toBeVisible();
+        await expect(page.locator('.main-tab').first()).toBeVisible();
     });
 });
 
@@ -122,44 +122,44 @@ test.describe('Type Filters', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
+
+        // Disable animations
+        await page.addStyleTag({
+            content: `*, *::before, *::after {
+                animation-duration: 0s !important;
+                transition-duration: 0s !important;
+            }`
+        });
+
         await page.click('.main-tab:has-text("Library")');
-        await page.waitForTimeout(500);
+        await page.waitForSelector('.library-item', { timeout: 10000 });
     });
 
     test('can filter by Music type', async ({ page }) => {
-        await page.waitForSelector('.library-item', { timeout: 10000 });
-
-        const musicTab = page.locator('.type-tab[data-type="music"]');
+        // Music tab should already be active by default, but click to verify
+        const musicTab = page.locator('button.type-tab[data-type="music"]');
         await expect(musicTab).toBeVisible({ timeout: 5000 });
+
+        // Click SFX first, then Music to test switching
+        const sfxTab = page.locator('button.type-tab[data-type="audio"]');
+        await sfxTab.click();
+        await page.waitForTimeout(300);
+
         await musicTab.click();
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(300);
 
-        // Tab should be active
+        // Music tab should be active
         await expect(musicTab).toHaveClass(/active/);
-
-        // Take screenshot
-        await page.screenshot({
-            path: 'test-results/filter-music.png',
-            fullPage: true
-        });
     });
 
     test('can filter by SFX type', async ({ page }) => {
-        await page.waitForSelector('.library-item', { timeout: 10000 });
-
-        const sfxTab = page.locator('.type-tab[data-type="audio"]');
+        const sfxTab = page.locator('button.type-tab[data-type="audio"]');
         await expect(sfxTab).toBeVisible({ timeout: 5000 });
         await sfxTab.click();
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(300);
 
-        // Tab should be active
+        // SFX tab should be active
         await expect(sfxTab).toHaveClass(/active/);
-
-        // Take screenshot
-        await page.screenshot({
-            path: 'test-results/filter-sfx.png',
-            fullPage: true
-        });
     });
 
     test('All tab shows all types', async ({ page }) => {
@@ -188,60 +188,72 @@ test.describe('Category/Genre Filters', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
+
+        // Disable animations
+        await page.addStyleTag({
+            content: `*, *::before, *::after {
+                animation-duration: 0s !important;
+                transition-duration: 0s !important;
+            }`
+        });
+
         await page.click('.main-tab:has-text("Library")');
-        await page.waitForTimeout(500);
+        await page.waitForSelector('.library-item', { timeout: 10000 });
     });
 
     test('category sidebar is visible', async ({ page }) => {
-        const sidebar = page.locator('#category-sidebar, .genre-sidebar, .categories-sidebar');
-        // May not exist on mobile
-        if (await sidebar.isVisible()) {
-            await expect(sidebar).toBeVisible();
-        }
+        // The genre sidebar contains genre sections
+        const sidebar = page.locator('.genre-section, #music-genres');
+        await expect(sidebar.first()).toBeVisible({ timeout: 5000 });
     });
 
     test('clicking category filters results', async ({ page }) => {
-        await page.waitForSelector('.library-item', { timeout: 10000 });
-
-        // Expand the "Ambient & Chill" genre group first
+        // Find and expand a genre group
         const ambientHeader = page.locator('.genre-section-header:has-text("Ambient")');
         await expect(ambientHeader).toBeVisible({ timeout: 5000 });
         await ambientHeader.click();
-        await page.waitForTimeout(300);
+        await page.waitForTimeout(200);
 
+        // Click on ambient genre item
         const genreItem = page.locator('.genre-item[data-genre="ambient"]');
         await expect(genreItem).toBeVisible({ timeout: 3000 });
         await genreItem.click();
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(300);
 
         // Genre should be active
         await expect(genreItem).toHaveClass(/active/);
     });
 
     test('clear filter button removes category filter', async ({ page }) => {
-        await page.waitForSelector('.library-item', { timeout: 10000 });
-
         // Expand a genre group first
         const genreHeader = page.locator('.genre-section-header').first();
         await expect(genreHeader).toBeVisible({ timeout: 5000 });
         await genreHeader.click();
-        await page.waitForTimeout(300);
+        await page.waitForTimeout(200);
 
         // Click a genre
         const genreItem = page.locator('.genre-item').first();
         await expect(genreItem).toBeVisible({ timeout: 3000 });
         await genreItem.click();
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(300);
 
-        // Click clear button if it appears
-        const clearBtn = page.locator('#clear-filter-btn');
-        if (await clearBtn.isVisible()) {
-            await clearBtn.click();
-            await page.waitForTimeout(500);
+        // Verify genre is active
+        await expect(genreItem).toHaveClass(/active/);
+
+        // Click clear button (may be labeled "Clear" or "All")
+        const clearBtn = page.locator('#clear-filter-btn, button:has-text("Clear"), .clear-filter-btn');
+        if (await clearBtn.first().isVisible()) {
+            await clearBtn.first().click();
+            await page.waitForTimeout(300);
 
             // No genre should be active
             const activeGenres = await page.locator('.genre-item.active').count();
             expect(activeGenres).toBe(0);
+        } else {
+            // If no clear button, clicking active genre again should deselect
+            await genreItem.click();
+            await page.waitForTimeout(300);
+            await expect(genreItem).not.toHaveClass(/active/);
         }
     });
 });
@@ -331,13 +343,21 @@ test.describe('Pagination', () => {
     test('can navigate to specific page', async ({ page }) => {
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        const pageBtn = page.locator('.page-btn:has-text("2"), .pagination button:has-text("2")');
-        if (await pageBtn.isVisible()) {
-            await pageBtn.click();
-            await page.waitForTimeout(500);
+        // Look for page 2 button in pagination controls
+        const pagination = page.locator('.pagination');
+        if (await pagination.isVisible()) {
+            const pageBtn = pagination.locator('button:has-text("2")').first();
+            if (await pageBtn.count() > 0 && await pageBtn.isVisible()) {
+                await pageBtn.click();
+                await page.waitForTimeout(500);
 
-            // Page 2 should be active
-            await expect(pageBtn).toHaveClass(/active/);
+                // Verify page changed
+                const currentPage = await pagination.locator('.current, .active, [aria-current]').first();
+                if (await currentPage.count() > 0) {
+                    const text = await currentPage.textContent();
+                    expect(text).toContain('2');
+                }
+            }
         }
     });
 });

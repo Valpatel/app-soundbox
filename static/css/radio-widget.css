@@ -1,0 +1,826 @@
+/**
+ * Radio Widget - Base Styles
+ * Core styling for the reusable radio widget component
+ */
+
+/* ========================================
+   CSS CUSTOM PROPERTIES (THEME VARIABLES)
+   ======================================== */
+
+.radio-widget {
+    /* Colors - Default Dark Theme */
+    --rw-bg: #0a0e17;
+    --rw-bg-card: rgba(15, 23, 42, 0.95);
+    --rw-bg-hover: rgba(30, 41, 59, 0.8);
+    --rw-border: rgba(71, 85, 105, 0.4);
+    --rw-border-hover: rgba(168, 85, 247, 0.5);
+
+    /* Text */
+    --rw-text: #f1f5f9;
+    --rw-text-dim: #94a3b8;
+    --rw-text-muted: #64748b;
+
+    /* Accent Colors */
+    --rw-accent: #a855f7;
+    --rw-accent-glow: rgba(168, 85, 247, 0.4);
+    --rw-accent-secondary: #22d3ee;
+
+    /* Semantic Colors */
+    --rw-success: #22c55e;
+    --rw-warning: #f59e0b;
+    --rw-error: #ef4444;
+    --rw-favorite: #f472b6;
+
+    /* Gradients */
+    --rw-gradient-primary: linear-gradient(135deg, #a855f7, #6366f1);
+    --rw-gradient-glow: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(99, 102, 241, 0.3));
+
+    /* Sizing */
+    --rw-radius: 12px;
+    --rw-radius-sm: 8px;
+    --rw-radius-lg: 16px;
+    --rw-spacing: 12px;
+    --rw-spacing-sm: 8px;
+    --rw-spacing-lg: 16px;
+
+    /* Typography */
+    --rw-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --rw-font-size: 14px;
+    --rw-font-size-sm: 12px;
+    --rw-font-size-lg: 16px;
+    --rw-font-size-xl: 20px;
+
+    /* Transitions */
+    --rw-transition: 0.2s ease;
+    --rw-transition-slow: 0.3s ease;
+
+    /* Shadows */
+    --rw-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    --rw-shadow-glow: 0 0 20px var(--rw-accent-glow);
+}
+
+/* ========================================
+   BASE CONTAINER
+   ======================================== */
+
+.radio-widget {
+    font-family: var(--rw-font);
+    font-size: var(--rw-font-size);
+    color: var(--rw-text);
+    background: var(--rw-bg-card);
+    border: 1px solid var(--rw-border);
+    border-radius: var(--rw-radius);
+    box-shadow: var(--rw-shadow);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--rw-spacing);
+    padding: var(--rw-spacing);
+    box-sizing: border-box;
+    transition: border-color var(--rw-transition), box-shadow var(--rw-transition);
+}
+
+.radio-widget:hover {
+    border-color: var(--rw-border-hover);
+}
+
+.radio-widget * {
+    box-sizing: border-box;
+}
+
+/* ========================================
+   BUTTONS - BASE
+   ======================================== */
+
+.radio-widget .rw-btn {
+    background: transparent;
+    border: none;
+    color: var(--rw-text-dim);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--rw-radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--rw-transition);
+    font-family: inherit;
+}
+
+.radio-widget .rw-btn:hover {
+    color: var(--rw-text);
+    background: var(--rw-bg-hover);
+}
+
+.radio-widget .rw-btn:active {
+    transform: scale(0.95);
+}
+
+.radio-widget .rw-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Play Button - Large Circular */
+.radio-widget .rw-play-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 50%;
+    background: var(--rw-gradient-primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--rw-transition);
+    box-shadow: 0 4px 15px var(--rw-accent-glow);
+    position: relative;
+}
+
+.radio-widget .rw-play-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 25px var(--rw-accent-glow);
+}
+
+.radio-widget .rw-play-btn:active {
+    transform: scale(0.98);
+}
+
+.radio-widget .rw-play-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Show/hide play/pause icons based on state */
+.radio-widget .rw-play-btn .rw-icon-pause {
+    display: none;
+}
+
+.radio-widget .rw-play-btn.playing .rw-icon-play {
+    display: none;
+}
+
+.radio-widget .rw-play-btn.playing .rw-icon-pause {
+    display: block;
+}
+
+/* ========================================
+   SKIP BUTTONS
+   ======================================== */
+
+.radio-widget .rw-skip-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.radio-widget .rw-prev-btn,
+.radio-widget .rw-next-btn {
+    width: 36px;
+    height: 36px;
+}
+
+.radio-widget .rw-prev-btn svg,
+.radio-widget .rw-next-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ========================================
+   TRACK INFO
+   ======================================== */
+
+.radio-widget .rw-track-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.radio-widget .rw-track-title {
+    font-weight: 500;
+    color: var(--rw-text);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.radio-widget .rw-track-info.rw-truncate .rw-track-title {
+    white-space: nowrap;
+}
+
+.radio-widget .rw-track-duration {
+    font-size: var(--rw-font-size-sm);
+    color: var(--rw-text-muted);
+}
+
+/* ========================================
+   PROGRESS BAR
+   ======================================== */
+
+.radio-widget .rw-progress-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.radio-widget .rw-progress-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.radio-widget .rw-progress-bar:hover {
+    height: 6px;
+}
+
+.radio-widget .rw-progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: var(--rw-gradient-primary);
+    border-radius: 2px;
+    transition: width 0.1s linear;
+}
+
+.radio-widget .rw-time-current,
+.radio-widget .rw-time-total {
+    font-size: 11px;
+    color: var(--rw-text-muted);
+    min-width: 35px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ========================================
+   VOLUME CONTROL
+   ======================================== */
+
+.radio-widget .rw-volume-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.radio-widget .rw-mute-btn {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+}
+
+.radio-widget .rw-mute-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Show/hide volume icons based on mute state */
+.radio-widget .rw-mute-btn .rw-icon-muted {
+    display: none;
+}
+
+.radio-widget .rw-mute-btn.muted .rw-icon-volume {
+    display: none;
+}
+
+.radio-widget .rw-mute-btn.muted .rw-icon-muted {
+    display: block;
+    color: var(--rw-error);
+}
+
+/* Volume Slider */
+.radio-widget .rw-volume-slider {
+    width: 80px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.radio-widget .rw-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--rw-accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--rw-accent-glow);
+}
+
+.radio-widget .rw-volume-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: var(--rw-accent);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--rw-accent-glow);
+}
+
+/* ========================================
+   EQ VISUALIZER (CSS Animation)
+   ======================================== */
+
+.radio-widget .rw-eq-visualizer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    height: 24px;
+    padding: 0 4px;
+}
+
+.radio-widget .rw-eq-bar {
+    width: 4px;
+    background: var(--rw-gradient-primary);
+    border-radius: 2px;
+    animation: rw-eq-bounce 0.5s ease-in-out infinite alternate;
+    opacity: 0.3;
+}
+
+.radio-widget .rw-eq-visualizer.playing .rw-eq-bar {
+    opacity: 1;
+}
+
+.radio-widget .rw-eq-bar:nth-child(1) { height: 40%; animation-delay: 0s; }
+.radio-widget .rw-eq-bar:nth-child(2) { height: 70%; animation-delay: 0.1s; }
+.radio-widget .rw-eq-bar:nth-child(3) { height: 100%; animation-delay: 0.2s; }
+.radio-widget .rw-eq-bar:nth-child(4) { height: 60%; animation-delay: 0.3s; }
+.radio-widget .rw-eq-bar:nth-child(5) { height: 30%; animation-delay: 0.4s; }
+
+@keyframes rw-eq-bounce {
+    0% { transform: scaleY(0.3); }
+    100% { transform: scaleY(1); }
+}
+
+/* ========================================
+   FAVORITE BUTTON
+   ======================================== */
+
+.radio-widget .rw-favorite-btn {
+    color: var(--rw-text-muted);
+}
+
+.radio-widget .rw-favorite-btn:hover {
+    color: var(--rw-favorite);
+}
+
+.radio-widget .rw-favorite-btn.favorited {
+    color: var(--rw-favorite);
+}
+
+.radio-widget .rw-favorite-btn.favorited svg {
+    filter: drop-shadow(0 0 6px var(--rw-favorite));
+}
+
+/* ========================================
+   VOTE BUTTONS
+   ======================================== */
+
+.radio-widget .rw-vote-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.radio-widget .rw-vote-up,
+.radio-widget .rw-vote-down {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-radius: var(--rw-radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+}
+
+.radio-widget .rw-vote-up:hover {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: var(--rw-success);
+}
+
+.radio-widget .rw-vote-down:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--rw-error);
+}
+
+.radio-widget .rw-vote-up.voted {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: var(--rw-success);
+    color: var(--rw-success);
+}
+
+.radio-widget .rw-vote-down.voted {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: var(--rw-error);
+    color: var(--rw-error);
+}
+
+.radio-widget .rw-vote-up svg,
+.radio-widget .rw-vote-down svg {
+    width: 16px;
+    height: 16px;
+}
+
+.radio-widget .rw-vote-count {
+    font-size: var(--rw-font-size-sm);
+    font-weight: 500;
+    min-width: 16px;
+    text-align: center;
+}
+
+/* ========================================
+   CONTROLS ROW (for medium/large widgets)
+   ======================================== */
+
+.radio-widget .rw-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    z-index: 1;
+    position: relative;
+}
+
+/* ========================================
+   SMALL VISUALIZER (for medium/large widgets)
+   ======================================== */
+
+.radio-widget .rw-visualizer-small {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.radio-widget .rw-visualizer-canvas-small {
+    width: 100%;
+    height: 100%;
+    opacity: 0.6;
+}
+
+/* ========================================
+   QUEUE PREVIEW
+   ======================================== */
+
+.radio-widget .rw-queue-preview {
+    border-top: 1px solid var(--rw-border);
+    padding-top: var(--rw-spacing);
+    margin-top: var(--rw-spacing-sm);
+}
+
+.radio-widget .rw-queue-preview h4 {
+    font-size: var(--rw-font-size-sm);
+    color: var(--rw-text-muted);
+    margin: 0 0 8px 0;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.radio-widget .rw-queue-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.radio-widget .rw-queue-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--rw-radius-sm);
+    font-size: var(--rw-font-size-sm);
+}
+
+.radio-widget .rw-queue-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.radio-widget .rw-queue-num {
+    color: var(--rw-text-muted);
+    font-weight: 500;
+    min-width: 16px;
+}
+
+.radio-widget .rw-queue-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--rw-text-dim);
+}
+
+.radio-widget .rw-queue-empty {
+    color: var(--rw-text-muted);
+    font-size: var(--rw-font-size-sm);
+    text-align: center;
+    padding: 12px;
+}
+
+/* ========================================
+   MOOD SELECTOR
+   ======================================== */
+
+/* ========================================
+   STATION SELECTOR
+   ======================================== */
+
+.radio-widget .rw-station-selector {
+    position: relative;
+    z-index: 10;
+}
+
+.radio-widget .rw-station-dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--rw-border);
+    border-radius: 20px;
+    color: var(--rw-text);
+    font-size: var(--rw-font-size-sm);
+    cursor: pointer;
+    transition: all var(--rw-transition);
+}
+
+.radio-widget .rw-station-dropdown-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--rw-accent);
+}
+
+.radio-widget .rw-station-dropdown-btn svg {
+    flex-shrink: 0;
+}
+
+.radio-widget .rw-current-station {
+    font-weight: 500;
+}
+
+.radio-widget .rw-dropdown-arrow {
+    opacity: 0.6;
+    transition: transform var(--rw-transition);
+}
+
+.radio-widget .rw-station-selector.open .rw-dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.radio-widget .rw-station-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 200px;
+    background: var(--rw-bg-card);
+    border: 1px solid var(--rw-border);
+    border-radius: var(--rw-radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    z-index: 100;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+}
+
+.radio-widget .rw-station-menu.hidden {
+    display: none;
+}
+
+.radio-widget .rw-station-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    border-radius: var(--rw-radius-sm);
+    color: var(--rw-text-dim);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all var(--rw-transition);
+    text-align: center;
+}
+
+.radio-widget .rw-station-option:hover {
+    background: rgba(168, 85, 247, 0.15);
+    color: var(--rw-text);
+}
+
+.radio-widget .rw-station-option.active {
+    background: var(--rw-gradient-primary);
+    color: white;
+}
+
+.radio-widget .rw-station-option svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.radio-widget .rw-station-option:hover svg,
+.radio-widget .rw-station-option.active svg {
+    opacity: 1;
+}
+
+.radio-widget .rw-mood-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: var(--rw-spacing);
+    border-top: 1px solid var(--rw-border);
+}
+
+.radio-widget .rw-mood-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--rw-border);
+    color: var(--rw-text-dim);
+    font-size: var(--rw-font-size-sm);
+    cursor: pointer;
+    transition: all var(--rw-transition);
+    text-transform: capitalize;
+}
+
+.radio-widget .rw-mood-btn:hover {
+    background: var(--rw-gradient-glow);
+    border-color: var(--rw-accent);
+    color: var(--rw-text);
+}
+
+.radio-widget .rw-mood-btn.active {
+    background: var(--rw-gradient-primary);
+    border-color: transparent;
+    color: white;
+}
+
+/* ========================================
+   FULLSCREEN VISUALIZER CANVAS
+   ======================================== */
+
+.radio-widget .rw-visualizer-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 0.6;
+}
+
+/* ========================================
+   LOADING STATE
+   ======================================== */
+
+.radio-widget.loading .rw-play-btn::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px solid transparent;
+    border-top-color: white;
+    border-radius: 50%;
+    animation: rw-spin 0.8s linear infinite;
+}
+
+@keyframes rw-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+   ======================================== */
+
+@media (max-width: 480px) {
+    .radio-widget {
+        --rw-spacing: 10px;
+        --rw-font-size: 13px;
+    }
+
+    .radio-widget .rw-volume-slider {
+        width: 60px;
+    }
+}
+
+/* ========================================
+   GRAPHLINGS BRANDING (Embedded Widgets)
+   ======================================== */
+
+.radio-widget .rw-branding {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 0;
+    border-top: 1px solid var(--rw-border);
+    margin-top: auto;
+    opacity: 0.6;
+    transition: opacity var(--rw-transition);
+}
+
+.radio-widget .rw-branding:hover {
+    opacity: 1;
+}
+
+.radio-widget .rw-branding-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--rw-text-muted);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.radio-widget .rw-branding-link:hover {
+    color: var(--rw-accent);
+}
+
+.radio-widget .rw-branding-logo {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.radio-widget .rw-branding-text {
+    letter-spacing: 0.3px;
+}
+
+/* Ultra-minimal branding - show under play button */
+.radio-widget-ultra-minimal .rw-branding {
+    position: absolute;
+    bottom: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: none;
+    padding: 0;
+    white-space: nowrap;
+}
+
+.radio-widget-ultra-minimal .rw-branding-logo {
+    display: none;
+}
+
+.radio-widget-ultra-minimal .rw-branding-text {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+/* Minimal branding - centered at bottom */
+.radio-widget-minimal .rw-branding {
+    border: none;
+    padding: 4px 0 0;
+    justify-content: center;
+    width: 100%;
+}
+
+.radio-widget-minimal .rw-branding-logo {
+    width: 14px;
+    height: 14px;
+}
+
+.radio-widget-minimal .rw-branding-text {
+    font-size: 10px;
+}
+
+/* Small branding - compact */
+.radio-widget-small .rw-branding {
+    padding: 4px 0;
+}
+
+/* Fullscreen branding - corner badge */
+.radio-widget-fullscreen .rw-branding {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    border: none;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    border-radius: var(--rw-radius-sm);
+    z-index: 100;
+}
+
+/* Disable branding for internal use */
+.radio-widget[data-branding="false"] .rw-branding {
+    display: none !important;
+}

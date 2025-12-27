@@ -53,14 +53,12 @@ git clone git@github.com:Valpatel/app-soundbox.git
 cd app-soundbox
 
 # Run setup script (installs system deps, creates venv, installs Python packages)
+# Note: May require sudo for system dependencies
 chmod +x setup.sh
 ./setup.sh
 
-# Activate virtual environment
-source venv/bin/activate
-
 # Start the server
-python app.py
+./start.sh
 ```
 
 Open http://localhost:5309 in your browser.

@@ -261,20 +261,23 @@ CREATE TABLE IF NOT EXISTS tag_suggestions (
     generation_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     suggested_category TEXT NOT NULL,  -- The category the user thinks fits better
+    action TEXT NOT NULL DEFAULT 'add',  -- 'add' or 'remove'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (generation_id) REFERENCES generations(id) ON DELETE CASCADE,
-    UNIQUE(generation_id, user_id, suggested_category)
+    UNIQUE(generation_id, user_id, suggested_category, action)
 );
 
 -- Tag Consensus table to track when categories should be updated
 CREATE TABLE IF NOT EXISTS tag_consensus (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    generation_id TEXT NOT NULL UNIQUE,
-    new_category TEXT NOT NULL,
+    generation_id TEXT NOT NULL,
+    category TEXT NOT NULL,
+    action TEXT NOT NULL DEFAULT 'add',  -- 'add' or 'remove'
     suggestion_count INTEGER DEFAULT 1,
     applied BOOLEAN DEFAULT FALSE,
     applied_at TIMESTAMP,
-    FOREIGN KEY (generation_id) REFERENCES generations(id) ON DELETE CASCADE
+    FOREIGN KEY (generation_id) REFERENCES generations(id) ON DELETE CASCADE,
+    UNIQUE(generation_id, category, action)
 );
 
 -- Indexes
@@ -364,6 +367,108 @@ def init_db():
 
         # Index for fast category filtering
         conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_category ON generations(category)")
+
+        # Migration: Add license_type column for differentiating AI-generated (CC0) vs human-made content
+        try:
+            conn.execute("ALTER TABLE generations ADD COLUMN license_type TEXT DEFAULT 'cc0'")
+            print("[DB] Added license_type column to generations table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        # Migration: Add creator tracking for user uploads from Graphlings widget
+        try:
+            conn.execute("ALTER TABLE generations ADD COLUMN creator_id TEXT")
+            print("[DB] Added creator_id column to generations table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        try:
+            conn.execute("ALTER TABLE generations ADD COLUMN creator_name TEXT")
+            print("[DB] Added creator_name column to generations table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        try:
+            conn.execute("ALTER TABLE generations ADD COLUMN is_user_upload BOOLEAN DEFAULT FALSE")
+            print("[DB] Added is_user_upload column to generations table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        # Index for creator lookups
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_creator ON generations(creator_id)")
+
+        # Migration: Add play/download tracking for analytics
+        try:
+            conn.execute("ALTER TABLE generations ADD COLUMN play_count INTEGER DEFAULT 0")
+            print("[DB] Added play_count column to generations table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        try:
+            conn.execute("ALTER TABLE generations ADD COLUMN unique_plays INTEGER DEFAULT 0")
+            print("[DB] Added unique_plays column to generations table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        try:
+            conn.execute("ALTER TABLE generations ADD COLUMN download_count INTEGER DEFAULT 0")
+            print("[DB] Added download_count column to generations table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        # Create plays tracking table for unique play counting
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS play_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                generation_id TEXT NOT NULL,
+                user_id TEXT,
+                session_id TEXT,
+                played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                play_duration REAL,
+                source TEXT DEFAULT 'radio',
+                FOREIGN KEY (generation_id) REFERENCES generations(id) ON DELETE CASCADE
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_play_events_generation ON play_events(generation_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_play_events_user ON play_events(user_id)")
+
+        # Create downloads tracking table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS download_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                generation_id TEXT NOT NULL,
+                user_id TEXT,
+                downloaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                format TEXT DEFAULT 'wav',
+                FOREIGN KEY (generation_id) REFERENCES generations(id) ON DELETE CASCADE
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_download_events_generation ON download_events(generation_id)")
+
+        # Migration: Add action column to tag_suggestions if missing
+        try:
+            conn.execute("ALTER TABLE tag_suggestions ADD COLUMN action TEXT NOT NULL DEFAULT 'add'")
+            print("[DB] Added action column to tag_suggestions table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        # Migration: Add action column to tag_consensus if missing
+        try:
+            conn.execute("ALTER TABLE tag_consensus ADD COLUMN action TEXT NOT NULL DEFAULT 'add'")
+            print("[DB] Added action column to tag_consensus table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        # Migration: Rename new_category to category in tag_consensus if needed
+        try:
+            # Check if new_category column exists (old schema)
+            cursor = conn.execute("PRAGMA table_info(tag_consensus)")
+            columns = [row[1] for row in cursor.fetchall()]
+            if 'new_category' in columns and 'category' not in columns:
+                # SQLite doesn't support RENAME COLUMN in older versions, so we'll just use new_category
+                pass
+        except sqlite3.OperationalError:
+            pass
 
         conn.commit()
     print("[DB] Database initialized")
@@ -1105,6 +1210,205 @@ def get_recent_tracks(model=None, count=10, min_duration=60, hours=168):
 
 
 # =============================================================================
+# Play & Download Tracking
+# =============================================================================
+
+def record_play(generation_id, user_id=None, session_id=None, play_duration=None, source='radio'):
+    """
+    Record a play event for a track.
+
+    Args:
+        generation_id: The generation ID
+        user_id: Optional user ID (from Graphlings widget or anonymous)
+        session_id: Browser session ID for unique counting
+        play_duration: How long they listened (seconds)
+        source: Where it was played from ('radio', 'library', 'embed', etc.)
+
+    Returns:
+        dict with updated play counts
+    """
+    with get_db() as conn:
+        # Record the play event
+        conn.execute("""
+            INSERT INTO play_events (generation_id, user_id, session_id, play_duration, source)
+            VALUES (?, ?, ?, ?, ?)
+        """, (generation_id, user_id, session_id, play_duration, source))
+
+        # Update total play count
+        conn.execute("""
+            UPDATE generations SET play_count = play_count + 1 WHERE id = ?
+        """, (generation_id,))
+
+        # Check if this is a unique play (by user_id or session_id)
+        identifier = user_id or session_id
+        if identifier:
+            existing = conn.execute("""
+                SELECT COUNT(*) FROM play_events
+                WHERE generation_id = ? AND (user_id = ? OR session_id = ?)
+            """, (generation_id, identifier, identifier)).fetchone()[0]
+
+            # If this is their first play, increment unique_plays
+            if existing == 1:
+                conn.execute("""
+                    UPDATE generations SET unique_plays = unique_plays + 1 WHERE id = ?
+                """, (generation_id,))
+
+        conn.commit()
+
+        # Get updated counts
+        row = conn.execute("""
+            SELECT play_count, unique_plays FROM generations WHERE id = ?
+        """, (generation_id,)).fetchone()
+
+        return {
+            'play_count': row['play_count'] if row else 0,
+            'unique_plays': row['unique_plays'] if row else 0
+        }
+
+
+def record_download(generation_id, user_id=None, format='wav'):
+    """
+    Record a download event for a track.
+
+    Args:
+        generation_id: The generation ID
+        user_id: Optional user ID
+        format: Download format (wav, mp3, etc.)
+
+    Returns:
+        dict with updated download count
+    """
+    with get_db() as conn:
+        # Record the download event
+        conn.execute("""
+            INSERT INTO download_events (generation_id, user_id, format)
+            VALUES (?, ?, ?)
+        """, (generation_id, user_id, format))
+
+        # Update download count
+        conn.execute("""
+            UPDATE generations SET download_count = download_count + 1 WHERE id = ?
+        """, (generation_id,))
+
+        conn.commit()
+
+        # Get updated count
+        row = conn.execute("""
+            SELECT download_count FROM generations WHERE id = ?
+        """, (generation_id,)).fetchone()
+
+        return {
+            'download_count': row['download_count'] if row else 0
+        }
+
+
+def get_play_stats(generation_id):
+    """Get detailed play statistics for a track."""
+    with get_db() as conn:
+        # Get basic counts
+        row = conn.execute("""
+            SELECT play_count, unique_plays, download_count FROM generations WHERE id = ?
+        """, (generation_id,)).fetchone()
+
+        if not row:
+            return None
+
+        # Get plays by source
+        sources = conn.execute("""
+            SELECT source, COUNT(*) as count FROM play_events
+            WHERE generation_id = ?
+            GROUP BY source
+        """, (generation_id,)).fetchall()
+
+        # Get plays over time (last 7 days)
+        daily = conn.execute("""
+            SELECT date(played_at) as day, COUNT(*) as count FROM play_events
+            WHERE generation_id = ? AND played_at >= datetime('now', '-7 days')
+            GROUP BY day
+            ORDER BY day
+        """, (generation_id,)).fetchall()
+
+        return {
+            'play_count': row['play_count'],
+            'unique_plays': row['unique_plays'],
+            'download_count': row['download_count'],
+            'by_source': {r['source']: r['count'] for r in sources},
+            'daily': [{r['day']: r['count']} for r in daily]
+        }
+
+
+def get_trending_tracks(hours=24, limit=20, model=None):
+    """
+    Get trending tracks based on recent play activity.
+
+    Args:
+        hours: Time window for trending calculation
+        limit: Number of tracks to return
+        model: Optional filter by 'music' or 'audio'
+
+    Returns:
+        List of tracks with play counts
+    """
+    conditions = ["pe.played_at >= datetime('now', ?)"]
+    params = [f'-{hours} hours']
+
+    if model:
+        conditions.append("g.model = ?")
+        params.append(model)
+
+    where_clause = " AND ".join(conditions)
+
+    with get_db() as conn:
+        rows = conn.execute(f"""
+            SELECT g.*, COUNT(pe.id) as recent_plays
+            FROM generations g
+            JOIN play_events pe ON g.id = pe.generation_id
+            WHERE {where_clause}
+            GROUP BY g.id
+            ORDER BY recent_plays DESC
+            LIMIT ?
+        """, params + [limit]).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+def get_most_played(limit=50, model=None, days=None):
+    """
+    Get most played tracks of all time or within a time period.
+
+    Args:
+        limit: Number of tracks to return
+        model: Optional filter by 'music' or 'audio'
+        days: Optional time window in days
+
+    Returns:
+        List of tracks sorted by play count
+    """
+    conditions = []
+    params = []
+
+    if model:
+        conditions.append("model = ?")
+        params.append(model)
+
+    if days:
+        conditions.append("created_at >= datetime('now', ?)")
+        params.append(f'-{days} days')
+
+    where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+    with get_db() as conn:
+        rows = conn.execute(f"""
+            SELECT * FROM generations
+            WHERE {where_clause} AND play_count > 0
+            ORDER BY play_count DESC
+            LIMIT ?
+        """, params + [limit]).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+# =============================================================================
 # Cleanup / Maintenance
 # =============================================================================
 
@@ -1136,7 +1440,7 @@ def get_stats():
 TAG_CONSENSUS_THRESHOLD = 3
 
 
-def submit_tag_suggestion(generation_id, user_id, suggested_category):
+def submit_tag_suggestion(generation_id, user_id, suggested_category, action='add'):
     """
     Submit a tag/category suggestion for a generation.
 
@@ -1144,10 +1448,15 @@ def submit_tag_suggestion(generation_id, user_id, suggested_category):
         generation_id: The ID of the generation
         user_id: The ID of the user suggesting
         suggested_category: The category they think fits better
+        action: 'add' to suggest adding a tag, 'remove' to suggest removing a tag
 
     Returns:
         dict with 'success' boolean and 'message' or 'consensus_reached' if applied
     """
+    # Validate action
+    if action not in ('add', 'remove'):
+        return {'success': False, 'message': f'Invalid action: {action}. Must be "add" or "remove"'}
+
     # Validate the category exists
     all_categories = list(MUSIC_CATEGORIES.keys()) + list(SFX_CATEGORIES.keys())
     if suggested_category not in all_categories:
@@ -1163,33 +1472,47 @@ def submit_tag_suggestion(generation_id, user_id, suggested_category):
         if not gen:
             return {'success': False, 'message': 'Generation not found'}
 
-        # Check if this category is already applied
+        # Get current categories
         current_categories = json.loads(gen['category'] or '[]')
-        if suggested_category in current_categories:
-            return {'success': False, 'message': 'This category is already applied'}
+
+        # Validate action makes sense
+        if action == 'add':
+            if suggested_category in current_categories:
+                return {'success': False, 'message': 'This category is already applied'}
+        elif action == 'remove':
+            if suggested_category not in current_categories:
+                return {'success': False, 'message': 'This category is not currently applied'}
 
         try:
             # Insert the suggestion (will fail if duplicate)
             conn.execute(
-                """INSERT INTO tag_suggestions (generation_id, user_id, suggested_category)
-                   VALUES (?, ?, ?)""",
-                (generation_id, user_id, suggested_category)
+                """INSERT INTO tag_suggestions (generation_id, user_id, suggested_category, action)
+                   VALUES (?, ?, ?, ?)""",
+                (generation_id, user_id, suggested_category, action)
             )
             conn.commit()
         except sqlite3.IntegrityError:
-            return {'success': False, 'message': 'You already suggested this category'}
+            action_verb = 'adding' if action == 'add' else 'removing'
+            return {'success': False, 'message': f'You already suggested {action_verb} this category'}
 
-        # Count how many users suggested this category
+        # Count how many users suggested this category with the same action
         count = conn.execute(
             """SELECT COUNT(DISTINCT user_id) FROM tag_suggestions
-               WHERE generation_id = ? AND suggested_category = ?""",
-            (generation_id, suggested_category)
+               WHERE generation_id = ? AND suggested_category = ? AND action = ?""",
+            (generation_id, suggested_category, action)
         ).fetchone()[0]
 
         # Check if consensus threshold reached
         if count >= TAG_CONSENSUS_THRESHOLD:
-            # Apply the category
-            new_categories = current_categories + [suggested_category]
+            if action == 'add':
+                # Add the category
+                new_categories = current_categories + [suggested_category]
+                message = f'Consensus reached! Category "{suggested_category}" has been added.'
+            else:
+                # Remove the category
+                new_categories = [c for c in current_categories if c != suggested_category]
+                message = f'Consensus reached! Category "{suggested_category}" has been removed.'
+
             conn.execute(
                 "UPDATE generations SET category = ? WHERE id = ?",
                 (json.dumps(new_categories), generation_id)
@@ -1198,9 +1521,9 @@ def submit_tag_suggestion(generation_id, user_id, suggested_category):
             # Record the consensus
             try:
                 conn.execute(
-                    """INSERT INTO tag_consensus (generation_id, new_category, suggestion_count, applied, applied_at)
-                       VALUES (?, ?, ?, TRUE, CURRENT_TIMESTAMP)""",
-                    (generation_id, suggested_category, count)
+                    """INSERT INTO tag_consensus (generation_id, category, action, suggestion_count, applied, applied_at)
+                       VALUES (?, ?, ?, ?, TRUE, CURRENT_TIMESTAMP)""",
+                    (generation_id, suggested_category, action, count)
                 )
             except sqlite3.IntegrityError:
                 # Already recorded
@@ -1210,37 +1533,45 @@ def submit_tag_suggestion(generation_id, user_id, suggested_category):
             return {
                 'success': True,
                 'consensus_reached': True,
-                'message': f'Consensus reached! Category "{suggested_category}" has been added.',
-                'new_categories': new_categories
+                'message': message,
+                'new_categories': new_categories,
+                'action': action
             }
 
+        action_verb = 'add' if action == 'add' else 'remove'
         return {
             'success': True,
             'consensus_reached': False,
-            'message': f'Suggestion recorded. {count}/{TAG_CONSENSUS_THRESHOLD} users have suggested this category.',
+            'message': f'Suggestion recorded. {count}/{TAG_CONSENSUS_THRESHOLD} users have suggested to {action_verb} this category.',
             'current_votes': count,
-            'threshold': TAG_CONSENSUS_THRESHOLD
+            'threshold': TAG_CONSENSUS_THRESHOLD,
+            'action': action
         }
 
 
 def get_tag_suggestions(generation_id):
     """
-    Get all tag suggestions for a generation with vote counts.
+    Get all tag suggestions for a generation with vote counts, grouped by action.
 
     Returns:
-        dict mapping category names to suggestion counts
+        dict with 'add' and 'remove' keys, each mapping category names to suggestion counts
     """
     with get_db() as conn:
         rows = conn.execute(
-            """SELECT suggested_category, COUNT(DISTINCT user_id) as count
+            """SELECT suggested_category, action, COUNT(DISTINCT user_id) as count
                FROM tag_suggestions
                WHERE generation_id = ?
-               GROUP BY suggested_category
+               GROUP BY suggested_category, action
                ORDER BY count DESC""",
             (generation_id,)
         ).fetchall()
 
-    return {row['suggested_category']: row['count'] for row in rows}
+    result = {'add': {}, 'remove': {}}
+    for row in rows:
+        action = row['action'] if 'action' in row.keys() else 'add'
+        result[action][row['suggested_category']] = row['count']
+
+    return result
 
 
 def get_user_suggestions(generation_id, user_id):
@@ -1248,16 +1579,21 @@ def get_user_suggestions(generation_id, user_id):
     Get the categories a specific user has suggested for a generation.
 
     Returns:
-        list of category names
+        dict with 'add' and 'remove' lists of category names
     """
     with get_db() as conn:
         rows = conn.execute(
-            """SELECT suggested_category FROM tag_suggestions
+            """SELECT suggested_category, action FROM tag_suggestions
                WHERE generation_id = ? AND user_id = ?""",
             (generation_id, user_id)
         ).fetchall()
 
-    return [row['suggested_category'] for row in rows]
+    result = {'add': [], 'remove': []}
+    for row in rows:
+        action = row['action'] if 'action' in row.keys() else 'add'
+        result[action].append(row['suggested_category'])
+
+    return result
 
 
 def get_pending_consensus():

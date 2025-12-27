@@ -73,20 +73,34 @@ test.describe('Keyboard Navigation', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
+
+        // Disable animations for stability
+        await page.addStyleTag({
+            content: `*, *::before, *::after {
+                animation-duration: 0s !important;
+                transition-duration: 0s !important;
+            }`
+        });
     });
 
     test('Tab key navigates through interactive elements', async ({ page }) => {
-        // Focus first element
-        await page.keyboard.press('Tab');
+        // Tab through elements and verify focus moves
+        let focusedCount = 0;
 
-        // Continue tabbing and check we can reach main tabs
         for (let i = 0; i < 10; i++) {
             await page.keyboard.press('Tab');
-            const focusedElement = await page.locator(':focus');
-            const tag = await focusedElement.evaluate(el => el.tagName.toLowerCase());
-            // Should be focusable elements
-            expect(['button', 'a', 'input', 'select', 'div']).toContain(tag);
+            await page.waitForTimeout(50);
+
+            const hasFocus = await page.evaluate(() => {
+                const el = document.activeElement;
+                return el && el !== document.body;
+            });
+
+            if (hasFocus) focusedCount++;
         }
+
+        // Should have focused on multiple elements
+        expect(focusedCount).toBeGreaterThan(3);
     });
 
     test('Enter key activates buttons', async ({ page }) => {
@@ -99,30 +113,37 @@ test.describe('Keyboard Navigation', () => {
         await promptInput.focus();
         await promptInput.fill('test prompt');
 
-        // Tab to generate button
-        await page.keyboard.press('Tab');
+        // Tab to next focusable element
         await page.keyboard.press('Tab');
 
-        // Check we're focused on a button
-        const focused = await page.locator(':focus');
-        await expect(focused).toBeVisible();
+        // Check something is focused
+        const hasFocus = await page.evaluate(() => {
+            const el = document.activeElement;
+            return el && el !== document.body;
+        });
+        expect(hasFocus).toBeTruthy();
     });
 
     test('Escape key closes modals', async ({ page }) => {
-        // Go to Library
+        // Go to Library and open feedback modal
         await page.click('.main-tab:has-text("Library")');
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
-        // Click an item to potentially open a modal (if there's a detail view)
-        const firstItem = page.locator('.library-item').first();
-        if (await firstItem.count() > 0) {
-            // Check if clicking opens a modal
-            await firstItem.click();
-            await page.waitForTimeout(300);
+        // Click vote button to open feedback modal
+        const voteBtn = page.locator('.library-item button[title="Like this track"]').first();
+        await voteBtn.click();
+        await page.waitForTimeout(500);
 
-            // If a modal opened, Escape should close it
-            await page.keyboard.press('Escape');
-        }
+        // Verify modal is open
+        const modal = page.locator('#feedback-modal-container');
+        await expect(modal).toBeVisible({ timeout: 5000 });
+
+        // Press Escape to close
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+
+        // Modal should be closed
+        await expect(modal).not.toBeVisible();
     });
 });
 

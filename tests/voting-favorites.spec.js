@@ -38,7 +38,7 @@ test.describe('Voting System', () => {
         await page.waitForTimeout(500);
 
         // Clicking opens a feedback modal - confirm it appears
-        const modal = page.locator('.feedback-modal, #feedback-modal');
+        const modal = page.locator('#feedback-modal-container');
         await expect(modal).toBeVisible({ timeout: 5000 });
     });
 
@@ -54,7 +54,7 @@ test.describe('Voting System', () => {
         await page.waitForTimeout(500);
 
         // Should trigger feedback modal
-        const modal = page.locator('.feedback-modal, #feedback-modal');
+        const modal = page.locator('#feedback-modal-container');
         await expect(modal).toBeVisible({ timeout: 5000 });
     });
 
@@ -64,6 +64,7 @@ test.describe('Voting System', () => {
         await page.waitForSelector('.library-item', { timeout: 10000 });
 
         const upvoteBtn = page.locator('.library-item button[title="Like this track"]').first();
+        const downvoteBtn = page.locator('.library-item button[title="Dislike this track"]').first();
 
         await expect(upvoteBtn).toBeVisible({ timeout: 5000 });
 
@@ -72,15 +73,44 @@ test.describe('Voting System', () => {
         await page.waitForTimeout(500);
 
         // Feedback modal should open
-        const modal = page.locator('.feedback-modal, #feedback-modal');
+        const modal = page.locator('#feedback-modal-container');
         await expect(modal).toBeVisible({ timeout: 5000 });
 
+        // Select a feedback option to enable submit button
+        const feedbackOption = page.locator('#feedback-modal-options button').first();
+        await feedbackOption.click();
+        await page.waitForTimeout(200);
+
         // Submit the positive feedback
-        const submitBtn = page.locator('.feedback-modal button:has-text("Submit"), #feedback-submit-btn');
-        if (await submitBtn.isVisible()) {
-            await submitBtn.click();
-            await page.waitForTimeout(500);
-        }
+        const submitBtn = page.locator('#feedback-modal-submit');
+        await expect(submitBtn).toBeVisible({ timeout: 3000 });
+        await expect(submitBtn).toBeEnabled({ timeout: 2000 });
+        await submitBtn.click();
+
+        // Wait for modal to close (indicates successful submission)
+        await expect(modal).not.toBeVisible({ timeout: 5000 });
+
+        // Verify upvote is now active
+        await expect(upvoteBtn).toHaveClass(/voted/, { timeout: 5000 });
+
+        // Now click downvote to change the vote
+        await downvoteBtn.click();
+        await page.waitForTimeout(500);
+
+        // Modal opens again for downvote - select a feedback option
+        await expect(modal).toBeVisible({ timeout: 5000 });
+        const feedbackOption2 = page.locator('#feedback-modal-options button').first();
+        await feedbackOption2.click();
+        await page.waitForTimeout(200);
+        await expect(submitBtn).toBeEnabled({ timeout: 2000 });
+        await submitBtn.click();
+
+        // Wait for modal to close
+        await expect(modal).not.toBeVisible({ timeout: 5000 });
+
+        // Downvote should now be active, upvote should not be
+        await expect(downvoteBtn).toHaveClass(/voted/, { timeout: 5000 });
+        await expect(upvoteBtn).not.toHaveClass(/voted/);
     });
 
     test('vote counts update after voting', async ({ page }) => {
@@ -99,19 +129,68 @@ test.describe('Voting System', () => {
         await upvoteBtn.click();
         await page.waitForTimeout(500);
 
-        // Feedback modal opens - submit it
-        const modal = page.locator('.feedback-modal, #feedback-modal');
+        // Feedback modal opens - select option and submit
+        const modal = page.locator('#feedback-modal-container');
         await expect(modal).toBeVisible({ timeout: 5000 });
 
-        const submitBtn = page.locator('#feedback-submit-btn');
-        if (await submitBtn.isVisible()) {
-            await submitBtn.click();
-            await page.waitForTimeout(500);
+        // Select a feedback option to enable submit button
+        const feedbackOption = page.locator('#feedback-modal-options button').first();
+        await feedbackOption.click();
+        await page.waitForTimeout(200);
 
-            // Count should change after submission
-            const newCount = await countSpan.textContent();
-            console.log(`Vote count: ${initialCount} -> ${newCount}`);
-        }
+        const submitBtn = page.locator('#feedback-modal-submit');
+        await expect(submitBtn).toBeVisible({ timeout: 3000 });
+        await expect(submitBtn).toBeEnabled({ timeout: 2000 });
+        await submitBtn.click();
+        await page.waitForTimeout(500);
+
+        // Count should change after submission
+        const newCount = await countSpan.textContent();
+        console.log(`Vote count: ${initialCount} -> ${newCount}`);
+    });
+
+    test('can clear vote by clicking same button again', async ({ page }) => {
+        // Switch to Library
+        await page.click('.main-tab:has-text("Library")');
+        await page.waitForSelector('.library-item', { timeout: 10000 });
+
+        const upvoteBtn = page.locator('.library-item button[title="Like this track"]').first();
+        await expect(upvoteBtn).toBeVisible({ timeout: 5000 });
+
+        // First, upvote the track
+        await upvoteBtn.click();
+        await page.waitForTimeout(500);
+
+        // Feedback modal opens - select option and submit
+        const modal = page.locator('#feedback-modal-container');
+        await expect(modal).toBeVisible({ timeout: 5000 });
+
+        // Select a feedback option to enable submit button
+        const feedbackOption = page.locator('#feedback-modal-options button').first();
+        await feedbackOption.click();
+        await page.waitForTimeout(200);
+
+        const submitBtn = page.locator('#feedback-modal-submit');
+        await expect(submitBtn).toBeVisible({ timeout: 3000 });
+        await expect(submitBtn).toBeEnabled({ timeout: 2000 });
+        await submitBtn.click();
+
+        // Wait for modal to close (indicates successful submission)
+        await expect(modal).not.toBeVisible({ timeout: 5000 });
+
+        // Verify upvote is active
+        await expect(upvoteBtn).toHaveClass(/voted/, { timeout: 5000 });
+
+        // Click upvote again to clear the vote (toggle off)
+        await upvoteBtn.click();
+        await page.waitForTimeout(500);
+
+        // Should NOT open modal - vote should be cleared directly
+        // Modal should not be visible (or should close immediately)
+        await expect(modal).not.toBeVisible({ timeout: 2000 });
+
+        // Upvote should no longer be active
+        await expect(upvoteBtn).not.toHaveClass(/voted/, { timeout: 5000 });
     });
 });
 
@@ -134,20 +213,47 @@ test.describe('Radio Player Voting', () => {
     });
 
     test('can vote on current radio track', async ({ page }) => {
-        // Wait for radio to load
-        await page.waitForTimeout(2000);
+        // Wait for radio to load and track to be selected with prompt text
+        await page.waitForSelector('.now-playing:not(.hidden)', { timeout: 10000 });
+        await page.waitForFunction(() => {
+            const prompt = document.getElementById('radio-prompt');
+            return prompt && prompt.textContent && prompt.textContent.trim().length > 5;
+        }, { timeout: 15000 });
+        await page.waitForTimeout(1000);
 
-        // Find radio vote buttons (actual IDs)
+        // Find radio vote button
         const radioUpvote = page.locator('#radio-vote-up');
         await expect(radioUpvote).toBeVisible({ timeout: 5000 });
         await radioUpvote.click();
+        await page.waitForTimeout(1000);
+
+        // Radio vote opens feedback modal - select option and submit
+        const modal = page.locator('#feedback-modal-container');
+        await expect(modal).toBeVisible({ timeout: 5000 });
+
+        // Select a feedback option to enable submit button
+        const feedbackOption = page.locator('#feedback-modal-options button').first();
+        await feedbackOption.click();
+        await page.waitForTimeout(200);
+
+        const submitBtn = page.locator('#feedback-modal-submit');
+        await expect(submitBtn).toBeVisible({ timeout: 3000 });
+        await expect(submitBtn).toBeEnabled({ timeout: 2000 });
+        await submitBtn.click();
         await page.waitForTimeout(500);
+
+        // After submitting, vote should be applied
         await expect(radioUpvote).toHaveClass(/voted-up/);
     });
 
     test('vote persists when track changes', async ({ page }) => {
         // This tests that vote state is properly saved
-        await page.waitForTimeout(2000);
+        await page.waitForSelector('.now-playing:not(.hidden)', { timeout: 10000 });
+        await page.waitForFunction(() => {
+            const prompt = document.getElementById('radio-prompt');
+            return prompt && prompt.textContent && prompt.textContent.trim().length > 5;
+        }, { timeout: 15000 });
+        await page.waitForTimeout(1000);
 
         const radioUpvote = page.locator('#radio-vote-up');
         await expect(radioUpvote).toBeVisible({ timeout: 5000 });
@@ -156,13 +262,31 @@ test.describe('Radio Player Voting', () => {
         await radioUpvote.click();
         await page.waitForTimeout(500);
 
-        // Skip to next track
-        const nextBtn = page.locator('#radio-next');
+        // Submit feedback modal - select option first
+        const modal = page.locator('#feedback-modal-container');
+        await expect(modal).toBeVisible({ timeout: 5000 });
+
+        // Select a feedback option to enable submit button
+        const feedbackOption = page.locator('#feedback-modal-options button').first();
+        await feedbackOption.click();
+        await page.waitForTimeout(200);
+
+        const submitBtn = page.locator('#feedback-modal-submit');
+        await expect(submitBtn).toBeVisible({ timeout: 3000 });
+        await expect(submitBtn).toBeEnabled({ timeout: 2000 });
+        await submitBtn.click();
+        await page.waitForTimeout(500);
+
+        // Verify vote was applied
+        await expect(radioUpvote).toHaveClass(/voted-up/);
+
+        // Skip to next track using the skip button
+        const nextBtn = page.locator('button[title="Skip to next track"]');
         await expect(nextBtn).toBeVisible({ timeout: 5000 });
         await nextBtn.click();
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(1500);
 
-        // New track should not have vote active
+        // New track should not have vote active (vote resets per track)
         await expect(radioUpvote).not.toHaveClass(/voted-up/);
     });
 });
@@ -248,13 +372,28 @@ test.describe('Favorites System', () => {
     });
 
     test('can favorite current radio track', async ({ page }) => {
-        await page.waitForTimeout(2000);
+        // Wait for radio to load and track to be selected with prompt text
+        await page.waitForSelector('.now-playing:not(.hidden)', { timeout: 10000 });
+        await page.waitForFunction(() => {
+            const prompt = document.getElementById('radio-prompt');
+            return prompt && prompt.textContent && prompt.textContent.trim().length > 5;
+        }, { timeout: 15000 });
+        await page.waitForTimeout(1000);
 
         const radioFavBtn = page.locator('#radio-favorite-btn');
         await expect(radioFavBtn).toBeVisible({ timeout: 5000 });
+
+        // Click to favorite
+        await radioFavBtn.click();
+        await page.waitForTimeout(800);
+
+        // Should now have favorited class
+        await expect(radioFavBtn).toHaveClass(/favorited/);
+
+        // Toggle off to clean up
         await radioFavBtn.click();
         await page.waitForTimeout(500);
-        await expect(radioFavBtn).toHaveClass(/favorited/);
+        await expect(radioFavBtn).not.toHaveClass(/favorited/);
     });
 });
 

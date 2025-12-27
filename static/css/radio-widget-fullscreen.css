@@ -1,0 +1,1052 @@
+/**
+ * Radio Widget - Fullscreen Mode Enhancements
+ * Advanced styles for immersive fullscreen experience
+ */
+
+/* ========================================
+   FULLSCREEN OVERLAY BASE
+   ======================================== */
+
+.radio-widget-fullscreen {
+    --fs-glow-intensity: 0.6;
+    --fs-blur-amount: 20px;
+    overflow: hidden;
+}
+
+/* Animated gradient background */
+.radio-widget-fullscreen::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background:
+        radial-gradient(circle at 20% 80%, var(--rw-accent) 0%, transparent 40%),
+        radial-gradient(circle at 80% 20%, var(--rw-accent-secondary) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.3) 0%, transparent 60%);
+    animation: fsBackgroundPulse 8s ease-in-out infinite;
+    opacity: 0.15;
+    z-index: 0;
+    pointer-events: none;
+}
+
+@keyframes fsBackgroundPulse {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0.15;
+    }
+    50% {
+        transform: scale(1.1) rotate(5deg);
+        opacity: 0.25;
+    }
+}
+
+/* ========================================
+   VISUALIZER CANVAS
+   ======================================== */
+
+.radio-widget-fullscreen .rw-visualizer-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 0;
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+/* Audio-reactive glow overlay */
+.radio-widget-fullscreen .rw-visualizer-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, var(--rw-accent-glow) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.1s ease-out;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.radio-widget-fullscreen.audio-active .rw-visualizer-glow {
+    opacity: 0.3;
+}
+
+/* ========================================
+   TRACK INFO - HERO DISPLAY
+   ======================================== */
+
+.radio-widget-fullscreen .rw-track-info {
+    position: relative;
+    z-index: 10;
+    padding: 0 15%;
+    animation: fsFadeIn 0.5s ease-out;
+}
+
+@keyframes fsFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.radio-widget-fullscreen .rw-track-title {
+    background: linear-gradient(135deg, var(--rw-text) 0%, var(--rw-accent) 50%, var(--rw-accent-secondary) 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fsGradientFlow 4s ease-in-out infinite;
+    filter: drop-shadow(0 4px 20px var(--rw-accent-glow));
+}
+
+@keyframes fsGradientFlow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Album art / waveform display */
+.radio-widget-fullscreen .rw-album-display {
+    width: 200px;
+    height: 200px;
+    border-radius: var(--rw-radius-lg);
+    background: var(--rw-gradient-primary);
+    box-shadow:
+        0 20px 60px var(--rw-accent-glow),
+        0 0 100px var(--rw-accent-glow);
+    margin: 0 auto 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fsAlbumFloat 3s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes fsAlbumFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-10px) scale(1.02); }
+}
+
+.radio-widget-fullscreen .rw-album-display::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 40%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 60%
+    );
+    animation: fsShine 2s ease-in-out infinite;
+}
+
+@keyframes fsShine {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+/* ========================================
+   CENTER CONTENT - TRACK INFO
+   ======================================== */
+
+.radio-widget-fullscreen .rw-fs-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.radio-widget-fullscreen .rw-fs-center .rw-now-playing-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--rw-accent);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    text-shadow: 0 0 20px var(--rw-accent-glow);
+}
+
+.radio-widget-fullscreen .rw-fs-center .rw-now-playing-indicator::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--rw-accent);
+    border-radius: 50%;
+    animation: fsNowPlayingPulse 1.5s ease-in-out infinite;
+}
+
+.radio-widget-fullscreen .rw-fs-track .rw-track-title {
+    font-size: clamp(24px, 5vw, 48px);
+    font-weight: 700;
+    color: var(--rw-text);
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+    max-width: 80vw;
+    line-height: 1.3;
+}
+
+/* ========================================
+   CONTROLS - FLOATING DOCK
+   ======================================== */
+
+.radio-widget-fullscreen .rw-controls-dock {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 40px 30px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8) 30%, rgba(0, 0, 0, 0.95));
+    z-index: 100;
+}
+
+/* Progress bar row */
+.radio-widget-fullscreen .rw-dock-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.radio-widget-fullscreen .rw-dock-progress .rw-progress-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: height 0.2s ease;
+}
+
+.radio-widget-fullscreen .rw-dock-progress .rw-progress-bar:hover {
+    height: 8px;
+}
+
+.radio-widget-fullscreen .rw-dock-progress .rw-progress-fill {
+    height: 100%;
+    background: var(--rw-gradient-primary);
+    border-radius: 2px;
+    box-shadow: 0 0 10px var(--rw-accent-glow);
+    transition: width 0.1s linear;
+}
+
+.radio-widget-fullscreen .rw-dock-progress .rw-time-current,
+.radio-widget-fullscreen .rw-dock-progress .rw-time-total {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--rw-text-dim);
+    min-width: 45px;
+}
+
+.radio-widget-fullscreen .rw-dock-progress .rw-time-current {
+    text-align: right;
+}
+
+/* Control buttons row */
+.radio-widget-fullscreen .rw-dock-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.radio-widget-fullscreen .rw-dock-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.radio-widget-fullscreen .rw-dock-playback {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Dock buttons */
+.radio-widget-fullscreen .rw-dock-btn {
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    color: var(--rw-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radio-widget-fullscreen .rw-dock-btn:hover {
+    background: var(--rw-accent);
+    border-color: var(--rw-accent);
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--rw-accent-glow);
+}
+
+.radio-widget-fullscreen .rw-dock-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Vote buttons have more whitespace in icon design, increase size to match heart visually */
+.radio-widget-fullscreen .rw-vote-up svg,
+.radio-widget-fullscreen .rw-vote-down svg {
+    width: 30px;
+    height: 30px;
+}
+
+/* Ensure favorite heart icon matches other dock buttons */
+.radio-widget-fullscreen .rw-favorite-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+.radio-widget-fullscreen .rw-dock-btn.voted,
+.radio-widget-fullscreen .rw-dock-btn.favorited {
+    background: var(--rw-accent);
+    border-color: var(--rw-accent);
+    color: white;
+}
+
+/* Main play button in dock */
+.radio-widget-fullscreen .rw-dock-play {
+    width: 64px;
+    height: 64px;
+    background: var(--rw-accent);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 20px var(--rw-accent-glow);
+}
+
+.radio-widget-fullscreen .rw-dock-play:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 30px var(--rw-accent-glow);
+}
+
+.radio-widget-fullscreen .rw-dock-play svg {
+    width: 28px;
+    height: 28px;
+}
+
+/* Mute button states */
+.radio-widget-fullscreen .rw-dock-btn .rw-icon-muted {
+    display: none;
+}
+
+.radio-widget-fullscreen .rw-dock-btn.muted .rw-icon-volume {
+    display: none;
+}
+
+.radio-widget-fullscreen .rw-dock-btn.muted .rw-icon-muted {
+    display: block;
+}
+
+/* Play button pulse effect when playing */
+.radio-widget-fullscreen .rw-play-btn.playing {
+    animation: fsPlayPulse 2s ease-in-out infinite;
+}
+
+@keyframes fsPlayPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px var(--rw-accent-glow);
+    }
+    50% {
+        box-shadow: 0 0 40px var(--rw-accent-glow), 0 0 60px var(--rw-accent-glow);
+    }
+}
+
+/* ========================================
+   PROGRESS BAR - ENHANCED
+   ======================================== */
+
+.radio-widget-fullscreen .rw-progress-container {
+    position: relative;
+    z-index: 10;
+    padding: 0 10%;
+}
+
+.radio-widget-fullscreen .rw-progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: height 0.2s ease;
+}
+
+.radio-widget-fullscreen .rw-progress-bar:hover {
+    height: 12px;
+}
+
+.radio-widget-fullscreen .rw-progress-fill {
+    background: var(--rw-gradient-primary);
+    box-shadow: 0 0 20px var(--rw-accent-glow);
+    position: relative;
+}
+
+.radio-widget-fullscreen .rw-progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    background: var(--rw-accent);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--rw-accent-glow);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.radio-widget-fullscreen .rw-progress-bar:hover .rw-progress-fill::after {
+    opacity: 1;
+}
+
+/* Time display */
+.radio-widget-fullscreen .rw-time-current,
+.radio-widget-fullscreen .rw-time-total {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--rw-text);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   QUEUE PANEL - SIDE DRAWER
+   ======================================== */
+
+.radio-widget-fullscreen .rw-queue-preview {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%) translateX(calc(100% - 60px));
+    width: 320px;
+    max-height: 60vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(var(--fs-blur-amount));
+    -webkit-backdrop-filter: blur(var(--fs-blur-amount));
+    border-radius: var(--rw-radius-lg) 0 0 var(--rw-radius-lg);
+    border: 1px solid var(--rw-border);
+    border-right: none;
+    padding: 20px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 50;
+}
+
+.radio-widget-fullscreen .rw-queue-preview:hover,
+.radio-widget-fullscreen .rw-queue-preview:focus-within {
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Queue toggle tab */
+.radio-widget-fullscreen .rw-queue-preview::before {
+    content: '◀ Queue';
+    position: absolute;
+    left: -60px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    background: var(--rw-accent);
+    color: var(--rw-bg);
+    padding: 8px 16px;
+    border-radius: var(--rw-radius-sm) var(--rw-radius-sm) 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.radio-widget-fullscreen .rw-queue-preview h4 {
+    margin-bottom: 16px;
+    font-size: 16px;
+    color: var(--rw-text);
+    border-bottom: 1px solid var(--rw-border);
+    padding-bottom: 12px;
+}
+
+.radio-widget-fullscreen .rw-queue-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--rw-radius-sm);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.radio-widget-fullscreen .rw-queue-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(-5px);
+    border-left: 3px solid var(--rw-accent);
+}
+
+/* ========================================
+   MOOD SELECTOR - SIDE PANEL
+   ======================================== */
+
+.radio-widget-fullscreen .rw-mood-selector {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%) translateX(calc(-100% + 60px));
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(var(--fs-blur-amount));
+    -webkit-backdrop-filter: blur(var(--fs-blur-amount));
+    border-radius: 0 var(--rw-radius-lg) var(--rw-radius-lg) 0;
+    border: 1px solid var(--rw-border);
+    border-left: none;
+    padding: 20px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 50;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-widget-fullscreen .rw-mood-selector:hover,
+.radio-widget-fullscreen .rw-mood-selector:focus-within {
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Mood toggle tab */
+.radio-widget-fullscreen .rw-mood-selector::before {
+    content: 'Moods ▶';
+    position: absolute;
+    right: -60px;
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
+    background: var(--rw-accent-secondary);
+    color: var(--rw-bg);
+    padding: 8px 16px;
+    border-radius: var(--rw-radius-sm) var(--rw-radius-sm) 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.radio-widget-fullscreen .rw-mood-btn {
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--rw-border);
+    border-radius: var(--rw-radius);
+    color: var(--rw-text);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: capitalize;
+}
+
+.radio-widget-fullscreen .rw-mood-btn:hover {
+    background: var(--rw-accent);
+    border-color: var(--rw-accent);
+    color: white;
+    transform: translateX(5px);
+}
+
+.radio-widget-fullscreen .rw-mood-btn.active {
+    background: var(--rw-gradient-primary);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 4px 20px var(--rw-accent-glow);
+}
+
+/* ========================================
+   EXIT BUTTON
+   ======================================== */
+
+.radio-widget-fullscreen .rw-exit-btn {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: 48px;
+    height: 48px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--rw-accent);
+    border-radius: 50%;
+    color: var(--rw-text);
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 99999 !important;
+    pointer-events: auto !important;
+}
+
+.radio-widget-fullscreen .rw-exit-btn:hover {
+    background: var(--rw-error);
+    border-color: var(--rw-error);
+    color: white;
+    transform: scale(1.1);
+}
+
+.radio-widget-fullscreen .rw-exit-btn svg {
+    pointer-events: none;
+}
+
+/* ========================================
+   VIZ CONTROLS PANEL
+   ======================================== */
+
+.radio-widget-fullscreen .rw-viz-panel {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+}
+
+.radio-widget-fullscreen .rw-viz-modes {
+    display: flex;
+    gap: 8px;
+}
+
+.radio-widget-fullscreen .rw-viz-mode-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--rw-border);
+    border-radius: var(--rw-radius-sm);
+    color: var(--rw-text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radio-widget-fullscreen .rw-viz-mode-btn:hover,
+.radio-widget-fullscreen .rw-viz-mode-btn.active {
+    background: var(--rw-accent);
+    border-color: var(--rw-accent);
+    color: white;
+}
+
+.radio-widget-fullscreen .rw-viz-mode-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Settings panel - slides down when viz mode is clicked */
+.radio-widget-fullscreen .rw-viz-settings {
+    margin-top: 8px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--rw-border);
+    border-radius: var(--rw-radius);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 50; /* Lower than tooltips */
+}
+
+.radio-widget-fullscreen .rw-viz-panel:hover .rw-viz-settings,
+.radio-widget-fullscreen .rw-viz-settings.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.radio-widget-fullscreen .rw-settings-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--rw-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.radio-widget-fullscreen .rw-color-themes {
+    display: flex;
+    gap: 6px;
+}
+
+/* ========================================
+   VOLUME - VERTICAL SLIDER
+   ======================================== */
+
+.radio-widget-fullscreen .rw-volume-control {
+    position: fixed;
+    bottom: 120px;
+    right: 30px;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    padding: 12px;
+    border-radius: var(--rw-radius);
+    border: 1px solid var(--rw-border);
+    z-index: 100;
+}
+
+.radio-widget-fullscreen .rw-volume-slider {
+    width: 4px;
+    height: 100px;
+    -webkit-appearance: slider-vertical;
+    writing-mode: bt-lr;
+}
+
+/* ========================================
+   MOBILE FULLSCREEN ADJUSTMENTS
+   ======================================== */
+
+@media (max-width: 768px) {
+    .radio-widget-fullscreen .rw-fs-track .rw-track-title {
+        font-size: clamp(16px, 4vw, 28px);
+        padding: 0 10px;
+    }
+
+    .radio-widget-fullscreen .rw-controls-dock {
+        padding: 12px 16px 20px;
+    }
+
+    .radio-widget-fullscreen .rw-dock-controls {
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+    }
+
+    .radio-widget-fullscreen .rw-dock-group {
+        gap: 6px;
+    }
+
+    .radio-widget-fullscreen .rw-dock-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .radio-widget-fullscreen .rw-dock-play {
+        width: 56px;
+        height: 56px;
+    }
+
+    .radio-widget-fullscreen .rw-dock-play svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .radio-widget-fullscreen .rw-viz-modes {
+        top: 12px;
+        left: 12px;
+        gap: 6px;
+    }
+
+    .radio-widget-fullscreen .rw-viz-mode-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .radio-widget-fullscreen .rw-exit-btn {
+        top: 12px;
+        right: 12px;
+        width: 40px;
+        height: 40px;
+    }
+
+    .radio-widget-fullscreen .rw-shortcuts-hint {
+        display: none;
+    }
+}
+
+/* ========================================
+   KEYBOARD SHORTCUTS HINT
+   ======================================== */
+
+.radio-widget-fullscreen .rw-shortcuts-hint {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    font-size: 12px;
+    color: var(--rw-text-muted);
+    opacity: 0.5;
+    z-index: 10;
+}
+
+.radio-widget-fullscreen .rw-shortcuts-hint kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin: 0 2px;
+}
+
+/* ========================================
+   NOW PLAYING ANIMATION
+   ======================================== */
+
+.radio-widget-fullscreen .rw-now-playing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--rw-accent);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.radio-widget-fullscreen .rw-now-playing-indicator::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--rw-accent);
+    border-radius: 50%;
+    animation: fsNowPlayingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes fsNowPlayingPulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
+/* ========================================
+   VOLUME POPUP
+   ======================================== */
+
+.radio-widget-fullscreen .rw-volume-wrapper {
+    position: relative;
+}
+
+.radio-widget-fullscreen .rw-volume-popup {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 0;
+    margin-bottom: 5px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+.radio-widget-fullscreen .rw-volume-wrapper:hover .rw-volume-popup,
+.radio-widget-fullscreen .rw-volume-popup:hover {
+    opacity: 1;
+    visibility: visible;
+}
+
+.radio-widget-fullscreen .rw-volume-slider {
+    width: 100px;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    outline: none;
+    transform: rotate(-90deg);
+    transform-origin: center;
+}
+
+.radio-widget-fullscreen .rw-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--rw-accent);
+    cursor: pointer;
+    box-shadow: 0 0 15px var(--rw-accent-glow);
+}
+
+.radio-widget-fullscreen .rw-volume-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--rw-accent);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 15px var(--rw-accent-glow);
+}
+
+/* ========================================
+   BRANDING WATERMARK
+   ======================================== */
+
+.radio-widget-fullscreen .rw-fs-branding {
+    position: fixed;
+    bottom: 140px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    pointer-events: none;
+}
+
+.radio-widget-fullscreen .rw-fs-brand-text {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    text-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+}
+
+/* ========================================
+   COLOR THEME BUTTONS
+   ======================================== */
+
+.radio-widget-fullscreen .rw-color-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radio-widget-fullscreen .rw-color-btn:hover,
+.radio-widget-fullscreen .rw-color-btn.active {
+    transform: scale(1.2);
+    border-color: white;
+    box-shadow: 0 0 12px currentColor;
+}
+
+.radio-widget-fullscreen .rw-color-btn[data-theme="purple"] { background: linear-gradient(135deg, #a855f7, #6366f1); }
+.radio-widget-fullscreen .rw-color-btn[data-theme="blue"] { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+.radio-widget-fullscreen .rw-color-btn[data-theme="green"] { background: linear-gradient(135deg, #22c55e, #10b981); }
+.radio-widget-fullscreen .rw-color-btn[data-theme="orange"] { background: linear-gradient(135deg, #f97316, #eab308); }
+.radio-widget-fullscreen .rw-color-btn[data-theme="pink"] { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+.radio-widget-fullscreen .rw-color-btn[data-theme="rainbow"] { background: linear-gradient(135deg, #f43f5e, #f97316, #eab308, #22c55e, #3b82f6, #a855f7); }
+
+/* ========================================
+   TOOLTIPS
+   ======================================== */
+
+.radio-widget-fullscreen [title] {
+    position: relative;
+}
+
+/* Disable native tooltips, use CSS tooltips */
+.radio-widget-fullscreen .rw-dock-btn,
+.radio-widget-fullscreen .rw-viz-mode-btn,
+.radio-widget-fullscreen .rw-exit-btn,
+.radio-widget-fullscreen .rw-play-btn,
+.radio-widget-fullscreen .rw-color-btn {
+    position: relative;
+}
+
+/* Bottom dock buttons - tooltips appear ABOVE */
+.radio-widget-fullscreen .rw-dock-btn[data-tooltip]::after,
+.radio-widget-fullscreen .rw-dock-play[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    border-radius: 6px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
+}
+
+.radio-widget-fullscreen .rw-dock-btn[data-tooltip]:hover::after,
+.radio-widget-fullscreen .rw-dock-play[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Top elements (viz modes, exit button) - tooltips appear BELOW */
+.radio-widget-fullscreen .rw-viz-mode-btn[data-tooltip]::after,
+.radio-widget-fullscreen .rw-exit-btn[data-tooltip]::after,
+.radio-widget-fullscreen .rw-color-btn[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 8px);
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.95);
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    border-radius: 6px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10000;
+}
+
+/* Ensure viz mode buttons create proper stacking context for tooltips */
+.radio-widget-fullscreen .rw-viz-mode-btn:hover {
+    z-index: 200;
+}
+
+.radio-widget-fullscreen .rw-viz-mode-btn[data-tooltip]:hover::after,
+.radio-widget-fullscreen .rw-exit-btn[data-tooltip]:hover::after,
+.radio-widget-fullscreen .rw-color-btn[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ========================================
+   FPS COUNTER
+   ======================================== */
+
+.radio-widget-fullscreen .rw-fps-counter {
+    position: fixed;
+    top: 20px;
+    right: 80px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    padding: 4px 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    z-index: 100;
+    transition: color 0.3s ease;
+}
+
+.radio-widget-fullscreen .rw-fps-counter.fps-good {
+    color: #22c55e;
+}
+
+.radio-widget-fullscreen .rw-fps-counter.fps-ok {
+    color: #eab308;
+}
+
+.radio-widget-fullscreen .rw-fps-counter.fps-bad {
+    color: #ef4444;
+}
