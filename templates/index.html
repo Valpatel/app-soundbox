@@ -7774,7 +7774,7 @@
                 .replace(/\n/g, '\\n')       // Newlines
                 .replace(/\r/g, '\\r')       // Carriage returns
                 .replace(/\t/g, '\\t')       // Tabs
-                .replace(/</g, '\\x3c')      // Prevent </script> injection
+                .replace(/</g, '\\x3c')      // Prevent script tag injection
                 .replace(/>/g, '\\x3e');     // Prevent HTML context breakout
         }
 
