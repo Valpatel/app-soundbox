@@ -218,7 +218,18 @@ Saved to localStorage:
 
 ## Recent Changes
 
-### Dec 2025
+### Dec 27, 2025
+- **Responsive UI overhaul:**
+  - Mobile tab dropdown for screens < 480px
+  - Browse Categories modal with red X close button
+  - Compact CC0 license widget on mobile
+  - Simplified two-phase layout (900px breakpoint)
+  - Vertical Music/SFX filter tabs
+- Theme consistency: changed library cyan accents to purple
+- No-cache headers for development
+- Synced mute buttons between mobile/desktop
+
+### Dec 2025 (Earlier)
 - Theme standardization: removed orange, using purple/cyan
 - Fullscreen auto-dim UI after inactivity
 - Fixed volume/mute state not reflecting in UI on page load

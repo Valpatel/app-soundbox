@@ -222,8 +222,13 @@ app-soundbox/
 ├── app.py              # Flask server with AudioCraft integration
 ├── database.py         # SQLite database layer with FTS5 search
 ├── prompts.py          # Category definitions and random prompts
+├── batch_generate.py   # Utility for bulk content generation
 ├── templates/
 │   └── index.html      # Frontend SPA with Graphlings integration
+├── static/
+│   ├── js/             # RadioWidget JavaScript modules
+│   └── css/            # Widget and app stylesheets
+├── tests/              # Playwright test suites
 ├── docs/               # Documentation
 │   ├── API.md          # Complete API reference
 │   ├── DATABASE.md     # Schema and queries
@@ -235,7 +240,9 @@ app-soundbox/
 ├── spectrograms/       # Spectrogram images (created at runtime)
 ├── soundbox.db         # SQLite database (created at runtime)
 ├── setup.sh            # One-command setup script
+├── start.sh            # Server startup script
 ├── requirements.txt    # Python dependencies
+├── CLAUDE.md           # AI assistant context notes
 └── README.md           # This file
 ```
 
