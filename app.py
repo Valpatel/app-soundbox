@@ -431,6 +431,50 @@ def sanitize_filename(filename):
     return safe
 
 
+def normalize_text_for_filter(text):
+    """
+    Normalize text to defeat common content filter bypass techniques.
+    - Remove zero-width characters
+    - Normalize Unicode homoglyphs to ASCII
+    - Handle leetspeak substitutions
+    - Remove excessive spacing between letters
+    """
+    if not text:
+        return ""
+
+    # Remove zero-width characters and invisible Unicode
+    zero_width_chars = '\u200b\u200c\u200d\u2060\ufeff\u00ad'
+    for char in zero_width_chars:
+        text = text.replace(char, '')
+
+    # Common Unicode homoglyph mappings (Cyrillic/Greek that look like Latin)
+    homoglyphs = {
+        'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'х': 'x', 'у': 'y',
+        'А': 'A', 'Е': 'E', 'О': 'O', 'Р': 'P', 'С': 'C', 'Х': 'X',
+        'υ': 'u', 'ι': 'i', 'α': 'a', 'ο': 'o', 'ν': 'v',
+        '０': '0', '１': '1', '２': '2', '３': '3', '４': '4',
+        '５': '5', '６': '6', '７': '7', '８': '8', '９': '9',
+    }
+    for homoglyph, replacement in homoglyphs.items():
+        text = text.replace(homoglyph, replacement)
+
+    # Leetspeak substitutions
+    leetspeak = {
+        '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's',
+        '7': 't', '@': 'a', '$': 's', '!': 'i', '*': '',
+        '+': 't',
+    }
+    for leet, replacement in leetspeak.items():
+        text = text.replace(leet, replacement)
+
+    # Remove single spaces between single letters (catches "f u c k")
+    # This pattern: letter + space + letter repeated
+    import re
+    text = re.sub(r'\b([a-zA-Z])\s+(?=[a-zA-Z]\b)', r'\1', text)
+
+    return text.lower()
+
+
 def contains_blocked_content(text):
     """
     Check if text contains blocked/explicit content.
@@ -439,17 +483,21 @@ def contains_blocked_content(text):
     if not text:
         return False, None
 
+    # Normalize text to defeat bypass attempts
+    normalized = normalize_text_for_filter(text)
     text_lower = text.lower()
 
-    # Check blocked words
-    for word in BLOCKED_WORDS:
-        if word in text_lower:
-            return True, f"Content contains prohibited term"
+    # Check both original and normalized versions
+    for check_text in [text_lower, normalized]:
+        # Check blocked words
+        for word in BLOCKED_WORDS:
+            if word in check_text:
+                return True, "Content contains prohibited term"
 
-    # Check explicit patterns
-    for pattern in EXPLICIT_PATTERNS:
-        if pattern.search(text):
-            return True, f"Content contains explicit language"
+        # Check explicit patterns
+        for pattern in EXPLICIT_PATTERNS:
+            if pattern.search(check_text):
+                return True, "Content contains explicit language"
 
     return False, None
 
@@ -541,6 +589,29 @@ def validate_integer(value, field_name, min_val=None, max_val=None, default=None
         return False, None, f"{field_name} must be at most {max_val}"
 
     return True, int_val, None
+
+
+def get_pagination_params():
+    """
+    Safely extract and validate pagination parameters from request args.
+    Returns (page, per_page) with sane defaults and limits.
+    """
+    # Parse page - must be positive integer, default 1, max 10000
+    try:
+        page = int(request.args.get('page', 1))
+        page = max(1, min(page, 10000))  # Clamp to 1-10000
+    except (ValueError, TypeError, OverflowError):
+        page = 1
+
+    # Parse per_page - must be positive integer, default 20, max 100
+    try:
+        per_page = int(request.args.get('per_page', 20))
+        per_page = max(1, min(per_page, 100))  # Clamp to 1-100
+    except (ValueError, TypeError, OverflowError):
+        per_page = 20
+
+    return page, per_page
+
 
 # =============================================================================
 
@@ -1123,8 +1194,7 @@ def api_library():
         user_id: Filter by creator
         category: Filter by genre/category (e.g., 'ambient', 'nature')
     """
-    page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 20))
+    page, per_page = get_pagination_params()
     model = request.args.get('model')
     search = request.args.get('search')
     sort = request.args.get('sort', 'recent')
@@ -1473,8 +1543,7 @@ def api_get_favorites():
     """Get user's favorites (paginated). Requires authentication."""
     user_id = request.user_id  # From verified auth token
 
-    page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 20))
+    page, per_page = get_pagination_params()
     model = request.args.get('model')
 
     result = db.get_favorites(user_id, page=page, per_page=per_page, model=model)
