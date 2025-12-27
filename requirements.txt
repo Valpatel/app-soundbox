@@ -3,6 +3,8 @@
 
 # Core framework
 flask>=2.0
+flask-limiter>=3.0
+requests>=2.28
 
 # PyTorch (CPU version - use setup.sh for GPU/CUDA version)
 torch>=2.0

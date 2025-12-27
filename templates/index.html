@@ -6444,9 +6444,9 @@
                 return;
             }
 
-            // Load playlists from API
+            // Load playlists from API (uses auth token)
             try {
-                const res = await fetch(`/api/playlists?user_id=${currentUserId}`);
+                const res = await authFetch('/api/playlists');
                 const data = await res.json();
 
                 if (data.error) {
@@ -6483,12 +6483,23 @@
         }
 
         async function loadFavorites() {
-            const userId = getEffectiveUserId();
             const grid = document.getElementById('favorites-grid');
             if (!grid) return;
 
+            // Check if authenticated
+            if (!isAuthenticated()) {
+                grid.innerHTML = `
+                    <div class="playlist-empty-state">
+                        <svg class="icon icon-xl"><use href="#icon-user"/></svg>
+                        <h3>Sign in to see Favorites</h3>
+                        <p>Log in with your Graphlings account to view your favorites.</p>
+                    </div>
+                `;
+                return;
+            }
+
             try {
-                const res = await fetch(`/api/favorites?user_id=${userId}&limit=20`);
+                const res = await authFetch('/api/favorites?limit=20');
                 const data = await res.json();
 
                 if (data.favorites && data.favorites.length > 0) {
@@ -6565,7 +6576,7 @@
             }
 
             try {
-                const res = await fetch(`/api/history/plays?user_id=${userId}&limit=${historyLimit}&offset=${playHistoryOffset}`);
+                const res = await authFetch(`/api/history/plays?limit=${historyLimit}&offset=${playHistoryOffset}`);
                 const data = await res.json();
 
                 if (data.error) {
@@ -6637,7 +6648,7 @@
             }
 
             try {
-                const res = await fetch(`/api/history/votes?user_id=${userId}&limit=${historyLimit}&offset=${voteHistoryOffset}`);
+                const res = await authFetch(`/api/history/votes?limit=${historyLimit}&offset=${voteHistoryOffset}`);
                 const data = await res.json();
 
                 if (data.error) {
@@ -6844,7 +6855,7 @@
             // Fetch playlists if not already loaded
             if (userPlaylists.length === 0) {
                 try {
-                    const res = await fetch(`/api/playlists?user_id=${currentUserId}`);
+                    const res = await authFetch('/api/playlists');
                     const data = await res.json();
                     userPlaylists = data.playlists || [];
                 } catch (e) {
@@ -6891,11 +6902,10 @@
             statusEl.textContent = 'Adding...';
 
             try {
-                const res = await fetch(`/api/playlists/${playlistId}/tracks`, {
+                const res = await authFetch(`/api/playlists/${playlistId}/tracks`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        user_id: currentUserId,
                         generation_id: currentPlaylistModalTrackId
                     })
                 });
@@ -6949,11 +6959,10 @@
 
             try {
                 // Create playlist via API
-                const res = await fetch('/api/playlists', {
+                const res = await authFetch('/api/playlists', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        user_id: currentUserId,
                         name: name
                     })
                 });
@@ -6966,11 +6975,10 @@
 
                 // If we have a track to add, add it now
                 if (currentPlaylistModalTrackId) {
-                    await fetch(`/api/playlists/${data.id}/tracks`, {
+                    await authFetch(`/api/playlists/${data.id}/tracks`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            user_id: currentUserId,
                             generation_id: currentPlaylistModalTrackId
                         })
                     });
@@ -7005,7 +7013,7 @@
             currentViewingPlaylistId = playlistId;
 
             try {
-                const res = await fetch(`/api/playlists/${playlistId}`);
+                const res = await authFetch(`/api/playlists/${playlistId}`);
                 const playlist = await res.json();
 
                 if (playlist.error) {
@@ -7122,7 +7130,7 @@
 
             try {
                 // Fetch playlist tracks
-                const res = await fetch(`/api/playlists/${currentViewingPlaylistId}`);
+                const res = await authFetch(`/api/playlists/${currentViewingPlaylistId}`);
                 const playlist = await res.json();
                 const tracks = playlist.tracks || [];
 
@@ -7155,12 +7163,11 @@
             if (!currentViewingPlaylistId || !isUserAuthenticated()) return;
 
             try {
-                const res = await fetch(
+                const res = await authFetch(
                     `/api/playlists/${currentViewingPlaylistId}/tracks/${trackId}`,
                     {
                         method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: currentUserId })
+                        headers: { 'Content-Type': 'application/json' }
                     }
                 );
 
@@ -7207,11 +7214,10 @@
             }
 
             try {
-                const res = await fetch(`/api/playlists/${currentViewingPlaylistId}`, {
+                const res = await authFetch(`/api/playlists/${currentViewingPlaylistId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        user_id: currentUserId,
                         name: newName
                     })
                 });
@@ -7239,10 +7245,9 @@
             if (!confirm('Delete this playlist? This cannot be undone.')) return;
 
             try {
-                const res = await fetch(`/api/playlists/${currentViewingPlaylistId}`, {
+                const res = await authFetch(`/api/playlists/${currentViewingPlaylistId}`, {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUserId })
+                    headers: { 'Content-Type': 'application/json' }
                 });
 
                 const data = await res.json();
@@ -7321,11 +7326,10 @@
             if (!currentViewingPlaylistId || !isUserAuthenticated()) return;
 
             try {
-                await fetch(`/api/playlists/${currentViewingPlaylistId}/reorder`, {
+                await authFetch(`/api/playlists/${currentViewingPlaylistId}/reorder`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        user_id: currentUserId,
                         track_order: trackOrder
                     })
                 });
@@ -7468,6 +7472,27 @@
         // Get effective user ID (logged in user OR device ID)
         function getEffectiveUserId() {
             return currentUserId || getDeviceId();
+        }
+
+        // Get auth token from Graphlings SDK
+        function getAuthToken() {
+            // The Graphlings SDK stores token in localStorage with key like 'graphlings_sfx-music_token'
+            return localStorage.getItem('graphlings_sfx-music_token');
+        }
+
+        // Make authenticated API request
+        async function authFetch(url, options = {}) {
+            const token = getAuthToken();
+            if (token) {
+                options.headers = options.headers || {};
+                options.headers['Authorization'] = `Bearer ${token}`;
+            }
+            return fetch(url, options);
+        }
+
+        // Check if user is authenticated with Graphlings
+        function isAuthenticated() {
+            return !!getAuthToken() && !!currentUserId;
         }
 
         const gpuName = document.getElementById('gpu-name');
@@ -8063,12 +8088,12 @@
 
         async function loadRadioTrackVote() {
             if (!currentRadioTrack) return;
-            const voterId = getEffectiveUserId();
+            if (!isAuthenticated()) return;  // Votes require auth
             try {
-                const response = await fetch('/api/library/votes', {
+                const response = await authFetch('/api/library/votes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ generation_ids: [currentRadioTrack.id], user_id: voterId })
+                    body: JSON.stringify({ generation_ids: [currentRadioTrack.id] })
                 });
                 const data = await response.json();
                 currentRadioVote = data.votes?.[currentRadioTrack.id] || 0;
@@ -8088,16 +8113,14 @@
                 return;
             }
 
-            const voterId = getEffectiveUserId();
-
             // Toggle vote if clicking same button
             const newVote = currentRadioVote === voteValue ? 0 : voteValue;
 
             try {
-                const response = await fetch(`/api/library/${currentRadioTrack.id}/vote`, {
+                const response = await authFetch(`/api/library/${currentRadioTrack.id}/vote`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ vote: newVote, user_id: voterId })
+                    body: JSON.stringify({ vote: newVote })
                 });
                 const data = await response.json();
 
@@ -8127,7 +8150,6 @@
                 return;
             }
 
-            const voterId = getEffectiveUserId();
             const newVote = currentRadioVote === voteValue ? 0 : voteValue;
 
             // Visual feedback on mini-player buttons
@@ -8135,10 +8157,10 @@
             const downBtn = document.getElementById('mini-vote-down');
 
             try {
-                const response = await fetch(`/api/library/${currentRadioTrack.id}/vote`, {
+                const response = await authFetch(`/api/library/${currentRadioTrack.id}/vote`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ vote: newVote, user_id: voterId })
+                    body: JSON.stringify({ vote: newVote })
                 });
                 const data = await response.json();
 
@@ -8789,17 +8811,15 @@
         async function submitFeedbackModal() {
             if (!feedbackModalState.track) return;
 
-            const voterId = getEffectiveUserId();
             const voteValue = feedbackModalState.isPositive ? 1 : -1;
             const genId = feedbackModalState.track.id;
 
             try {
-                const response = await fetch(`/api/library/${genId}/vote`, {
+                const response = await authFetch(`/api/library/${genId}/vote`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         vote: voteValue,
-                        user_id: voterId,
                         feedback_reasons: feedbackModalState.selectedReasons.length > 0 ? feedbackModalState.selectedReasons : null,
                         suggested_model: feedbackModalState.suggestedModel
                     })
@@ -9323,12 +9343,12 @@
         }
 
         async function loadUserVotes(generationIds) {
-            const voterId = getEffectiveUserId();
+            if (!isAuthenticated()) return;  // Votes require auth
             try {
-                const response = await fetch('/api/library/votes', {
+                const response = await authFetch('/api/library/votes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ generation_ids: generationIds, user_id: voterId })
+                    body: JSON.stringify({ generation_ids: generationIds })
                 });
                 const data = await response.json();
                 userVotes = data.votes || {};
@@ -9338,12 +9358,12 @@
         }
 
         async function loadUserFavorites(generationIds) {
-            const userId = getEffectiveUserId();
+            if (!isAuthenticated()) return;  // Favorites require auth
             try {
-                const response = await fetch('/api/favorites/check', {
+                const response = await authFetch('/api/favorites/check', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, generation_ids: generationIds })
+                    body: JSON.stringify({ generation_ids: generationIds })
                 });
                 if (response.ok) {
                     const data = await response.json();
@@ -9932,12 +9952,11 @@
 
         // Clear a library vote (toggle off)
         async function clearLibraryVote(genId) {
-            const voterId = getEffectiveUserId();
             try {
-                const response = await fetch(`/api/library/${genId}/vote`, {
+                const response = await authFetch(`/api/library/${genId}/vote`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ vote: 0, user_id: voterId })
+                    body: JSON.stringify({ vote: 0 })
                 });
                 const data = await response.json();
 

@@ -15,6 +15,7 @@ import threading
 import queue
 import time
 from datetime import datetime
+from functools import wraps
 import torch
 import numpy as np
 import librosa
@@ -22,6 +23,9 @@ import matplotlib
 matplotlib.use('Agg')  # Non-interactive backend
 import matplotlib.pyplot as plt
 from flask import Flask, render_template, request, jsonify, send_file
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import requests
 from audiocraft.models import MusicGen, AudioGen, MAGNeT
 from audiocraft.data.audio import audio_write
 import database as db
@@ -186,6 +190,138 @@ def make_loopable(wav, sample_rate, fade_duration=0.5):
 
 app = Flask(__name__)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# =============================================================================
+# Rate Limiting - Prevent abuse and DoS
+# =============================================================================
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
+# =============================================================================
+# Authentication - Verify tokens with Graphlings accounts server
+# =============================================================================
+
+# Auto-detect accounts server URL based on environment
+def get_accounts_url():
+    """Get the accounts server URL based on environment."""
+    # Check environment variable first
+    env_url = os.environ.get('GRAPHLINGS_ACCOUNTS_URL')
+    if env_url:
+        return env_url.rstrip('/')
+
+    # In production, use the production server
+    # In development, assume local server
+    return 'http://localhost:8002'
+
+ACCOUNTS_URL = get_accounts_url()
+
+# Token verification cache to reduce load on accounts server
+# Format: {token: {'user': user_data, 'expires': timestamp}}
+_token_cache = {}
+_TOKEN_CACHE_TTL = 300  # 5 minutes
+
+def verify_auth_token(token):
+    """
+    Verify a JWT token with the Graphlings accounts server.
+
+    Returns user data dict if valid, None if invalid.
+    Uses a short-lived cache to reduce load on accounts server.
+    """
+    if not token:
+        return None
+
+    # Check cache first
+    cached = _token_cache.get(token)
+    if cached and cached['expires'] > time.time():
+        return cached['user']
+
+    # Verify with accounts server
+    try:
+        response = requests.get(
+            f'{ACCOUNTS_URL}/api/auth/me',
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=5
+        )
+
+        if response.status_code == 200:
+            user = response.json()
+            # Cache the result
+            _token_cache[token] = {
+                'user': user,
+                'expires': time.time() + _TOKEN_CACHE_TTL
+            }
+            return user
+        else:
+            # Invalid token - remove from cache if present
+            _token_cache.pop(token, None)
+            return None
+
+    except requests.RequestException as e:
+        print(f"[Auth] Token verification failed: {e}")
+        # On network error, check if we have a cached result (even if expired)
+        # This provides resilience if accounts server is temporarily down
+        if cached:
+            return cached['user']
+        return None
+
+def get_auth_token():
+    """Extract auth token from request headers."""
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        return auth_header[7:]
+    return None
+
+def require_auth(f):
+    """
+    Decorator to require authentication for an endpoint.
+    Sets request.user_id and request.user if authenticated.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = get_auth_token()
+        user = verify_auth_token(token)
+
+        if not user:
+            return jsonify({'error': 'Authentication required'}), 401
+
+        # Attach user info to request context
+        request.user = user
+        request.user_id = user.get('id')
+        request.is_adult = (
+            user.get('account_type') == 'adult' or
+            (user.get('account_type') != 'child' and not user.get('is_child'))
+        )
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+def optional_auth(f):
+    """
+    Decorator to optionally authenticate.
+    Sets request.user_id and request.user if token provided and valid.
+    Does not fail if no token or invalid token.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = get_auth_token()
+        user = verify_auth_token(token) if token else None
+
+        request.user = user
+        request.user_id = user.get('id') if user else None
+        request.is_adult = (
+            user.get('account_type') == 'adult' or
+            (user.get('account_type') != 'child' and not user.get('is_child'))
+        ) if user else False
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+# =============================================================================
 
 # Model state
 models = {}
@@ -535,6 +671,8 @@ def job_status(job_id):
 
 
 @app.route('/generate', methods=['POST'])
+@limiter.limit("10 per hour")  # Limit generation requests (resource intensive)
+@optional_auth
 def generate():
     data = request.json
     prompt = data.get('prompt', 'upbeat electronic music')
@@ -542,7 +680,8 @@ def generate():
     model_type = data.get('model', 'music')
     make_loop = data.get('loop', False)
     priority = data.get('priority', 'standard')
-    user_id = data.get('user_id')  # Optional user ID from widget
+    # Use verified user_id from auth token, fallback to provided user_id for backwards compat
+    user_id = request.user_id or data.get('user_id')
 
     if loading_status.get(model_type) != 'ready':
         return jsonify({
@@ -758,26 +897,26 @@ def api_category_counts():
 # =============================================================================
 
 @app.route('/api/library/<gen_id>/vote', methods=['POST'])
+@limiter.limit("100 per hour")
+@require_auth
 def api_vote(gen_id):
     """
     Cast or update a vote with optional private feedback.
 
+    Requires authentication via Bearer token.
+
     Body:
         vote: 1 (upvote), -1 (downvote), or 0 (remove)
-        user_id: The voter's user ID
         feedback_reasons: Optional list of feedback tags (e.g., ['catchy', 'quality'])
         notes: Optional private notes (not displayed publicly)
         suggested_model: Optional reclassification suggestion ('music' or 'audio')
     """
     data = request.json or {}
     vote_value = data.get('vote', 0)
-    user_id = data.get('user_id')
+    user_id = request.user_id  # From verified auth token
     feedback_reasons = data.get('feedback_reasons')  # List of tags
     notes = data.get('notes')  # Private notes
     suggested_model = data.get('suggested_model')  # Reclassification suggestion
-
-    if not user_id:
-        return jsonify({'error': 'user_id required'}), 400
 
     if vote_value not in [-1, 0, 1]:
         return jsonify({'error': 'vote must be -1, 0, or 1'}), 400
@@ -796,20 +935,18 @@ def api_vote(gen_id):
 
 
 @app.route('/api/library/votes', methods=['POST'])
+@require_auth
 def api_get_votes():
     """
     Get user's votes for multiple generations.
+    Requires authentication via Bearer token.
 
     Body:
         generation_ids: List of generation IDs
-        user_id: The user's ID
     """
     data = request.json or {}
     generation_ids = data.get('generation_ids', [])
-    user_id = data.get('user_id')
-
-    if not user_id:
-        return jsonify({'error': 'user_id required'}), 400
+    user_id = request.user_id  # From verified auth token
 
     votes = db.get_user_votes(generation_ids, user_id)
     return jsonify({'votes': votes})
@@ -830,6 +967,8 @@ def api_get_feedback(gen_id):
 # =============================================================================
 
 @app.route('/api/library/<gen_id>/suggest-tag', methods=['POST'])
+@limiter.limit("50 per hour")
+@optional_auth
 def api_suggest_tag(gen_id):
     """
     Submit a tag/category suggestion for a generation.
@@ -838,12 +977,10 @@ def api_suggest_tag(gen_id):
     Body:
         category: The category to suggest
         action: 'add' (default) or 'remove'
-        user_id: (optional) User identifier
     """
     data = request.get_json()
-    user_id = data.get('user_id') if data else None
-    if not user_id:
-        user_id = request.args.get('user_id') or request.remote_addr
+    # Use verified user_id from auth, fallback to IP for anonymous users
+    user_id = request.user_id or request.remote_addr
 
     if not data or 'category' not in data:
         return jsonify({'error': 'Missing category'}), 400
@@ -986,17 +1123,14 @@ def api_radio_next():
 
 
 # =============================================================================
-# Favorites
+# Favorites - Requires authentication
 # =============================================================================
 
 @app.route('/api/favorites/<gen_id>', methods=['POST'])
+@require_auth
 def api_add_favorite(gen_id):
-    """Add a generation to user's favorites."""
-    data = request.json or {}
-    user_id = data.get('user_id')
-
-    if not user_id:
-        return jsonify({'error': 'user_id required'}), 400
+    """Add a generation to user's favorites. Requires authentication."""
+    user_id = request.user_id  # From verified auth token
 
     # Verify generation exists
     generation = db.get_generation(gen_id)
@@ -1012,13 +1146,10 @@ def api_add_favorite(gen_id):
 
 
 @app.route('/api/favorites/<gen_id>', methods=['DELETE'])
+@require_auth
 def api_remove_favorite(gen_id):
-    """Remove a generation from user's favorites."""
-    data = request.json or {}
-    user_id = data.get('user_id')
-
-    if not user_id:
-        return jsonify({'error': 'user_id required'}), 400
+    """Remove a generation from user's favorites. Requires authentication."""
+    user_id = request.user_id  # From verified auth token
 
     removed = db.remove_favorite(user_id, gen_id)
     return jsonify({
@@ -1029,11 +1160,10 @@ def api_remove_favorite(gen_id):
 
 
 @app.route('/api/favorites')
+@require_auth
 def api_get_favorites():
-    """Get user's favorites (paginated)."""
-    user_id = request.args.get('user_id')
-    if not user_id:
-        return jsonify({'error': 'user_id required'}), 400
+    """Get user's favorites (paginated). Requires authentication."""
+    user_id = request.user_id  # From verified auth token
 
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 20))
@@ -1044,25 +1174,22 @@ def api_get_favorites():
 
 
 @app.route('/api/favorites/check', methods=['POST'])
+@require_auth
 def api_check_favorites():
-    """Check which generations are favorited by user."""
+    """Check which generations are favorited by user. Requires authentication."""
     data = request.json or {}
-    user_id = data.get('user_id')
+    user_id = request.user_id  # From verified auth token
     generation_ids = data.get('generation_ids', [])
-
-    if not user_id:
-        return jsonify({'error': 'user_id required'}), 400
 
     favorites = db.get_user_favorites(user_id, generation_ids)
     return jsonify({'favorites': list(favorites)})
 
 
 @app.route('/api/radio/favorites')
+@require_auth
 def api_radio_favorites():
-    """Shuffle play user's favorites."""
-    user_id = request.args.get('user_id')
-    if not user_id:
-        return jsonify({'error': 'user_id required'}), 400
+    """Shuffle play user's favorites. Requires authentication."""
+    user_id = request.user_id  # From verified auth token
 
     model = request.args.get('model')
     count = min(int(request.args.get('count', 10)), 50)
@@ -1106,11 +1233,10 @@ def api_radio_new():
 # =============================================================================
 
 @app.route('/api/history/plays')
+@require_auth
 def api_play_history():
-    """Get user's play history."""
-    user_id = request.args.get('user_id')
-    if not user_id:
-        return jsonify({'error': 'Authentication required'}), 401
+    """Get user's play history. Requires authentication."""
+    user_id = request.user_id  # From verified auth token
 
     limit = min(int(request.args.get('limit', 50)), 100)
     offset = int(request.args.get('offset', 0))
@@ -1125,11 +1251,10 @@ def api_play_history():
 
 
 @app.route('/api/history/votes')
+@require_auth
 def api_vote_history():
-    """Get user's vote history."""
-    user_id = request.args.get('user_id')
-    if not user_id:
-        return jsonify({'error': 'Authentication required'}), 401
+    """Get user's vote history. Requires authentication."""
+    user_id = request.user_id  # From verified auth token
 
     limit = min(int(request.args.get('limit', 50)), 100)
     offset = int(request.args.get('offset', 0))
@@ -1144,19 +1269,18 @@ def api_vote_history():
 
 
 # =============================================================================
-# Playlists - Requires authenticated user from Graphlings/Valnet widget
+# Playlists - Requires authentication via Bearer token
 # =============================================================================
 
 @app.route('/api/playlists', methods=['POST'])
+@require_auth
 def api_create_playlist():
-    """Create a new playlist."""
+    """Create a new playlist. Requires authentication."""
     data = request.get_json() or {}
-    user_id = data.get('user_id')
+    user_id = request.user_id  # From verified auth token
     name = data.get('name', '').strip()
     description = data.get('description', '').strip()
 
-    if not user_id:
-        return jsonify({'error': 'Authentication required. Please log in via Graphlings.'}), 401
     if not name:
         return jsonify({'error': 'Playlist name is required'}), 400
 
@@ -1170,11 +1294,10 @@ def api_create_playlist():
 
 
 @app.route('/api/playlists')
+@require_auth
 def api_get_playlists():
-    """Get user's playlists."""
-    user_id = request.args.get('user_id')
-    if not user_id:
-        return jsonify({'error': 'Authentication required. Please log in via Graphlings.'}), 401
+    """Get user's playlists. Requires authentication."""
+    user_id = request.user_id  # From verified auth token
 
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 50, type=int)
@@ -1184,26 +1307,29 @@ def api_get_playlists():
 
 
 @app.route('/api/playlists/<playlist_id>')
+@optional_auth
 def api_get_playlist(playlist_id):
-    """Get a playlist with its tracks."""
+    """Get a playlist with its tracks. Optional authentication for private playlists."""
     playlist = db.get_playlist(playlist_id)
     if not playlist:
         return jsonify({'error': 'Playlist not found'}), 404
 
+    # Check ownership for private playlists (future feature)
+    # For now, all playlists are public/viewable
+
     tracks = db.get_playlist_tracks(playlist_id, include_metadata=True)
     playlist['tracks'] = tracks
+    playlist['is_owner'] = (request.user_id == playlist.get('user_id')) if request.user_id else False
 
     return jsonify(playlist)
 
 
 @app.route('/api/playlists/<playlist_id>', methods=['PUT'])
+@require_auth
 def api_update_playlist(playlist_id):
-    """Update playlist name/description."""
+    """Update playlist name/description. Requires authentication and ownership."""
     data = request.get_json() or {}
-    user_id = data.get('user_id')
-
-    if not user_id:
-        return jsonify({'error': 'Authentication required'}), 401
+    user_id = request.user_id  # From verified auth token
 
     name = data.get('name')
     description = data.get('description')
@@ -1215,13 +1341,10 @@ def api_update_playlist(playlist_id):
 
 
 @app.route('/api/playlists/<playlist_id>', methods=['DELETE'])
+@require_auth
 def api_delete_playlist(playlist_id):
-    """Delete a playlist."""
-    data = request.get_json() or {}
-    user_id = data.get('user_id')
-
-    if not user_id:
-        return jsonify({'error': 'Authentication required'}), 401
+    """Delete a playlist. Requires authentication and ownership."""
+    user_id = request.user_id  # From verified auth token
 
     if db.delete_playlist(playlist_id, user_id):
         return jsonify({'success': True})
@@ -1229,14 +1352,13 @@ def api_delete_playlist(playlist_id):
 
 
 @app.route('/api/playlists/<playlist_id>/tracks', methods=['POST'])
+@require_auth
 def api_add_playlist_track(playlist_id):
-    """Add a track to a playlist."""
+    """Add a track to a playlist. Requires authentication and ownership."""
     data = request.get_json() or {}
-    user_id = data.get('user_id')
+    user_id = request.user_id  # From verified auth token
     generation_id = data.get('generation_id')
 
-    if not user_id:
-        return jsonify({'error': 'Authentication required'}), 401
     if not generation_id:
         return jsonify({'error': 'generation_id required'}), 400
 
@@ -1247,13 +1369,10 @@ def api_add_playlist_track(playlist_id):
 
 
 @app.route('/api/playlists/<playlist_id>/tracks/<generation_id>', methods=['DELETE'])
+@require_auth
 def api_remove_playlist_track(playlist_id, generation_id):
-    """Remove a track from a playlist."""
-    data = request.get_json() or {}
-    user_id = data.get('user_id')
-
-    if not user_id:
-        return jsonify({'error': 'Authentication required'}), 401
+    """Remove a track from a playlist. Requires authentication and ownership."""
+    user_id = request.user_id  # From verified auth token
 
     if db.remove_track_from_playlist(playlist_id, generation_id, user_id):
         return jsonify({'success': True})
@@ -1261,14 +1380,13 @@ def api_remove_playlist_track(playlist_id, generation_id):
 
 
 @app.route('/api/playlists/<playlist_id>/reorder', methods=['PUT'])
+@require_auth
 def api_reorder_playlist(playlist_id):
-    """Reorder tracks in a playlist."""
+    """Reorder tracks in a playlist. Requires authentication and ownership."""
     data = request.get_json() or {}
-    user_id = data.get('user_id')
+    user_id = request.user_id  # From verified auth token
     track_order = data.get('track_order', [])
 
-    if not user_id:
-        return jsonify({'error': 'Authentication required'}), 401
     if not track_order:
         return jsonify({'error': 'track_order required'}), 400
 
@@ -1279,7 +1397,7 @@ def api_reorder_playlist(playlist_id):
 
 @app.route('/api/radio/playlist/<playlist_id>')
 def api_radio_playlist(playlist_id):
-    """Get playlist tracks for radio playback."""
+    """Get playlist tracks for radio playback. Public access for sharing."""
     shuffle = request.args.get('shuffle', 'false').lower() == 'true'
 
     playlist = db.get_playlist(playlist_id)
