@@ -412,6 +412,79 @@
             opacity: 0.7;
         }
 
+        /* Voice Selector */
+        .voice-selector {
+            margin: 16px 0;
+            padding: 16px;
+            background: var(--bg-input);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .voice-selector label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .voice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .voice-card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .voice-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        .voice-card.selected {
+            border-color: var(--accent);
+            background: rgba(var(--accent-rgb), 0.1);
+        }
+        .voice-card .voice-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .voice-card .voice-locale {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+        .voice-card .voice-quality {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            display: inline-block;
+            width: fit-content;
+        }
+        .voice-card .voice-sample-btn {
+            margin-top: 6px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            width: fit-content;
+        }
+        .voice-card .voice-sample-btn:hover {
+            filter: brightness(1.1);
+        }
+
         /* Controls Row */
         .controls {
             display: flex;
@@ -6141,6 +6214,19 @@
                     <div class="name">AudioGen</div>
                     <div class="desc">Generate sound effects</div>
                 </div>
+                <div class="model-tab" data-model="voice" onclick="selectModel('voice')" title="Generate speech with AI">
+                    <div class="icon"><svg class="icon icon-lg"><use href="#icon-mic"/></svg></div>
+                    <div class="name">Piper TTS</div>
+                    <div class="desc">Generate speech</div>
+                </div>
+            </div>
+
+            <!-- Voice selector (shown only for voice model) -->
+            <div class="voice-selector" id="voice-selector" style="display: none;">
+                <label>Select Voice:</label>
+                <div class="voice-grid" id="voice-grid">
+                    <!-- Voices loaded dynamically -->
+                </div>
             </div>
 
             <label for="prompt">Describe what you want to generate:</label>
@@ -6165,6 +6251,18 @@
                     <span class="chip" onclick="setPrompt('car engine starting and revving')">Car Engine</span>
                     <span class="chip" onclick="setPrompt('crowd cheering at a sports event')">Crowd Cheering</span>
                     <span class="chip" onclick="setPrompt('glass breaking and shattering')">Glass Breaking</span>
+                </div>
+            </div>
+
+            <div class="examples" id="voice-examples" style="display: none;">
+                <span>Try these:</span>
+                <div class="example-chips">
+                    <span class="chip" onclick="setPrompt('Welcome to the game! Press start to begin.')">Game Welcome</span>
+                    <span class="chip" onclick="setPrompt('Level complete! You earned 100 points.')">Level Complete</span>
+                    <span class="chip" onclick="setPrompt('Game over. Would you like to play again?')">Game Over</span>
+                    <span class="chip" onclick="setPrompt('Three. Two. One. Go!')">Countdown</span>
+                    <span class="chip" onclick="setPrompt('Achievement unlocked! You are a champion.')">Achievement</span>
+                    <span class="chip" onclick="setPrompt('Warning! Enemy approaching from the north.')">Warning</span>
                 </div>
             </div>
 
@@ -7800,14 +7898,36 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 tab.classList.toggle('active', tab.dataset.model === model);
             });
 
+            const voiceSelector = document.getElementById('voice-selector');
+            const voiceExamples = document.getElementById('voice-examples');
+            const durationControl = document.querySelector('.duration-control');
+            const loopControl = document.getElementById('loop-control');
+
             if (model === 'music') {
                 musicExamples.style.display = 'block';
                 audioExamples.style.display = 'none';
+                voiceExamples.style.display = 'none';
+                voiceSelector.style.display = 'none';
+                durationControl.style.display = 'flex';
+                loopControl.style.display = 'flex';
                 promptEl.placeholder = 'e.g., upbeat electronic dance music with heavy bass and synth leads';
-            } else {
+            } else if (model === 'audio') {
                 musicExamples.style.display = 'none';
                 audioExamples.style.display = 'block';
+                voiceExamples.style.display = 'none';
+                voiceSelector.style.display = 'none';
+                durationControl.style.display = 'flex';
+                loopControl.style.display = 'flex';
                 promptEl.placeholder = 'e.g., dog barking loudly, thunder in the background';
+            } else if (model === 'voice') {
+                musicExamples.style.display = 'none';
+                audioExamples.style.display = 'none';
+                voiceExamples.style.display = 'block';
+                voiceSelector.style.display = 'block';
+                durationControl.style.display = 'none';
+                loopControl.style.display = 'none';
+                promptEl.placeholder = 'Type the text you want the voice to say...';
+                loadVoices();
             }
 
             // Restore saved prompt for this model
@@ -7815,6 +7935,118 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
             updateGenerateButton();
 
+        }
+
+        // Voice/TTS handling
+        let availableVoices = [];
+        let selectedVoice = 'en_US-lessac-medium';
+        let voicesLoaded = false;
+
+        async function loadVoices() {
+            if (voicesLoaded) return;
+
+            try {
+                const resp = await fetch('/api/voices');
+                const data = await resp.json();
+                availableVoices = data.voices || [];
+                voicesLoaded = true;
+                renderVoiceGrid();
+            } catch (err) {
+                console.error('Failed to load voices:', err);
+            }
+        }
+
+        function renderVoiceGrid() {
+            const grid = document.getElementById('voice-grid');
+            grid.innerHTML = '';
+
+            availableVoices.forEach(voice => {
+                const card = document.createElement('div');
+                card.className = 'voice-card' + (voice.id === selectedVoice ? ' selected' : '');
+                card.onclick = () => selectVoice(voice.id);
+
+                const localeParts = voice.locale.split('_');
+                const localeDisplay = localeParts.length > 1 ? `${localeParts[1]} (${localeParts[0]})` : voice.locale;
+
+                card.innerHTML = `
+                    <div class="voice-name">${voice.name}</div>
+                    <div class="voice-locale">${localeDisplay}</div>
+                    <div class="voice-quality">${voice.quality}</div>
+                    <button class="voice-sample-btn" onclick="event.stopPropagation(); playSample('${voice.id}')">
+                        <svg class="icon" width="12" height="12"><use href="#icon-play"/></svg>
+                        Sample
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function selectVoice(voiceId) {
+            selectedVoice = voiceId;
+            document.querySelectorAll('.voice-card').forEach(card => {
+                const isSelected = card.querySelector('.voice-name').textContent ===
+                    availableVoices.find(v => v.id === voiceId)?.name;
+                card.classList.toggle('selected',
+                    availableVoices.find(v => v.id === voiceId)?.name ===
+                    card.querySelector('.voice-name').textContent);
+            });
+            renderVoiceGrid();
+        }
+
+        let sampleAudio = null;
+        function playSample(voiceId) {
+            if (sampleAudio) {
+                sampleAudio.pause();
+            }
+            sampleAudio = new Audio(`/api/tts/sample/${voiceId}`);
+            sampleAudio.play().catch(e => console.error('Sample playback failed:', e));
+        }
+
+        async function generateTTS() {
+            const text = promptEl.value.trim();
+            if (!text) {
+                showToast('Please enter text to speak', 'warning');
+                return;
+            }
+
+            const statusEl = document.getElementById('status');
+            const generateBtn = document.getElementById('generate-btn');
+
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<span>Generating...</span>';
+            statusEl.innerHTML = '<div class="status-message">Generating speech...</div>';
+            statusEl.style.display = 'block';
+
+            try {
+                const resp = await fetch('/api/tts/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        voice: selectedVoice
+                    })
+                });
+
+                const data = await resp.json();
+
+                if (data.success) {
+                    statusEl.innerHTML = '<div class="status-success">Speech generated!</div>';
+                    const audioEl = document.getElementById('audio');
+                    audioEl.src = `/generated/${data.filename}`;
+                    audioEl.play();
+                    document.getElementById('player').style.display = 'block';
+                    showToast('Speech generated successfully!', 'success');
+                } else {
+                    statusEl.innerHTML = `<div class="status-error">Error: ${data.error}</div>`;
+                    showToast('TTS generation failed', 'error');
+                }
+            } catch (err) {
+                statusEl.innerHTML = '<div class="status-error">Generation failed</div>';
+                showToast('TTS generation failed', 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<span>Generate</span>';
+            }
         }
 
         function setPrompt(text) {
@@ -7857,6 +8089,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
 
         async function generate() {
+            // Handle voice model separately
+            if (currentModel === 'voice') {
+                generateTTS();
+                return;
+            }
+
             // Require authentication to generate
             if (!isUserAuthenticated()) {
                 showLoginPrompt('generate audio');
