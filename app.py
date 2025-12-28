@@ -28,7 +28,14 @@ from flask_limiter.util import get_remote_address
 import requests
 from audiocraft.models import MusicGen, AudioGen, MAGNeT
 from audiocraft.data.audio import audio_write
+from piper import PiperVoice
+import wave
+import io
 import database as db
+
+# Voice models directory
+VOICES_DIR = os.path.join(os.path.dirname(__file__), "models", "voices")
+voice_models = {}  # Cached voice models
 
 METADATA_FILE = "generations.json"
 OUTPUT_DIR = "generated"
@@ -1942,6 +1949,173 @@ def api_log_error():
     print(f"{'='*60}\n")
 
     return jsonify({'logged': True})
+
+
+# =============================================================================
+# TTS / Voice Endpoints
+# =============================================================================
+
+def get_available_voices():
+    """Scan voices directory and return available voice models."""
+    voices = []
+    if not os.path.exists(VOICES_DIR):
+        return voices
+
+    for filename in os.listdir(VOICES_DIR):
+        if filename.endswith('.onnx') and not filename.endswith('.onnx.json'):
+            voice_id = filename.replace('.onnx', '')
+            json_path = os.path.join(VOICES_DIR, f"{voice_id}.onnx.json")
+
+            # Parse voice metadata from filename (e.g., "en_US-lessac-medium")
+            parts = voice_id.split('-')
+            locale = parts[0] if parts else 'unknown'
+            name = parts[1] if len(parts) > 1 else 'unknown'
+            quality = parts[2] if len(parts) > 2 else 'medium'
+
+            # Try to read JSON config for additional metadata
+            description = ""
+            sample_rate = 22050
+            if os.path.exists(json_path):
+                try:
+                    with open(json_path, 'r') as f:
+                        config = json.load(f)
+                        sample_rate = config.get('audio', {}).get('sample_rate', 22050)
+                        description = config.get('description', '')
+                except:
+                    pass
+
+            voices.append({
+                'id': voice_id,
+                'name': name.replace('_', ' ').title(),
+                'locale': locale,
+                'quality': quality,
+                'description': description,
+                'sample_rate': sample_rate,
+                'onnx_path': os.path.join(VOICES_DIR, filename)
+            })
+
+    # Sort by locale, then name
+    voices.sort(key=lambda v: (v['locale'], v['name']))
+    return voices
+
+
+def get_voice_model(voice_id):
+    """Load and cache a Piper voice model."""
+    if voice_id in voice_models:
+        return voice_models[voice_id]
+
+    onnx_path = os.path.join(VOICES_DIR, f"{voice_id}.onnx")
+    json_path = os.path.join(VOICES_DIR, f"{voice_id}.onnx.json")
+
+    if not os.path.exists(onnx_path):
+        return None
+
+    try:
+        # Load model with GPU if available
+        voice = PiperVoice.load(onnx_path, config_path=json_path, use_cuda=torch.cuda.is_available())
+        voice_models[voice_id] = voice
+        return voice
+    except Exception as e:
+        print(f"Failed to load voice {voice_id}: {e}")
+        return None
+
+
+@app.route('/api/voices')
+def api_voices():
+    """List all available TTS voices."""
+    voices = get_available_voices()
+    return jsonify({
+        'voices': voices,
+        'total': len(voices)
+    })
+
+
+@app.route('/api/tts/generate', methods=['POST'])
+def api_tts_generate():
+    """Generate speech from text using Piper TTS."""
+    data = request.get_json() or {}
+    text = data.get('text', '').strip()
+    voice_id = data.get('voice', 'en_US-lessac-medium')
+
+    if not text:
+        return jsonify({'error': 'Text is required'}), 400
+
+    if len(text) > 5000:
+        return jsonify({'error': 'Text too long (max 5000 chars)'}), 400
+
+    voice = get_voice_model(voice_id)
+    if not voice:
+        return jsonify({'error': f'Voice not found: {voice_id}'}), 404
+
+    try:
+        # Create WAV file
+        gen_id = uuid.uuid4().hex
+        filename = f"tts_{gen_id}.wav"
+        filepath = os.path.join(OUTPUT_DIR, filename)
+
+        # Use synthesize_wav to write directly to file
+        with wave.open(filepath, 'wb') as wav_file:
+            voice.synthesize_wav(text, wav_file)
+
+        # Get duration from file
+        import scipy.io.wavfile as wav_reader
+        sample_rate, audio_data = wav_reader.read(filepath)
+        duration = len(audio_data) / sample_rate
+
+        # Save to database
+        db.create_generation(
+            gen_id=gen_id,
+            prompt=text[:200],  # Store first 200 chars as prompt
+            model='voice',
+            filename=filename,
+            duration=duration,
+            is_loop=False
+        )
+
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'gen_id': gen_id,
+            'duration': round(duration, 2),
+            'voice': voice_id
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"TTS generation error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': 'TTS generation failed'}), 500
+
+
+@app.route('/api/tts/sample/<voice_id>')
+def api_tts_sample(voice_id):
+    """Get or generate a sample for a voice."""
+    # Check for cached sample
+    sample_dir = os.path.join(OUTPUT_DIR, 'voice_samples')
+    os.makedirs(sample_dir, exist_ok=True)
+    sample_path = os.path.join(sample_dir, f"{voice_id}_sample.wav")
+
+    if os.path.exists(sample_path):
+        return send_file(sample_path, mimetype='audio/wav')
+
+    # Generate sample
+    voice = get_voice_model(voice_id)
+    if not voice:
+        return jsonify({'error': f'Voice not found: {voice_id}'}), 404
+
+    try:
+        # Use a standard sample text
+        sample_text = "Hello! This is a sample of my voice. I can read any text you give me."
+
+        # Use synthesize_wav to write directly to file
+        with wave.open(sample_path, 'wb') as wav_file:
+            voice.synthesize_wav(sample_text, wav_file)
+
+        return send_file(sample_path, mimetype='audio/wav')
+
+    except Exception as e:
+        print(f"Sample generation error: {e}")
+        return jsonify({'error': 'Sample generation failed'}), 500
 
 
 def slugify_prompt(prompt, max_length=30):
