@@ -415,61 +415,128 @@
         /* Voice Selector */
         .voice-selector {
             margin: 16px 0;
-            padding: 16px;
+            padding: 12px;
             background: var(--bg-input);
             border-radius: 12px;
             border: 1px solid var(--border);
         }
-        .voice-selector label {
-            display: block;
+        .voice-selector-header {
+            display: flex;
+            gap: 12px;
+            align-items: center;
             margin-bottom: 12px;
-            font-weight: 600;
+            flex-wrap: wrap;
         }
-        .voice-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 10px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .voice-card {
+        .voice-search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             background: var(--bg-secondary);
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 12px;
+            flex: 1;
+            min-width: 150px;
+        }
+        .voice-search-box input {
+            border: none;
+            background: transparent;
+            outline: none;
+            color: var(--text);
+            flex: 1;
+            font-size: 0.9rem;
+        }
+        .voice-filters {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .voice-filter-btn {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
             cursor: pointer;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 4px;
             transition: all 0.2s;
+        }
+        .voice-filter-btn:hover {
+            border-color: var(--accent);
+        }
+        .voice-filter-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        .voice-list {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
+            max-height: 250px;
+            overflow-y: auto;
         }
-        .voice-card:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px);
+        .voice-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
         }
-        .voice-card.selected {
+        .voice-row:hover {
+            border-color: var(--border);
+            background: var(--bg-tertiary);
+        }
+        .voice-row.selected {
             border-color: var(--accent);
             background: rgba(var(--accent-rgb), 0.1);
         }
-        .voice-card .voice-name {
+        .voice-row .voice-fav {
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            transition: all 0.2s;
+        }
+        .voice-row .voice-fav:hover {
+            color: gold;
+            transform: scale(1.2);
+        }
+        .voice-row .voice-fav.is-fav {
+            color: gold;
+        }
+        .voice-row .voice-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .voice-row .voice-name {
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
-        .voice-card .voice-locale {
+        .voice-row .voice-meta {
             font-size: 0.75rem;
-            opacity: 0.7;
+            color: var(--text-muted);
         }
-        .voice-card .voice-quality {
-            font-size: 0.7rem;
+        .voice-row .voice-quality {
+            font-size: 0.65rem;
             padding: 2px 6px;
             background: var(--bg-tertiary);
             border-radius: 4px;
-            display: inline-block;
-            width: fit-content;
         }
-        .voice-card .voice-sample-btn {
-            margin-top: 6px;
-            padding: 4px 8px;
+        .voice-row .voice-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .voice-row .voice-play-btn {
+            padding: 4px 10px;
             font-size: 0.75rem;
             background: var(--accent);
             color: white;
@@ -479,10 +546,12 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            width: fit-content;
         }
-        .voice-card .voice-sample-btn:hover {
+        .voice-row .voice-play-btn:hover {
             filter: brightness(1.1);
+        }
+        .voice-row .voice-play-btn.playing {
+            background: var(--success);
         }
 
         /* Controls Row */
@@ -5591,6 +5660,15 @@
         <symbol id="icon-volume-off" viewBox="0 0 24 24" fill="currentColor">
             <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
         </symbol>
+        <symbol id="icon-mic" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+        </symbol>
+        <symbol id="icon-star" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+        </symbol>
+        <symbol id="icon-star-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+        </symbol>
     </svg>
 
     <div class="widget-bar-top">
@@ -6223,8 +6301,21 @@
 
             <!-- Voice selector (shown only for voice model) -->
             <div class="voice-selector" id="voice-selector" style="display: none;">
-                <label>Select Voice:</label>
-                <div class="voice-grid" id="voice-grid">
+                <div class="voice-selector-header">
+                    <div class="voice-search-box">
+                        <svg class="icon" width="16" height="16"><use href="#icon-search"/></svg>
+                        <input type="text" id="voice-search" placeholder="Search voices..." oninput="filterVoices()">
+                    </div>
+                    <div class="voice-filters">
+                        <button class="voice-filter-btn active" data-filter="all" onclick="setVoiceFilter('all')">All</button>
+                        <button class="voice-filter-btn" data-filter="favorites" onclick="setVoiceFilter('favorites')">
+                            <svg class="icon" width="14" height="14"><use href="#icon-star"/></svg> Favorites
+                        </button>
+                        <button class="voice-filter-btn" data-filter="en_US" onclick="setVoiceFilter('en_US')">US</button>
+                        <button class="voice-filter-btn" data-filter="en_GB" onclick="setVoiceFilter('en_GB')">UK</button>
+                    </div>
+                </div>
+                <div class="voice-list" id="voice-list">
                     <!-- Voices loaded dynamically -->
                 </div>
             </div>
@@ -7941,6 +8032,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         let availableVoices = [];
         let selectedVoice = 'en_US-lessac-medium';
         let voicesLoaded = false;
+        let favoriteVoices = JSON.parse(localStorage.getItem('favoriteVoices') || '[]');
+        let currentVoiceFilter = 'all';
+        let voiceSearchQuery = '';
 
         async function loadVoices() {
             if (voicesLoaded) return;
@@ -7950,56 +8044,135 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 const data = await resp.json();
                 availableVoices = data.voices || [];
                 voicesLoaded = true;
-                renderVoiceGrid();
+                renderVoiceList();
             } catch (err) {
                 console.error('Failed to load voices:', err);
             }
         }
 
-        function renderVoiceGrid() {
-            const grid = document.getElementById('voice-grid');
-            grid.innerHTML = '';
+        function filterVoices() {
+            voiceSearchQuery = document.getElementById('voice-search').value.toLowerCase();
+            renderVoiceList();
+        }
 
-            availableVoices.forEach(voice => {
-                const card = document.createElement('div');
-                card.className = 'voice-card' + (voice.id === selectedVoice ? ' selected' : '');
-                card.onclick = () => selectVoice(voice.id);
+        function setVoiceFilter(filter) {
+            currentVoiceFilter = filter;
+            document.querySelectorAll('.voice-filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filter);
+            });
+            renderVoiceList();
+        }
 
+        function getFilteredVoices() {
+            return availableVoices.filter(voice => {
+                // Search filter
+                if (voiceSearchQuery) {
+                    const searchIn = `${voice.name} ${voice.locale} ${voice.quality}`.toLowerCase();
+                    if (!searchIn.includes(voiceSearchQuery)) return false;
+                }
+                // Category filter
+                if (currentVoiceFilter === 'favorites') {
+                    return favoriteVoices.includes(voice.id);
+                } else if (currentVoiceFilter !== 'all') {
+                    return voice.locale.startsWith(currentVoiceFilter);
+                }
+                return true;
+            });
+        }
+
+        function renderVoiceList() {
+            const list = document.getElementById('voice-list');
+            list.innerHTML = '';
+
+            const filtered = getFilteredVoices();
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">No voices found</div>';
+                return;
+            }
+
+            filtered.forEach(voice => {
+                const row = document.createElement('div');
+                row.className = 'voice-row' + (voice.id === selectedVoice ? ' selected' : '');
+                row.onclick = (e) => {
+                    if (!e.target.closest('.voice-fav') && !e.target.closest('.voice-play-btn')) {
+                        selectVoice(voice.id);
+                    }
+                };
+
+                const isFav = favoriteVoices.includes(voice.id);
                 const localeParts = voice.locale.split('_');
-                const localeDisplay = localeParts.length > 1 ? `${localeParts[1]} (${localeParts[0]})` : voice.locale;
+                const flag = localeParts[1] === 'US' ? '🇺🇸' : localeParts[1] === 'GB' ? '🇬🇧' : '🌐';
 
-                card.innerHTML = `
-                    <div class="voice-name">${voice.name}</div>
-                    <div class="voice-locale">${localeDisplay}</div>
-                    <div class="voice-quality">${voice.quality}</div>
-                    <button class="voice-sample-btn" onclick="event.stopPropagation(); playSample('${voice.id}')">
-                        <svg class="icon" width="12" height="12"><use href="#icon-play"/></svg>
-                        Sample
-                    </button>
+                row.innerHTML = `
+                    <div class="voice-fav ${isFav ? 'is-fav' : ''}" onclick="toggleFavorite('${voice.id}')">
+                        <svg class="icon" width="16" height="16"><use href="#icon-star${isFav ? '' : '-outline'}"/></svg>
+                    </div>
+                    <div class="voice-info" onclick="selectVoice('${voice.id}')">
+                        <span class="voice-name">${voice.name}</span>
+                        <span class="voice-meta">${flag} ${localeParts[1] || voice.locale}</span>
+                        <span class="voice-quality">${voice.quality}</span>
+                    </div>
+                    <div class="voice-actions">
+                        <button class="voice-play-btn" id="play-${voice.id}" onclick="playSample('${voice.id}')">
+                            <svg class="icon" width="12" height="12"><use href="#icon-play"/></svg>
+                        </button>
+                    </div>
                 `;
-                grid.appendChild(card);
+                list.appendChild(row);
             });
         }
 
         function selectVoice(voiceId) {
             selectedVoice = voiceId;
-            document.querySelectorAll('.voice-card').forEach(card => {
-                const isSelected = card.querySelector('.voice-name').textContent ===
-                    availableVoices.find(v => v.id === voiceId)?.name;
-                card.classList.toggle('selected',
-                    availableVoices.find(v => v.id === voiceId)?.name ===
-                    card.querySelector('.voice-name').textContent);
-            });
-            renderVoiceGrid();
+            renderVoiceList();
+        }
+
+        function toggleFavorite(voiceId) {
+            const idx = favoriteVoices.indexOf(voiceId);
+            if (idx >= 0) {
+                favoriteVoices.splice(idx, 1);
+            } else {
+                favoriteVoices.push(voiceId);
+            }
+            localStorage.setItem('favoriteVoices', JSON.stringify(favoriteVoices));
+            renderVoiceList();
         }
 
         let sampleAudio = null;
+        let playingVoiceId = null;
+
         function playSample(voiceId) {
+            // Stop current playback
             if (sampleAudio) {
                 sampleAudio.pause();
+                if (playingVoiceId) {
+                    const oldBtn = document.getElementById(`play-${playingVoiceId}`);
+                    if (oldBtn) oldBtn.classList.remove('playing');
+                }
             }
+
+            // If clicking same voice, just stop
+            if (playingVoiceId === voiceId) {
+                playingVoiceId = null;
+                return;
+            }
+
+            // Play new sample
+            const btn = document.getElementById(`play-${voiceId}`);
+            if (btn) btn.classList.add('playing');
+            playingVoiceId = voiceId;
+
             sampleAudio = new Audio(`/api/tts/sample/${voiceId}`);
-            sampleAudio.play().catch(e => console.error('Sample playback failed:', e));
+            sampleAudio.onended = () => {
+                if (btn) btn.classList.remove('playing');
+                playingVoiceId = null;
+            };
+            sampleAudio.play().catch(e => {
+                console.error('Sample playback failed:', e);
+                if (btn) btn.classList.remove('playing');
+                playingVoiceId = null;
+            });
         }
 
         async function generateTTS() {
