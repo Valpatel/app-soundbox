@@ -206,8 +206,16 @@ def add_cache_headers(response):
 # Rate Limiting - Prevent abuse and DoS
 # =============================================================================
 
+def get_remote_address_or_exempt():
+    """Get remote address, but exempt localhost from rate limiting."""
+    addr = get_remote_address()
+    # Exempt localhost/127.0.0.1 from rate limiting for batch generation
+    if addr in ('127.0.0.1', 'localhost', '::1'):
+        return None  # Returning None exempts from rate limiting
+    return addr
+
 limiter = Limiter(
-    get_remote_address,
+    get_remote_address_or_exempt,
     app=app,
     # No default limits - apply specific limits to sensitive endpoints only
     # Default limits broke the frontend which polls /status every 3 seconds
