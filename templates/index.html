@@ -358,6 +358,11 @@
             font-family: inherit;
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .model-tab::before {
@@ -395,21 +400,14 @@
             50% { box-shadow: 0 0 30px var(--accent-glow), 0 0 40px var(--accent-glow); }
         }
 
-        .model-tab .icon {
-            font-size: 28px;
-            margin-bottom: 6px;
-            display: block;
+        .model-tab .icon-lg {
+            width: 28px;
+            height: 28px;
         }
 
-        .model-tab .name {
+        .model-tab span {
             font-weight: 700;
             font-size: 0.9rem;
-        }
-
-        .model-tab .desc {
-            font-size: 0.7rem;
-            margin-top: 4px;
-            opacity: 0.7;
         }
 
         /* Voice Selector */
@@ -552,6 +550,68 @@
         }
         .voice-row .voice-play-btn.playing {
             background: var(--success);
+        }
+        /* License badges for voices */
+        .voice-license {
+            font-size: 0.6rem;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .voice-license.license-ok {
+            background: rgba(76, 175, 80, 0.15);
+            color: #4caf50;
+        }
+        .voice-license.license-nc {
+            background: rgba(255, 152, 0, 0.15);
+            color: #ff9800;
+        }
+        .voice-license a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .voice-license a:hover {
+            text-decoration: underline;
+        }
+        .voice-attribution {
+            margin-left: 3px;
+            opacity: 0.7;
+            font-size: 0.7rem;
+            text-decoration: none !important;
+        }
+        .voice-attribution:hover {
+            opacity: 1;
+        }
+
+        /* Voice info tags for library items */
+        .voice-info-tags {
+            display: inline-flex;
+            gap: 4px;
+            margin-left: 8px;
+        }
+        .voice-gender-tag, .voice-accent-tag, .voice-name-tag {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .voice-gender-tag.female {
+            background: rgba(233, 30, 99, 0.15);
+            color: #e91e63;
+        }
+        .voice-gender-tag.male {
+            background: rgba(33, 150, 243, 0.15);
+            color: #2196f3;
+        }
+        .voice-accent-tag {
+            background: rgba(156, 39, 176, 0.15);
+            color: #9c27b0;
+        }
+        .voice-name-tag {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
         }
 
         /* Controls Row */
@@ -1481,6 +1541,11 @@
         .queue-item-meta .model-badge.audio {
             background: rgba(0, 212, 255, 0.2);
             color: var(--cyan);
+        }
+
+        .queue-item-meta .model-badge.voice {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
         }
 
         .queue-item-meta .duration-badge,
@@ -4408,12 +4473,124 @@
         }
 
         /* Genre sections visibility based on type tab */
-        .category-sidebar[data-type="music"] .sfx-genres {
+        .category-sidebar[data-type="music"] .sfx-genres,
+        .category-sidebar[data-type="music"] .speech-genres,
+        .category-sidebar[data-type="music"] .graphlings-genres {
             display: none;
         }
 
-        .category-sidebar[data-type="audio"] .music-genres {
+        .category-sidebar[data-type="audio"] .music-genres,
+        .category-sidebar[data-type="audio"] .speech-genres,
+        .category-sidebar[data-type="audio"] .graphlings-genres {
             display: none;
+        }
+
+        .category-sidebar[data-type="voice"] .music-genres,
+        .category-sidebar[data-type="voice"] .sfx-genres,
+        .category-sidebar[data-type="voice"] .graphlings-genres {
+            display: none;
+        }
+
+        .category-sidebar[data-type="graphlings"] .music-genres,
+        .category-sidebar[data-type="graphlings"] .sfx-genres,
+        .category-sidebar[data-type="graphlings"] .speech-genres {
+            display: none;
+        }
+
+        /* Graphlings section styles */
+        .graphlings-loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .graphlings-source {
+            margin-bottom: 12px;
+        }
+
+        .graphlings-source-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(139, 92, 246, 0.1));
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .graphlings-source-header:hover {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(139, 92, 246, 0.15));
+            border-color: rgba(168, 85, 247, 0.4);
+        }
+
+        .graphlings-source-header .source-icon {
+            width: 24px;
+            height: 24px;
+            color: var(--primary);
+        }
+
+        .graphlings-source-header .source-name {
+            flex: 1;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .graphlings-source-header .source-count {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .graphlings-source-types {
+            display: none;
+            padding: 8px 0 0 16px;
+        }
+
+        .graphlings-source.expanded .graphlings-source-types {
+            display: block;
+        }
+
+        .graphlings-type-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            color: var(--text-muted);
+        }
+
+        .graphlings-type-item:hover {
+            background: var(--hover);
+            color: var(--text);
+        }
+
+        .graphlings-type-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .graphlings-type-item .type-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .graphlings-type-item .type-name {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .graphlings-type-item .type-count {
+            font-size: 0.75rem;
+            opacity: 0.7;
         }
 
         /* Genre section spacing */
@@ -4604,6 +4781,11 @@
         .model-badge.audio {
             background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(16, 185, 129, 0.2));
             color: var(--cyan);
+        }
+
+        .model-badge.voice {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.2));
+            color: #f59e0b;
         }
 
         /* Item Info */
@@ -5176,16 +5358,13 @@
                 border-radius: 16px;
             }
 
-            .model-tab .icon {
-                font-size: 32px;
+            .model-tab .icon-lg {
+                width: 32px;
+                height: 32px;
             }
 
-            .model-tab .name {
+            .model-tab span {
                 font-size: 1rem;
-            }
-
-            .model-tab .desc {
-                font-size: 0.8rem;
             }
 
             /* Larger buttons */
@@ -5292,8 +5471,9 @@
                 padding: 24px 20px;
             }
 
-            .model-tab .icon {
-                font-size: 36px;
+            .model-tab .icon-lg {
+                width: 36px;
+                height: 36px;
             }
 
             /* Library 3 columns */
@@ -5378,11 +5558,12 @@
                 border-radius: 20px;
             }
 
-            .model-tab .icon {
-                font-size: 42px;
+            .model-tab .icon-lg {
+                width: 42px;
+                height: 42px;
             }
 
-            .model-tab .name {
+            .model-tab span {
                 font-size: 1.1rem;
             }
 
@@ -5683,13 +5864,7 @@
         <div class="license-notice-wrapper">
             <p class="license-notice">
                 <span class="license-badge">CC0</span>
-                <span>Free to use</span>
-                <span class="separator">•</span>
-                <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">Public Domain</a>
-                <span class="separator">•</span>
-                <span>Built on <a href="https://ai.meta.com/resources/models-and-libraries/audiocraft/" target="_blank" rel="noopener">AudioCraft</a></span>
-                <span class="separator">•</span>
-                <span class="attribution-hint" title="Click to copy attribution">Copy credit</span>
+                <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener" title="Creative Commons Zero - Public Domain">All audio is CC0 · Free to use</a>
             </p>
         </div>
 
@@ -5831,6 +6006,7 @@
                         <div id="radio-prompt" class="track-title">Pick a station to start</div>
                         <div class="track-meta">
                             <span class="duration" id="radio-duration">0s</span>
+                            <span class="voice-info-tags" id="radio-voice-info" style="display: none;"></span>
                         </div>
                     </div>
                 </div>
@@ -5929,6 +6105,7 @@
                     <option value="">All Types</option>
                     <option value="music">Music</option>
                     <option value="audio">Sound Effects</option>
+                    <option value="voice">Speech</option>
                     <option value="favorites">My Favorites</option>
                 </select>
                 <select id="library-sort" title="Sort order">
@@ -5966,7 +6143,7 @@
                             <svg class="icon" width="18" height="18"><use href="#icon-close"/></svg>
                         </button>
                     </div>
-                    <!-- Type Tabs: Music vs SFX -->
+                    <!-- Type Tabs: Music, SFX, Speech, Graphlings -->
                     <div class="category-type-tabs">
                         <button class="type-tab active" data-type="music" onclick="selectTypeTab('music')" title="Browse generated music">
                             <svg class="icon"><use href="#icon-music"/></svg>
@@ -5977,6 +6154,16 @@
                             <svg class="icon"><use href="#icon-soundwave"/></svg>
                             SFX
                             <span class="tab-count" id="sfx-count">0</span>
+                        </button>
+                        <button class="type-tab" data-type="voice" onclick="selectTypeTab('voice')" title="Browse speech/narration">
+                            <svg class="icon"><use href="#icon-mic"/></svg>
+                            Speech
+                            <span class="tab-count" id="voice-count">0</span>
+                        </button>
+                        <button class="type-tab" data-type="graphlings" onclick="selectTypeTab('graphlings')" title="Browse Graphlings game audio">
+                            <svg class="icon"><use href="#icon-game"/></svg>
+                            Graphlings
+                            <span class="tab-count" id="graphlings-count">0</span>
                         </button>
                     </div>
 
@@ -6095,12 +6282,29 @@
                     <!-- SFX Categories - Collapsible Groups -->
                     <div class="genre-section sfx-genres" id="sfx-genres">
                         <div class="genre-group collapsed">
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Trailer & Cinematic</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('riser')" data-genre="riser"><span class="genre-name">Riser</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('hit')" data-genre="hit"><span class="genre-name">Hit/Slam</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('boom')" data-genre="boom"><span class="genre-name">Boom</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('stinger')" data-genre="stinger"><span class="genre-name">Stinger</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('swell')" data-genre="swell"><span class="genre-name">Swell</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('transition')" data-genre="transition"><span class="genre-name">Transition</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('buildup')" data-genre="buildup"><span class="genre-name">Buildup</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('drop')" data-genre="drop"><span class="genre-name">Drop</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('drone')" data-genre="drone"><span class="genre-name">Drone</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('sub_bass')" data-genre="sub_bass"><span class="genre-name">Sub Bass</span><span class="genre-count">0</span></div>
+                            </div>
+                        </div>
+                        <div class="genre-group collapsed">
                             <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>UI & Interface</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
                             <div class="genre-list">
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('notification')" data-genre="notification"><span class="genre-name">Notification</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('button')" data-genre="button"><span class="genre-name">Button/Click</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('menu')" data-genre="menu"><span class="genre-name">Menu</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('success')" data-genre="success"><span class="genre-name">Success/Win</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('error')" data-genre="error"><span class="genre-name">Error/Fail</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('typing')" data-genre="typing"><span class="genre-name">Typing</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
                         <div class="genre-group collapsed">
@@ -6109,6 +6313,8 @@
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('whoosh')" data-genre="whoosh"><span class="genre-name">Whoosh</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('impact')" data-genre="impact"><span class="genre-name">Impact/Hit</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('explosion')" data-genre="explosion"><span class="genre-name">Explosion</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('crash')" data-genre="crash"><span class="genre-name">Crash</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('jump')" data-genre="jump"><span class="genre-name">Jump</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('footstep')" data-genre="footstep"><span class="genre-name">Footsteps</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
@@ -6119,7 +6325,9 @@
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('wind')" data-genre="wind"><span class="genre-name">Wind</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('thunder')" data-genre="thunder"><span class="genre-name">Thunder</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('water')" data-genre="water"><span class="genre-name">Water</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('ocean')" data-genre="ocean"><span class="genre-name">Ocean</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('fire')" data-genre="fire"><span class="genre-name">Fire</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('forest')" data-genre="forest"><span class="genre-name">Forest</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
                         <div class="genre-group collapsed">
@@ -6128,6 +6336,8 @@
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('bird')" data-genre="bird"><span class="genre-name">Birds</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('dog')" data-genre="dog"><span class="genre-name">Dog</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('cat')" data-genre="cat"><span class="genre-name">Cat</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('insect')" data-genre="insect"><span class="genre-name">Insects</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('creature')" data-genre="creature"><span class="genre-name">Creature</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('monster')" data-genre="monster"><span class="genre-name">Monster</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
@@ -6136,8 +6346,9 @@
                             <div class="genre-list">
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('voice')" data-genre="voice"><span class="genre-name">Voice</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('crowd')" data-genre="crowd"><span class="genre-name">Crowd</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('eating')" data-genre="eating"><span class="genre-name">Eating</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('laugh')" data-genre="laugh"><span class="genre-name">Laugh</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('scream')" data-genre="scream"><span class="genre-name">Scream</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('breathing')" data-genre="breathing"><span class="genre-name">Breathing</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
                         <div class="genre-group collapsed">
@@ -6147,22 +6358,30 @@
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('bell')" data-genre="bell"><span class="genre-name">Bell</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('glass')" data-genre="glass"><span class="genre-name">Glass</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('metal')" data-genre="metal"><span class="genre-name">Metal</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('wood')" data-genre="wood"><span class="genre-name">Wood</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('paper')" data-genre="paper"><span class="genre-name">Paper</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
                         <div class="genre-group collapsed">
-                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Machines & Tech</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Vehicles & Machines</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
                             <div class="genre-list">
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('engine')" data-genre="engine"><span class="genre-name">Engine/Car</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('computer')" data-genre="computer"><span class="genre-name">Computer</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('car')" data-genre="car"><span class="genre-name">Car</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('engine')" data-genre="engine"><span class="genre-name">Engine</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('machine')" data-genre="machine"><span class="genre-name">Machine</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('electricity')" data-genre="electricity"><span class="genre-name">Electricity</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('robot')" data-genre="robot"><span class="genre-name">Robot</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('scifi')" data-genre="scifi"><span class="genre-name">Sci-Fi</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('helicopter')" data-genre="helicopter"><span class="genre-name">Helicopter</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
                         <div class="genre-group collapsed">
-                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Magic & Fantasy</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Sci-Fi & Fantasy</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
                             <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('laser')" data-genre="laser"><span class="genre-name">Laser</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('magic')" data-genre="magic"><span class="genre-name">Magic/Spell</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('sparkle')" data-genre="sparkle"><span class="genre-name">Sparkle</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('teleport')" data-genre="teleport"><span class="genre-name">Teleport</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('alien')" data-genre="alien"><span class="genre-name">Alien</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('futuristic')" data-genre="futuristic"><span class="genre-name">Futuristic</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('power_up')" data-genre="power_up"><span class="genre-name">Power Up</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
@@ -6170,8 +6389,9 @@
                             <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Weapons & Combat</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
                             <div class="genre-list">
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('gun')" data-genre="gun"><span class="genre-name">Gun/Shoot</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('laser')" data-genre="laser"><span class="genre-name">Laser</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('sword')" data-genre="sword"><span class="genre-name">Sword</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('punch')" data-genre="punch"><span class="genre-name">Punch</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('fight')" data-genre="fight"><span class="genre-name">Fight</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
                         <div class="genre-group collapsed">
@@ -6179,7 +6399,9 @@
                             <div class="genre-list">
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('horror')" data-genre="horror"><span class="genre-name">Horror</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('tension')" data-genre="tension"><span class="genre-name">Tension</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('creepy')" data-genre="creepy"><span class="genre-name">Creepy</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('ghost')" data-genre="ghost"><span class="genre-name">Ghost</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('jumpscare')" data-genre="jumpscare"><span class="genre-name">Jump Scare</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
                         <div class="genre-group collapsed">
@@ -6187,8 +6409,125 @@
                             <div class="genre-list">
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('cartoon')" data-genre="cartoon"><span class="genre-name">Cartoon</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('funny')" data-genre="funny"><span class="genre-name">Funny</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('boing')" data-genre="boing"><span class="genre-name">Boing</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('slide_whistle')" data-genre="slide_whistle"><span class="genre-name">Slide Whistle</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Speech Categories - Collapsible Groups -->
+                    <div class="genre-section speech-genres" id="speech-genres">
+                        <div class="genre-group collapsed">
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Voice Gender</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('male')" data-genre="male"><span class="genre-name">Male</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('female')" data-genre="female"><span class="genre-name">Female</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('child')" data-genre="child"><span class="genre-name">Child</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('neutral')" data-genre="neutral"><span class="genre-name">Neutral</span><span class="genre-count">0</span></div>
+                            </div>
+                        </div>
+                        <div class="genre-group collapsed">
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Voice Style</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('natural')" data-genre="natural"><span class="genre-name">Natural</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('professional')" data-genre="professional"><span class="genre-name">Professional</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('casual')" data-genre="casual"><span class="genre-name">Casual</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('dramatic')" data-genre="dramatic"><span class="genre-name">Dramatic</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('whisper')" data-genre="whisper"><span class="genre-name">Whisper</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('robotic')" data-genre="robotic"><span class="genre-name">Robotic/AI</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('announcer')" data-genre="announcer"><span class="genre-name">Announcer</span><span class="genre-count">0</span></div>
+                            </div>
+                        </div>
+                        <div class="genre-group collapsed">
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Content Type</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('announcement')" data-genre="announcement"><span class="genre-name">Announcement</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('narration')" data-genre="narration"><span class="genre-name">Narration</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('dialogue')" data-genre="dialogue"><span class="genre-name">Dialogue</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('monologue')" data-genre="monologue"><span class="genre-name">Monologue</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('voiceover')" data-genre="voiceover"><span class="genre-name">Voiceover</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('audiobook')" data-genre="audiobook"><span class="genre-name">Audiobook</span><span class="genre-count">0</span></div>
+                            </div>
+                        </div>
+                        <div class="genre-group collapsed">
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Numbers & Data</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('numbers')" data-genre="numbers"><span class="genre-name">Numbers</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('counting')" data-genre="counting"><span class="genre-name">Counting</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('time')" data-genre="time"><span class="genre-name">Time</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('date')" data-genre="date"><span class="genre-name">Date</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('currency')" data-genre="currency"><span class="genre-name">Currency</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('phone_number')" data-genre="phone_number"><span class="genre-name">Phone Number</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('address')" data-genre="address"><span class="genre-name">Address</span><span class="genre-count">0</span></div>
+                            </div>
+                        </div>
+                        <div class="genre-group collapsed">
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Common Phrases</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('greeting')" data-genre="greeting"><span class="genre-name">Greeting</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('farewell')" data-genre="farewell"><span class="genre-name">Farewell</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('thanks')" data-genre="thanks"><span class="genre-name">Thanks</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('confirmation')" data-genre="confirmation"><span class="genre-name">Confirmation</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('denial')" data-genre="denial"><span class="genre-name">Denial</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('question')" data-genre="question"><span class="genre-name">Question</span><span class="genre-count">0</span></div>
+                            </div>
+                        </div>
+                        <div class="genre-group collapsed">
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Instructions</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('directions')" data-genre="directions"><span class="genre-name">Directions</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('tutorial')" data-genre="tutorial"><span class="genre-name">Tutorial</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('warning')" data-genre="warning"><span class="genre-name">Warning</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('alert')" data-genre="alert"><span class="genre-name">Alert</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('reminder')" data-genre="reminder"><span class="genre-name">Reminder</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('prompt')" data-genre="prompt"><span class="genre-name">Prompt</span><span class="genre-count">0</span></div>
+                            </div>
+                        </div>
+                        <div class="genre-group collapsed">
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Media & Entertainment</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('commercial')" data-genre="commercial"><span class="genre-name">Commercial</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('trailer_voice')" data-genre="trailer_voice"><span class="genre-name">Trailer Voice</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('podcast')" data-genre="podcast"><span class="genre-name">Podcast</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('radio')" data-genre="radio"><span class="genre-name">Radio</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('game_voice')" data-genre="game_voice"><span class="genre-name">Game Voice</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('character')" data-genre="character"><span class="genre-name">Character</span><span class="genre-count">0</span></div>
+                            </div>
+                        </div>
+                        <div class="genre-group collapsed">
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Informational</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('news')" data-genre="news"><span class="genre-name">News</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('weather')" data-genre="weather"><span class="genre-name">Weather</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('sports')" data-genre="sports"><span class="genre-name">Sports</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('traffic')" data-genre="traffic"><span class="genre-name">Traffic</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('stock_market')" data-genre="stock_market"><span class="genre-name">Financial</span><span class="genre-count">0</span></div>
+                            </div>
+                        </div>
+                        <div class="genre-group collapsed">
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Alphabet & Spelling</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('alphabet')" data-genre="alphabet"><span class="genre-name">Alphabet</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('spelling')" data-genre="spelling"><span class="genre-name">Spelling</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('phonetic')" data-genre="phonetic"><span class="genre-name">NATO Phonetic</span><span class="genre-count">0</span></div>
+                            </div>
+                        </div>
+                        <div class="genre-group collapsed">
+                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Languages</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
+                            <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('english')" data-genre="english"><span class="genre-name">English</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('spanish')" data-genre="spanish"><span class="genre-name">Spanish</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('french')" data-genre="french"><span class="genre-name">French</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('german')" data-genre="german"><span class="genre-name">German</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('accent')" data-genre="accent"><span class="genre-name">Accented</span><span class="genre-count">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Graphlings Games/Apps - Dynamic from API -->
+                    <div class="genre-section graphlings-genres" id="graphlings-genres">
+                        <div class="graphlings-loading">Loading games...</div>
+                        <!-- Dynamically populated by loadGraphlingsSources() -->
                     </div>
 
                     <!-- Clear Filter Button -->
@@ -6233,11 +6572,15 @@
             <div class="model-status">
                 <div class="model-status-item">
                     <span class="status-dot" id="music-status-dot"></span>
-                    <span>MusicGen</span>
+                    <span>Music</span>
                 </div>
                 <div class="model-status-item">
                     <span class="status-dot" id="audio-status-dot"></span>
-                    <span>AudioGen</span>
+                    <span>SFX</span>
+                </div>
+                <div class="model-status-item">
+                    <span class="status-dot" id="tts-status-dot"></span>
+                    <span>Speech</span>
                 </div>
             </div>
         </div>
@@ -6283,19 +6626,16 @@
             <div class="generator-content">
             <div class="model-tabs">
                 <div class="model-tab active" data-model="music" onclick="selectModel('music')" title="Generate music with AI">
-                    <div class="icon"><svg class="icon icon-lg"><use href="#icon-music"/></svg></div>
-                    <div class="name">MusicGen</div>
-                    <div class="desc">Generate music</div>
+                    <svg class="icon icon-lg"><use href="#icon-music"/></svg>
+                    <span>Music</span>
                 </div>
                 <div class="model-tab" data-model="audio" onclick="selectModel('audio')" title="Generate sound effects with AI">
-                    <div class="icon"><svg class="icon icon-lg"><use href="#icon-volume"/></svg></div>
-                    <div class="name">AudioGen</div>
-                    <div class="desc">Generate sound effects</div>
+                    <svg class="icon icon-lg"><use href="#icon-volume"/></svg>
+                    <span>SFX</span>
                 </div>
                 <div class="model-tab" data-model="voice" onclick="selectModel('voice')" title="Generate speech with AI">
-                    <div class="icon"><svg class="icon icon-lg"><use href="#icon-mic"/></svg></div>
-                    <div class="name">Piper TTS</div>
-                    <div class="desc">Generate speech</div>
+                    <svg class="icon icon-lg"><use href="#icon-mic"/></svg>
+                    <span>Speech</span>
                 </div>
             </div>
 
@@ -6675,12 +7015,129 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         const loadingBanner = document.getElementById('loading-banner');
         const musicStatusDot = document.getElementById('music-status-dot');
         const audioStatusDot = document.getElementById('audio-status-dot');
+        const ttsStatusDot = document.getElementById('tts-status-dot');
         const qualityBadge = document.getElementById('quality-badge');
         const playerSpectrogram = document.getElementById('player-spectrogram');
 
         let currentModel = 'music';
-        let modelStatus = { music: 'pending', audio: 'pending' };
+        let modelStatus = { music: 'pending', audio: 'pending', tts: 'ready' };
         let currentTab = 'radio';
+
+        // ========================================
+        // SHARED CATEGORY DEFINITIONS
+        // Used by both library sidebar and tag modal
+        // ========================================
+        const MUSIC_CATEGORY_GROUPS = {
+            'Electronic & Dance': ['electronic', 'edm', 'house', 'techno', 'trance', 'dubstep', 'drum_and_bass', 'synthwave'],
+            'Ambient & Atmospheric': ['ambient', 'drone', 'meditation', 'nature_music', 'space', 'dark_ambient'],
+            'Cinematic': ['cinematic', 'epic', 'orchestral', 'trailer', 'dramatic', 'suspense', 'heroic', 'romantic'],
+            'Classical & Acoustic': ['classical', 'piano', 'guitar', 'strings', 'orchestra_section', 'acoustic'],
+            'Lo-Fi & Chill': ['lofi', 'chillhop', 'chill', 'study', 'cafe'],
+            'Hip Hop': ['hiphop', 'trap', 'boom_bap', 'instrumental_hiphop'],
+            'Rock & Alternative': ['rock', 'indie', 'metal', 'punk', 'grunge'],
+            'Jazz & Blues': ['jazz', 'blues', 'soul', 'funk'],
+            'World & Ethnic': ['world', 'asian', 'latin', 'african', 'celtic', 'middle_eastern'],
+            'Moods & Emotions': ['happy', 'sad', 'angry', 'peaceful', 'mysterious', 'scary', 'inspirational'],
+            'Energy Levels': ['upbeat', 'relaxing', 'intense', 'gentle'],
+            'Retro & Vintage': ['retro', 'chiptune', 'arcade', '80s', '70s', '60s'],
+            'Use Cases': ['corporate', 'advertising', 'youtube', 'podcast', 'game_music', 'holiday', 'workout', 'kids']
+        };
+
+        const SPEECH_CATEGORY_GROUPS = {
+            'Voice Gender': ['male', 'female', 'child', 'neutral'],
+            'Voice Style': ['natural', 'professional', 'casual', 'dramatic', 'whisper', 'robotic', 'announcer'],
+            'Content Type': ['announcement', 'narration', 'dialogue', 'monologue', 'voiceover', 'audiobook'],
+            'Numbers & Data': ['numbers', 'counting', 'time', 'date', 'currency', 'phone_number', 'address', 'coordinates'],
+            'Common Phrases': ['greeting', 'farewell', 'thanks', 'apology', 'confirmation', 'denial', 'question', 'exclamation'],
+            'Instructions': ['directions', 'tutorial', 'warning', 'alert', 'reminder', 'prompt'],
+            'Media & Entertainment': ['commercial', 'trailer_voice', 'podcast', 'radio', 'game_voice', 'character'],
+            'Informational': ['news', 'weather', 'sports', 'traffic', 'stock_market'],
+            'Alphabet & Spelling': ['alphabet', 'spelling', 'phonetic'],
+            'Languages': ['english', 'spanish', 'french', 'german', 'accent']
+        };
+
+        // Display names for speech categories
+        const SPEECH_DISPLAY_NAMES = {
+            // Voice Gender
+            'male': 'Male', 'female': 'Female', 'child': 'Child', 'neutral': 'Neutral/Androgynous',
+            // Voice Style
+            'natural': 'Natural', 'professional': 'Professional', 'casual': 'Casual/Conversational',
+            'dramatic': 'Dramatic', 'whisper': 'Whisper', 'robotic': 'Robotic/AI', 'announcer': 'Announcer',
+            // Content Type
+            'announcement': 'Announcement', 'narration': 'Narration', 'dialogue': 'Dialogue',
+            'monologue': 'Monologue', 'voiceover': 'Voiceover', 'audiobook': 'Audiobook',
+            // Numbers & Data
+            'numbers': 'Numbers', 'counting': 'Counting', 'time': 'Time', 'date': 'Date',
+            'currency': 'Currency/Money', 'phone_number': 'Phone Number', 'address': 'Address', 'coordinates': 'Coordinates',
+            // Common Phrases
+            'greeting': 'Greeting', 'farewell': 'Farewell/Goodbye', 'thanks': 'Thanks/Gratitude',
+            'apology': 'Apology', 'confirmation': 'Confirmation/Yes', 'denial': 'Denial/No',
+            'question': 'Question', 'exclamation': 'Exclamation',
+            // Instructions
+            'directions': 'Directions', 'tutorial': 'Tutorial/How-To', 'warning': 'Warning',
+            'alert': 'Alert', 'reminder': 'Reminder', 'prompt': 'Prompt/Call to Action',
+            // Media & Entertainment
+            'commercial': 'Commercial/Ad', 'trailer_voice': 'Trailer Voice', 'podcast': 'Podcast',
+            'radio': 'Radio', 'game_voice': 'Game Voice', 'character': 'Character Voice',
+            // Informational
+            'news': 'News', 'weather': 'Weather Report', 'sports': 'Sports Commentary',
+            'traffic': 'Traffic Report', 'stock_market': 'Stock/Financial',
+            // Alphabet & Spelling
+            'alphabet': 'Alphabet', 'spelling': 'Spelling', 'phonetic': 'Phonetic/NATO',
+            // Languages
+            'english': 'English', 'spanish': 'Spanish', 'french': 'French', 'german': 'German', 'accent': 'Accented'
+        };
+
+        const SFX_CATEGORY_GROUPS = {
+            'Trailer & Cinematic': ['riser', 'hit', 'boom', 'stinger', 'swell', 'transition', 'buildup', 'drop', 'drone', 'sub_bass'],
+            'UI & Interface': ['notification', 'button', 'menu', 'success', 'error', 'typing'],
+            'Actions & Movement': ['whoosh', 'impact', 'explosion', 'crash', 'jump', 'footstep'],
+            'Nature & Weather': ['rain', 'wind', 'thunder', 'water', 'ocean', 'fire', 'forest'],
+            'Animals & Creatures': ['bird', 'dog', 'cat', 'insect', 'creature', 'monster'],
+            'Human Sounds': ['voice', 'crowd', 'laugh', 'scream', 'breath'],
+            'Objects & Materials': ['door', 'bell', 'glass', 'metal', 'wood', 'paper'],
+            'Vehicles & Machines': ['car', 'engine', 'machine', 'electricity', 'robot', 'helicopter'],
+            'Sci-Fi & Fantasy': ['laser', 'magic', 'sparkle', 'teleport', 'alien', 'futuristic', 'power_up'],
+            'Weapons & Combat': ['gun', 'sword', 'punch', 'fight'],
+            'Horror & Tension': ['horror', 'tension', 'creepy', 'ghost', 'jumpscare'],
+            'Cartoon & Comedy': ['cartoon', 'funny', 'boing', 'slide_whistle']
+        };
+
+        // Display names for categories (for UI rendering)
+        const CATEGORY_DISPLAY_NAMES = {
+            // Trailer & Cinematic
+            'riser': 'Riser', 'hit': 'Hit/Slam', 'boom': 'Boom', 'stinger': 'Stinger',
+            'swell': 'Swell', 'transition': 'Transition', 'buildup': 'Buildup', 'drop': 'Drop',
+            'drone': 'Drone', 'sub_bass': 'Sub Bass',
+            // UI & Interface
+            'notification': 'Notification', 'button': 'Button/Click', 'menu': 'Menu', 'success': 'Success/Win',
+            'error': 'Error/Fail', 'typing': 'Typing',
+            // Actions & Movement
+            'whoosh': 'Whoosh', 'impact': 'Impact/Hit', 'explosion': 'Explosion', 'crash': 'Crash',
+            'jump': 'Jump', 'footstep': 'Footsteps',
+            // Nature & Weather
+            'rain': 'Rain', 'wind': 'Wind', 'thunder': 'Thunder', 'water': 'Water', 'ocean': 'Ocean',
+            'fire': 'Fire', 'forest': 'Forest',
+            // Animals & Creatures
+            'bird': 'Birds', 'dog': 'Dog', 'cat': 'Cat', 'insect': 'Insects',
+            'creature': 'Creature', 'monster': 'Monster',
+            // Human Sounds
+            'voice': 'Voice', 'crowd': 'Crowd', 'laugh': 'Laugh', 'scream': 'Scream', 'breathing': 'Breathing',
+            // Objects & Materials
+            'door': 'Door', 'bell': 'Bell', 'glass': 'Glass', 'metal': 'Metal', 'wood': 'Wood', 'paper': 'Paper',
+            // Vehicles & Machines
+            'car': 'Car', 'engine': 'Engine', 'machine': 'Machine', 'electricity': 'Electricity',
+            'robot': 'Robot', 'helicopter': 'Helicopter',
+            // Sci-Fi & Fantasy
+            'laser': 'Laser', 'magic': 'Magic/Spell', 'sparkle': 'Sparkle', 'teleport': 'Teleport',
+            'alien': 'Alien', 'futuristic': 'Futuristic', 'power_up': 'Power Up',
+            // Weapons & Combat
+            'gun': 'Gun/Shoot', 'sword': 'Sword', 'punch': 'Punch', 'fight': 'Fight',
+            // Horror & Tension
+            'horror': 'Horror', 'tension': 'Tension', 'creepy': 'Creepy', 'ghost': 'Ghost', 'jumpscare': 'Jump Scare',
+            // Cartoon & Comedy
+            'cartoon': 'Cartoon', 'funny': 'Funny', 'boing': 'Boing', 'slide_whistle': 'Slide Whistle'
+        };
 
         // ========================================
         // TAB SWITCHING
@@ -6837,7 +7294,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 `;
             } else {
                 grid.innerHTML = userPlaylists.map(pl => `
-                    <div class="playlist-card" onclick="viewPlaylist('${pl.id}')">
+                    <div class="playlist-card" onclick="viewPlaylist('${escapeJsString(pl.id)}')">
                         <div class="playlist-card-icon">
                             <svg class="icon"><use href="#icon-music"/></svg>
                         </div>
@@ -6870,16 +7327,16 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
                 if (data.favorites && data.favorites.length > 0) {
                     grid.innerHTML = data.favorites.map(item => `
-                        <div class="favorite-item" data-id="${item.id}">
+                        <div class="favorite-item" data-id="${escapeHtml(item.id)}">
                             <div class="favorite-info">
                                 <span class="favorite-prompt">${escapeHtml(item.prompt || 'Untitled')}</span>
                                 <span class="favorite-duration">${item.duration || 30}s</span>
                             </div>
                             <div class="favorite-actions">
-                                <button class="btn btn-sm" onclick="playFavorite('${item.id}')">
+                                <button class="btn btn-sm" onclick="playFavorite('${escapeJsString(item.id)}')">
                                     <svg class="icon"><use href="#icon-play"/></svg>
                                 </button>
-                                <button class="btn btn-sm" onclick="showAddToPlaylistModal('${item.id}')">
+                                <button class="btn btn-sm" onclick="showAddToPlaylistModal('${escapeJsString(item.id)}')">
                                     <svg class="icon"><use href="#icon-plus"/></svg>
                                 </button>
                             </div>
@@ -6918,12 +7375,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             // Load data if not already loaded
             if (tabName === 'plays') {
                 const list = document.getElementById('play-history-list');
-                if (list.querySelector('.history-loading')) {
+                if (list && list.querySelector('.history-loading')) {
                     loadPlayHistory();
                 }
             } else if (tabName === 'votes') {
                 const list = document.getElementById('vote-history-list');
-                if (list.querySelector('.history-loading')) {
+                if (list && list.querySelector('.history-loading')) {
                     loadVoteHistory();
                 }
             }
@@ -6970,7 +7427,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     const date = new Date(item.played_at);
                     const timeAgo = formatTimeAgo(date);
 
-                    list.innerHTML += `
+                    list.insertAdjacentHTML('beforeend', `
                         <div class="history-item" data-id="${item.generation_id}">
                             <div class="history-item-icon play">
                                 <svg class="icon"><use href="#icon-play"/></svg>
@@ -6984,10 +7441,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                                 </div>
                             </div>
                             <div class="history-item-actions">
-                                <button onclick="playHistoryItem('${item.generation_id}')">Play</button>
+                                <button onclick="playHistoryItem('${escapeJsString(item.generation_id)}')">Play</button>
                             </div>
                         </div>
-                    `;
+                    `);
                 });
 
                 playHistoryOffset += data.history.length;
@@ -7043,7 +7500,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     const timeAgo = formatTimeAgo(date);
                     const isUpvote = item.vote > 0;
 
-                    list.innerHTML += `
+                    list.insertAdjacentHTML('beforeend', `
                         <div class="history-item" data-id="${item.generation_id}">
                             <div class="history-item-icon ${isUpvote ? 'upvote' : 'downvote'}">
                                 <svg class="icon"><use href="#icon-thumbs-${isUpvote ? 'up' : 'down'}"/></svg>
@@ -7057,10 +7514,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                                 </div>
                             </div>
                             <div class="history-item-actions">
-                                <button onclick="playHistoryItem('${item.generation_id}')">Play</button>
+                                <button onclick="playHistoryItem('${escapeJsString(item.generation_id)}')">Play</button>
                             </div>
                         </div>
-                    `;
+                    `);
                 });
 
                 voteHistoryOffset += data.history.length;
@@ -7087,7 +7544,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             try {
                 const res = await fetch(`/api/generation/${generationId}`);
                 if (!res.ok) {
-                    showToast('Track not found', 'error');
+                    showErrorToast('Track not found');
                     return;
                 }
                 const track = await res.json();
@@ -7100,7 +7557,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 }
             } catch (err) {
                 console.error('Failed to play track:', err);
-                showToast('Failed to play track', 'error');
+                showErrorToast('Failed to play track');
             }
         }
 
@@ -7203,10 +7660,13 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             renderPlaylistList();
         }
 
+        let playlistModalSubmitting = false;  // Prevent double-submit
+
         function closePlaylistModal(event) {
             if (event && event.target !== event.currentTarget) return;
             document.getElementById('playlist-modal-overlay').classList.add('hidden');
             currentPlaylistModalTrackId = null;
+            playlistModalSubmitting = false;  // Reset submit guard
         }
 
         async function renderPlaylistList() {
@@ -7233,7 +7693,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 listEl.innerHTML = '<div class="playlist-empty">No playlists yet. Create one below!</div>';
             } else {
                 listEl.innerHTML = userPlaylists.map(pl => `
-                    <div class="playlist-option" onclick="addTrackToPlaylist('${pl.id}')">
+                    <div class="playlist-option" onclick="addTrackToPlaylist('${escapeJsString(pl.id)}')">
                         <div class="playlist-icon">
                             <svg class="icon"><use href="#icon-music"/></svg>
                         </div>
@@ -7257,8 +7717,13 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 return;
             }
 
+            // Prevent double-submit
+            if (playlistModalSubmitting) return;
+            playlistModalSubmitting = true;
+
             const playlist = userPlaylists.find(p => p.id === playlistId);
             if (!playlist) {
+                playlistModalSubmitting = false;
                 showErrorToast('Playlist not found');
                 return;
             }
@@ -7301,6 +7766,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 statusEl.className = 'playlist-modal-status error';
                 statusEl.textContent = 'Failed to add track';
                 showErrorToast('Failed to add track');
+            } finally {
+                playlistModalSubmitting = false;
             }
         }
 
@@ -7310,10 +7777,15 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 return;
             }
 
+            // Prevent double-submit
+            if (playlistModalSubmitting) return;
+            playlistModalSubmitting = true;
+
             const nameInput = document.getElementById('new-playlist-name');
             const name = nameInput.value.trim();
 
             if (!name) {
+                playlistModalSubmitting = false;
                 showErrorToast('Please enter a playlist name');
                 nameInput.focus();
                 return;
@@ -7341,13 +7813,18 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
                 // If we have a track to add, add it now
                 if (currentPlaylistModalTrackId) {
-                    await authFetch(`/api/playlists/${data.id}/tracks`, {
+                    const addRes = await authFetch(`/api/playlists/${data.id}/tracks`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             generation_id: currentPlaylistModalTrackId
                         })
                     });
+
+                    if (!addRes.ok) {
+                        const addErr = await addRes.json().catch(() => ({}));
+                        throw new Error(addErr.error || 'Failed to add track to playlist');
+                    }
 
                     statusEl.className = 'playlist-modal-status success';
                     statusEl.textContent = `Created "${name}" and added track`;
@@ -7370,6 +7847,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 statusEl.className = 'playlist-modal-status error';
                 statusEl.textContent = 'Failed to create playlist';
                 showErrorToast('Failed to create playlist');
+            } finally {
+                playlistModalSubmitting = false;
             }
         }
 
@@ -7435,10 +7914,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                         <span class="track-duration">${track.duration || 30}s</span>
                     </div>
                     <div class="track-actions">
-                        <button class="btn btn-icon btn-sm" onclick="playTrackFromPlaylist('${track.id}', ${index})" title="Play">
+                        <button class="btn btn-icon btn-sm" onclick="playTrackFromPlaylist('${escapeJsString(track.id)}', ${index})" title="Play">
                             <svg class="icon"><use href="#icon-play"/></svg>
                         </button>
-                        <button class="btn btn-icon btn-sm" onclick="removeFromPlaylist('${track.id}')" title="Remove">
+                        <button class="btn btn-icon btn-sm" onclick="removeFromPlaylist('${escapeJsString(track.id)}')" title="Remove">
                             <svg class="icon"><use href="#icon-trash"/></svg>
                         </button>
                     </div>
@@ -7633,9 +8112,15 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
 
         // Drag and Drop for Playlist Reordering
+        let playlistDragDropInitialized = false;  // Prevent duplicate listeners
+
         function initPlaylistDragDrop() {
             const container = document.getElementById('playlist-tracks-list');
             if (!container) return;
+
+            // Prevent adding duplicate listeners
+            if (container.dataset.dragInitialized === 'true') return;
+            container.dataset.dragInitialized = 'true';
 
             let draggedElement = null;
 
@@ -7692,15 +8177,21 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             if (!currentViewingPlaylistId || !isUserAuthenticated()) return;
 
             try {
-                await authFetch(`/api/playlists/${currentViewingPlaylistId}/reorder`, {
+                const response = await authFetch(`/api/playlists/${currentViewingPlaylistId}/reorder`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         track_order: trackOrder
                     })
                 });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Failed to save order');
+                }
             } catch (err) {
-                console.error('Failed to save order:', err);
+                console.error('Failed to save playlist order:', err);
+                showErrorToast('Failed to save playlist order');
             }
         }
 
@@ -7778,7 +8269,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         // Toggle mini player expanded state
         function toggleMiniPlayerExpanded() {
             const miniPlayer = document.getElementById('mini-player');
-            miniPlayer.classList.toggle('expanded');
+            if (miniPlayer) {
+                miniPlayer.classList.toggle('expanded');
+            }
         }
 
         // Update mini player progress bar
@@ -7798,8 +8291,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
 
         function toggleRadioPlayPause() {
+            if (!radioPlayer) return;
             if (radioPlayer.paused) {
-                radioPlayer.play();
+                radioPlayer.play().catch(e => console.warn('Play interrupted:', e.message));
             } else {
                 radioPlayer.pause();
             }
@@ -7916,6 +8410,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 // Update model status dots
                 musicStatusDot.className = 'status-dot ' + (modelStatus.music.startsWith?.('error') ? 'error' : modelStatus.music);
                 audioStatusDot.className = 'status-dot ' + (modelStatus.audio.startsWith?.('error') ? 'error' : modelStatus.audio);
+                if (ttsStatusDot) {
+                    const ttsStatus = modelStatus.tts || 'ready';
+                    ttsStatusDot.className = 'status-dot ' + (ttsStatus.startsWith?.('error') ? 'error' : ttsStatus);
+                }
 
                 // Update GPU status
                 if (data.gpu && data.gpu.available) {
@@ -7927,7 +8425,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 }
 
                 // Check if all ready
-                const allReady = modelStatus.music === 'ready' && modelStatus.audio === 'ready';
+                const ttsReady = (modelStatus.tts || 'ready') === 'ready';
+                const allReady = modelStatus.music === 'ready' && modelStatus.audio === 'ready' && ttsReady;
                 if (allReady && !modelsReady) {
                     modelsReady = true;
                     loadingBanner.classList.add('ready');
@@ -8032,7 +8531,13 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         let availableVoices = [];
         let selectedVoice = 'en_US-lessac-medium';
         let voicesLoaded = false;
-        let favoriteVoices = JSON.parse(localStorage.getItem('favoriteVoices') || '[]');
+        let favoriteVoices = [];
+        try {
+            favoriteVoices = JSON.parse(localStorage.getItem('favoriteVoices') || '[]');
+        } catch (e) {
+            console.warn('Failed to parse favoriteVoices from localStorage:', e);
+            favoriteVoices = [];
+        }
         let currentVoiceFilter = 'all';
         let voiceSearchQuery = '';
 
@@ -8084,12 +8589,21 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             const list = document.getElementById('voice-list');
             list.innerHTML = '';
 
-            const filtered = getFilteredVoices();
+            let filtered = getFilteredVoices();
 
             if (filtered.length === 0) {
                 list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">No voices found</div>';
                 return;
             }
+
+            // Sort favorites first, then alphabetically by name
+            filtered = filtered.sort((a, b) => {
+                const aFav = favoriteVoices.includes(a.id);
+                const bFav = favoriteVoices.includes(b.id);
+                if (aFav && !bFav) return -1;
+                if (!aFav && bFav) return 1;
+                return a.name.localeCompare(b.name);
+            });
 
             filtered.forEach(voice => {
                 const row = document.createElement('div');
@@ -8101,20 +8615,49 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 };
 
                 const isFav = favoriteVoices.includes(voice.id);
-                const localeParts = voice.locale.split('_');
+                const localeParts = (voice.locale || 'en_US').split('_');
                 const flag = localeParts[1] === 'US' ? '🇺🇸' : localeParts[1] === 'GB' ? '🇬🇧' : '🌐';
 
+                // Escape all user-provided data to prevent XSS
+                const safeId = escapeHtml(voice.id);  // For HTML attributes
+                const safeJsId = escapeJsString(voice.id);  // For onclick handlers
+                const safeName = escapeHtml(voice.name || 'Unknown');
+                const safeQuality = escapeHtml(voice.quality || 'medium');
+                const safeLocale = escapeHtml(localeParts[1] || voice.locale || 'US');
+
+                // License badge with attribution link
+                const isCommercial = voice.commercial_ok !== false;
+                const licenseShort = escapeHtml(voice.license_short || 'MIT');
+                const licenseUrl = voice.license_url || '';
+                const attributionUrl = voice.attribution_url || '';
+                const attribution = voice.attribution || '';
+                const licenseClass = isCommercial ? 'license-ok' : 'license-nc';
+                const licenseTitle = isCommercial
+                    ? `${voice.license || 'MIT'} - Commercial use OK`
+                    : `${voice.license || 'Non-Commercial'} - Research/non-commercial only`;
+
+                // License badge links to license, attribution link is separate
+                let licenseBadgeHtml = licenseUrl
+                    ? `<a href="${escapeHtml(licenseUrl)}" target="_blank" rel="noopener" title="${escapeHtml(licenseTitle)}">${licenseShort}</a>`
+                    : `<span title="${escapeHtml(licenseTitle)}">${licenseShort}</span>`;
+
+                // Add attribution link if available
+                const attributionLink = attributionUrl
+                    ? `<a href="${escapeHtml(attributionUrl)}" target="_blank" rel="noopener" class="voice-attribution" title="Attribution: ${escapeHtml(attribution)}">ⓘ</a>`
+                    : '';
+
                 row.innerHTML = `
-                    <div class="voice-fav ${isFav ? 'is-fav' : ''}" onclick="toggleFavorite('${voice.id}')">
+                    <div class="voice-fav ${isFav ? 'is-fav' : ''}" onclick="toggleFavorite('${safeJsId}')">
                         <svg class="icon" width="16" height="16"><use href="#icon-star${isFav ? '' : '-outline'}"/></svg>
                     </div>
-                    <div class="voice-info" onclick="selectVoice('${voice.id}')">
-                        <span class="voice-name">${voice.name}</span>
-                        <span class="voice-meta">${flag} ${localeParts[1] || voice.locale}</span>
-                        <span class="voice-quality">${voice.quality}</span>
+                    <div class="voice-info" onclick="selectVoice('${safeJsId}')">
+                        <span class="voice-name">${safeName}</span>
+                        <span class="voice-meta">${flag} ${safeLocale}</span>
+                        <span class="voice-quality">${safeQuality}</span>
+                        <span class="voice-license ${licenseClass}">${licenseBadgeHtml}${attributionLink}</span>
                     </div>
                     <div class="voice-actions">
-                        <button class="voice-play-btn" id="play-${voice.id}" onclick="playSample('${voice.id}')">
+                        <button class="voice-play-btn" id="play-${safeId}" onclick="playSample('${safeJsId}')">
                             <svg class="icon" width="12" height="12"><use href="#icon-play"/></svg>
                         </button>
                     </div>
@@ -8197,6 +8740,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     body: JSON.stringify({
                         text: text,
                         voice: selectedVoice
+                        // Note: save_to_library=false by default (local-only, not saved to server)
                     })
                 });
 
@@ -8205,12 +8749,21 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 if (data.success) {
                     statusEl.innerHTML = '<div class="status-success">Speech generated!</div>';
                     const audioEl = document.getElementById('audio');
-                    audioEl.src = `/generated/${data.filename}`;
-                    audioEl.play();
+
+                    // Handle base64 audio (local-only mode) vs saved file
+                    if (data.audio_base64) {
+                        // Local-only: play from base64 data URL (not saved to server)
+                        audioEl.src = `data:audio/wav;base64,${data.audio_base64}`;
+                    } else if (data.filename) {
+                        // Saved to library: play from server
+                        audioEl.src = `/generated/${encodeURIComponent(data.filename)}`;
+                    }
+
+                    audioEl.play().catch(e => console.warn('TTS play failed:', e.message));
                     document.getElementById('player').style.display = 'block';
-                    showToast('Speech generated successfully!', 'success');
+                    showToast('Speech generated!', 'success');
                 } else {
-                    statusEl.innerHTML = `<div class="status-error">Error: ${data.error}</div>`;
+                    statusEl.innerHTML = `<div class="status-error">Error: ${escapeHtml(data.error || 'Unknown error')}</div>`;
                     showToast('TTS generation failed', 'error');
                 }
             } catch (err) {
@@ -8323,7 +8876,15 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             }
         }
 
+        let pollTimeoutId = null;  // Track poll timeout to prevent duplicates
+
         async function pollJobStatus() {
+            // Clear any pending poll to prevent duplicates
+            if (pollTimeoutId) {
+                clearTimeout(pollTimeoutId);
+                pollTimeoutId = null;
+            }
+
             if (!currentJobId) return;
 
             try {
@@ -8332,7 +8893,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
                 if (job.status === 'completed') {
                     statusEl.style.display = 'none';
-                    audioEl.src = `/audio/${job.filename}`;
+                    audioEl.src = `/audio/${encodeURIComponent(job.filename)}`;
 
                     // Show quality badge
                     if (job.quality) {
@@ -8344,9 +8905,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                         qualityBadge.textContent = '';
                     }
 
-                    // Show spectrogram
+                    // Show spectrogram (escape filename to prevent XSS)
                     if (job.spectrogram) {
-                        playerSpectrogram.innerHTML = `<img src="/spectrogram/${job.spectrogram}" alt="Spectrogram">`;
+                        playerSpectrogram.innerHTML = `<img src="/spectrogram/${escapeHtml(job.spectrogram)}" alt="Spectrogram">`;
                     }
 
                     playerEl.classList.add('show');
@@ -8376,11 +8937,11 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                             <div class="progress-text">${!showBar ? '<span class="spinner"></span>' : ''}${job.progress || 'Processing...'}</div>
                         </div>
                     `;
-                    setTimeout(pollJobStatus, 300);
+                    pollTimeoutId = setTimeout(pollJobStatus, 300);
                 }
             } catch (err) {
                 console.error('Job poll failed:', err);
-                setTimeout(pollJobStatus, 1000);
+                pollTimeoutId = setTimeout(pollJobStatus, 1000);
             }
         }
 
@@ -8645,6 +9206,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             document.getElementById('radio-duration').textContent = currentRadioTrack.duration + 's';
             document.getElementById('radio-upvotes').textContent = currentRadioTrack.upvotes || 0;
             document.getElementById('radio-downvotes').textContent = currentRadioTrack.downvotes || 0;
+            updateRadioVoiceInfo(currentRadioTrack);
 
             // Reset vote button states
             document.getElementById('radio-vote-up').classList.remove('voted-up');
@@ -8667,8 +9229,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
             // Play the audio (auto-unmute if user had muted)
             autoUnmuteOnPlay();
-            radioPlayer.src = '/audio/' + currentRadioTrack.filename;
-            radioPlayer.play();
+            radioPlayer.src = '/audio/' + encodeURIComponent(currentRadioTrack.filename);
+            radioPlayer.play().catch(e => console.warn('Radio play failed:', e.message));
 
             updateRadioQueue();
 
@@ -8725,6 +9287,47 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
 
         let currentRadioVote = 0;
+
+        // Update voice info display for now playing track
+        function updateRadioVoiceInfo(track) {
+            const voiceInfoEl = document.getElementById('radio-voice-info');
+            if (!voiceInfoEl) return;
+
+            if (track && track.model === 'voice') {
+                // Parse categories
+                let categories = [];
+                try {
+                    categories = typeof track.category === 'string' ? JSON.parse(track.category) : (track.category || []);
+                } catch (e) { categories = []; }
+
+                const isFemale = categories.includes('female');
+                const isMale = categories.includes('male');
+                const isBritish = categories.includes('british');
+                const isAmerican = categories.includes('american');
+
+                // Extract voice name
+                let voiceName = '';
+                if (track.voice_id) {
+                    const parts = track.voice_id.split('-');
+                    if (parts.length >= 2) {
+                        voiceName = parts[1].toUpperCase();
+                    }
+                }
+
+                let html = '';
+                if (isFemale) html += '<span class="voice-gender-tag female">Female</span>';
+                else if (isMale) html += '<span class="voice-gender-tag male">Male</span>';
+                if (isBritish) html += '<span class="voice-accent-tag">UK</span>';
+                else if (isAmerican) html += '<span class="voice-accent-tag">US</span>';
+                if (voiceName) html += `<span class="voice-name-tag">${voiceName}</span>`;
+
+                voiceInfoEl.innerHTML = html;
+                voiceInfoEl.style.display = html ? 'inline-flex' : 'none';
+            } else {
+                voiceInfoEl.innerHTML = '';
+                voiceInfoEl.style.display = 'none';
+            }
+        }
 
         async function loadRadioTrackVote() {
             if (!currentRadioTrack) return;
@@ -8844,7 +9447,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             }
             const filename = currentRadioTrack.filename;
             const a = document.createElement('a');
-            a.href = `/download/${filename}`;
+            a.href = `/download/${encodeURIComponent(filename)}`;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
@@ -8911,6 +9514,23 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 });
             };
 
+            // Move modals inside fullscreen container so they appear above it
+            // (Native fullscreen creates a top-layer that hides elements outside it)
+            const modalsToMove = [
+                'feedback-modal-overlay',
+                'tag-modal-overlay',
+                'playlist-modal-overlay',
+                'playlist-options-overlay'
+            ];
+            const movedModals = [];
+            modalsToMove.forEach(id => {
+                const modal = document.getElementById(id);
+                if (modal) {
+                    movedModals.push({ element: modal, parent: modal.parentNode });
+                    container.appendChild(modal);
+                }
+            });
+
             // Enter native fullscreen FIRST, then initialize visualizer
             if (container.requestFullscreen) {
                 container.requestFullscreen().then(initVisualizerAfterFullscreen);
@@ -8923,6 +9543,13 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             // Clean up when exiting fullscreen
             document.addEventListener('fullscreenchange', function onFsChange() {
                 if (!document.fullscreenElement && fullscreenWidget) {
+                    // Move modals back to their original parents (body)
+                    movedModals.forEach(({ element, parent }) => {
+                        if (element && parent) {
+                            parent.appendChild(element);
+                        }
+                    });
+
                     // Preserve audio - shared element with main player
                     fullscreenWidget.destroy({ preserveAudio: true });
                     fullscreenWidget = null;
@@ -8946,7 +9573,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
         function downloadTrack(filename) {
             const a = document.createElement('a');
-            a.href = `/download/${filename}`;
+            a.href = `/download/${encodeURIComponent(filename)}`;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
@@ -9289,7 +9916,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     { id: 'too_busy', label: 'Too busy/complex' },
                     { id: 'too_simple', label: 'Too simple/boring' },
                     { id: 'jarring', label: 'Jarring transitions' },
-                    { id: 'low_quality', label: 'Low quality' }
+                    { id: 'low_quality', label: 'Low quality' },
+                    { id: 'inappropriate', label: 'Inappropriate content' }
                 ]
             },
             audio: {
@@ -9309,7 +9937,25 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     { id: 'distorted', label: 'Distorted/glitchy' },
                     { id: 'bad_volume', label: 'Too quiet/loud' },
                     { id: 'annoying', label: 'Annoying' },
-                    { id: 'low_quality', label: 'Low quality' }
+                    { id: 'low_quality', label: 'Low quality' },
+                    { id: 'inappropriate', label: 'Inappropriate content' }
+                ]
+            },
+            voice: {
+                positive: [
+                    { id: 'clear', label: 'Clear/crisp' },
+                    { id: 'natural', label: 'Natural sounding' },
+                    { id: 'expressive', label: 'Good expression' },
+                    { id: 'matches', label: 'Matches text' },
+                    { id: 'useful', label: 'Perfect for games' }
+                ],
+                negative: [
+                    { id: 'robotic', label: 'Too robotic' },
+                    { id: 'pronunciation', label: 'Bad pronunciation' },
+                    { id: 'pacing', label: 'Wrong pacing' },
+                    { id: 'distorted', label: 'Distorted/glitchy' },
+                    { id: 'low_quality', label: 'Low quality' },
+                    { id: 'inappropriate', label: 'Inappropriate content' }
                 ]
             }
         };
@@ -9354,7 +10000,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             titleEl.className = 'feedback-modal-title ' + (isPositive ? 'positive' : 'negative');
 
             // Update track info
-            document.getElementById('feedback-modal-badge').innerHTML = `<svg class="icon icon-sm" style="vertical-align: -2px;"><use href="${model === 'music' ? '#icon-music' : '#icon-volume'}"/></svg>`;
+            const badgeIcon = model === 'music' ? '#icon-music' : model === 'voice' ? '#icon-mic' : '#icon-volume';
+            document.getElementById('feedback-modal-badge').innerHTML = `<svg class="icon icon-sm" style="vertical-align: -2px;"><use href="${badgeIcon}"/></svg>`;
             document.getElementById('feedback-modal-prompt').textContent = track.prompt;
 
             // Update label
@@ -9368,13 +10015,20 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 `<button class="feedback-tag ${isPositive ? 'positive' : ''}" data-id="${opt.id}" onclick="toggleModalFeedbackTag('${opt.id}')">${opt.label}</button>`
             ).join('');
 
-            // Populate reclassify option
+            // Populate reclassify option (only for music/audio, not voice)
             const reclassifyContainer = document.getElementById('feedback-modal-reclassify');
-            const oppositeModel = model === 'music' ? 'audio' : 'music';
-            const oppositeIcon = model === 'music' ? '#icon-volume' : '#icon-music';
-            const oppositeLabel = `<svg class="icon icon-sm" style="vertical-align: -2px; margin-right: 4px;"><use href="${oppositeIcon}"/></svg>${model === 'music' ? 'This is actually a sound effect' : 'This is actually music'}`;
-            reclassifyContainer.innerHTML =
-                `<button class="reclassify-option" data-model="${oppositeModel}" onclick="toggleModalReclassify('${oppositeModel}')">${oppositeLabel}</button>`;
+            if (model === 'voice') {
+                // Voice clips can't be reclassified to other types
+                reclassifyContainer.innerHTML = '';
+                reclassifyContainer.style.display = 'none';
+            } else {
+                reclassifyContainer.style.display = '';
+                const oppositeModel = model === 'music' ? 'audio' : 'music';
+                const oppositeIcon = model === 'music' ? '#icon-volume' : '#icon-music';
+                const oppositeLabel = `<svg class="icon icon-sm" style="vertical-align: -2px; margin-right: 4px;"><use href="${oppositeIcon}"/></svg>${model === 'music' ? 'This is actually a sound effect' : 'This is actually music'}`;
+                reclassifyContainer.innerHTML =
+                    `<button class="reclassify-option" data-model="${oppositeModel}" onclick="toggleModalReclassify('${oppositeModel}')">${oppositeLabel}</button>`;
+            }
 
             // Update submit button
             const submitBtn = document.getElementById('feedback-modal-submit');
@@ -9450,6 +10104,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         async function submitFeedbackModal() {
             if (!feedbackModalState.track) return;
 
+            // Prevent double-submit
+            const submitBtn = document.getElementById('feedback-modal-submit');
+            if (submitBtn.disabled) return;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
             const voteValue = feedbackModalState.isPositive ? 1 : -1;
             const genId = feedbackModalState.track.id;
 
@@ -9463,6 +10123,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                         suggested_model: feedbackModalState.suggestedModel
                     })
                 });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Failed to submit feedback');
+                }
+
                 const data = await response.json();
 
                 // Update UI based on source
@@ -9508,6 +10174,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             } catch (err) {
                 console.error('Feedback failed:', err);
                 showErrorToast('Failed to submit feedback: ' + err.message);
+            } finally {
+                // Re-enable button (in case modal wasn't closed)
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Feedback';
+                }
             }
         }
 
@@ -9605,6 +10277,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             document.getElementById('radio-duration').textContent = currentRadioTrack.duration + 's';
             document.getElementById('radio-upvotes').textContent = currentRadioTrack.upvotes || 0;
             document.getElementById('radio-downvotes').textContent = currentRadioTrack.downvotes || 0;
+            updateRadioVoiceInfo(currentRadioTrack);
 
             // Reset vote button states
             document.getElementById('radio-vote-up').classList.remove('voted-up');
@@ -9618,8 +10291,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
             // Play the audio (auto-unmute if user had muted)
             autoUnmuteOnPlay();
-            radioPlayer.src = '/audio/' + currentRadioTrack.filename;
-            radioPlayer.play();
+            radioPlayer.src = '/audio/' + encodeURIComponent(currentRadioTrack.filename);
+            radioPlayer.play().catch(e => console.warn('Radio play failed:', e.message));
 
             updateRadioQueue();
         }
@@ -9695,6 +10368,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             radioPlayer.addEventListener('ended', () => {
                 updateEqVisualizer(false);
                 updateMiniPlayer();
+            });
+            radioPlayer.addEventListener('error', (e) => {
+                console.error('Audio playback error:', e);
+                showErrorToast('Failed to load audio. Skipping to next track...');
+                // Skip to next track on error
+                setTimeout(() => playNextTrack(), 1000);
             });
         }
 
@@ -9821,15 +10500,16 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             document.querySelector('.library-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        // Load and update type counts (Music/SFX)
+        // Load and update type counts (Music/SFX/Voice/Graphlings)
         async function loadTypeCounts() {
             try {
                 const response = await fetch('/api/library/counts');
                 const counts = await response.json();
 
-                // Update the Music and SFX count badges
+                // Update the Music, SFX, and Speech count badges
                 const musicCountEl = document.getElementById('music-count');
                 const sfxCountEl = document.getElementById('sfx-count');
+                const voiceCountEl = document.getElementById('voice-count');
 
                 if (musicCountEl) {
                     musicCountEl.textContent = counts.music || 0;
@@ -9837,9 +10517,131 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 if (sfxCountEl) {
                     sfxCountEl.textContent = counts.audio || 0;
                 }
+                if (voiceCountEl) {
+                    voiceCountEl.textContent = counts.voice || 0;
+                }
+
+                // Load Graphlings count separately
+                loadGraphlingsCount();
             } catch (error) {
                 console.error('Error loading type counts:', error);
             }
+        }
+
+        // Graphlings sources state
+        let graphlingsSources = {};
+        let graphlingsCounts = {};
+        let currentGraphlingsSource = '';
+        let currentGraphlingsModel = '';
+
+        async function loadGraphlingsCount() {
+            try {
+                const response = await fetch('/api/graphlings/sources');
+                const data = await response.json();
+
+                graphlingsSources = data.sources || {};
+                graphlingsCounts = data.counts || {};
+
+                // Calculate total Graphlings count
+                let totalCount = 0;
+                for (const sourceId in graphlingsCounts) {
+                    totalCount += graphlingsCounts[sourceId].total || 0;
+                }
+
+                const graphlingsCountEl = document.getElementById('graphlings-count');
+                if (graphlingsCountEl) {
+                    graphlingsCountEl.textContent = totalCount;
+                }
+
+                // Render Graphlings sources in sidebar
+                renderGraphlingsSources();
+            } catch (error) {
+                console.error('Error loading Graphlings sources:', error);
+            }
+        }
+
+        function renderGraphlingsSources() {
+            const container = document.getElementById('graphlings-genres');
+            if (!container) return;
+
+            if (Object.keys(graphlingsSources).length === 0) {
+                container.innerHTML = `
+                    <div class="graphlings-empty" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                        <svg class="icon" style="width: 32px; height: 32px; opacity: 0.5;"><use href="#icon-game"/></svg>
+                        <p style="margin-top: 8px; font-size: 0.9rem;">No game audio tagged yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            for (const sourceId in graphlingsSources) {
+                const source = graphlingsSources[sourceId];
+                const counts = graphlingsCounts[sourceId] || { music: 0, audio: 0, voice: 0, total: 0 };
+
+                html += `
+                    <div class="graphlings-source" data-source="${sourceId}">
+                        <div class="graphlings-source-header" onclick="toggleGraphlingsSource('${sourceId}')">
+                            <svg class="source-icon"><use href="#icon-game"/></svg>
+                            <span class="source-name">${escapeHtml(source.name)}</span>
+                            <span class="source-count">${counts.total}</span>
+                        </div>
+                        <div class="graphlings-source-types">
+                            <div class="graphlings-type-item" data-source="${sourceId}" data-model="" onclick="selectGraphlingsFilter('${sourceId}', '')">
+                                <svg class="type-icon"><use href="#icon-grid"/></svg>
+                                <span class="type-name">All Audio</span>
+                                <span class="type-count">${counts.total}</span>
+                            </div>
+                            <div class="graphlings-type-item" data-source="${sourceId}" data-model="music" onclick="selectGraphlingsFilter('${sourceId}', 'music')">
+                                <svg class="type-icon"><use href="#icon-music"/></svg>
+                                <span class="type-name">Music</span>
+                                <span class="type-count">${counts.music || 0}</span>
+                            </div>
+                            <div class="graphlings-type-item" data-source="${sourceId}" data-model="audio" onclick="selectGraphlingsFilter('${sourceId}', 'audio')">
+                                <svg class="type-icon"><use href="#icon-soundwave"/></svg>
+                                <span class="type-name">SFX</span>
+                                <span class="type-count">${counts.audio || 0}</span>
+                            </div>
+                            <div class="graphlings-type-item" data-source="${sourceId}" data-model="voice" onclick="selectGraphlingsFilter('${sourceId}', 'voice')">
+                                <svg class="type-icon"><use href="#icon-mic"/></svg>
+                                <span class="type-name">Speech</span>
+                                <span class="type-count">${counts.voice || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function toggleGraphlingsSource(sourceId) {
+            const sourceEl = document.querySelector(`.graphlings-source[data-source="${sourceId}"]`);
+            if (sourceEl) {
+                sourceEl.classList.toggle('expanded');
+            }
+        }
+
+        function selectGraphlingsFilter(sourceId, model) {
+            currentGraphlingsSource = sourceId;
+            currentGraphlingsModel = model;
+
+            // Update active states
+            document.querySelectorAll('.graphlings-type-item').forEach(item => {
+                const isActive = item.dataset.source === sourceId && item.dataset.model === model;
+                item.classList.toggle('active', isActive);
+            });
+
+            // Expand the source group
+            document.querySelectorAll('.graphlings-source').forEach(source => {
+                source.classList.toggle('expanded', source.dataset.source === sourceId);
+            });
+
+            updateClearFilterButton();
+
+            // Reload library with graphlings filter
+            libraryPage = 1;
+            loadLibrary();
         }
 
         async function loadLibrary() {
@@ -9858,9 +10660,20 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 sort: librarySortEl.value
             });
 
-            // Use currentCategory if set by type tabs, otherwise use model dropdown
-            const effectiveModel = currentCategory || model;
-            if (effectiveModel) params.set('model', effectiveModel);
+            // Handle Graphlings source filtering
+            if (currentGraphlingsSource) {
+                params.set('source', currentGraphlingsSource);
+                if (currentGraphlingsModel) {
+                    params.set('model', currentGraphlingsModel);
+                }
+            } else {
+                // Use currentCategory if set by type tabs, otherwise use model dropdown
+                const effectiveModel = currentCategory || model;
+                if (effectiveModel && effectiveModel !== 'graphlings') {
+                    params.set('model', effectiveModel);
+                }
+            }
+
             if (search) params.set('search', search);
 
             // Add category filter if a genre is selected
@@ -9892,10 +10705,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                             </div>
                         `;
                     } else if (model) {
+                        const emptyIcon = model === 'music' ? '#icon-music' : model === 'voice' ? '#icon-mic' : '#icon-volume';
+                        const emptyLabel = model === 'music' ? 'music' : model === 'voice' ? 'speech' : 'sound effects';
                         emptyMessage = `
                             <div class="library-empty">
-                                <svg class="empty-icon"><use href="${model === 'music' ? '#icon-music' : '#icon-volume'}"/></svg>
-                                <h3>No ${model === 'music' ? 'music' : 'sound effects'} yet</h3>
+                                <svg class="empty-icon"><use href="${emptyIcon}"/></svg>
+                                <h3>No ${emptyLabel} yet</h3>
                                 <p>Generate some using the Generate tab!</p>
                             </div>
                         `;
@@ -10110,6 +10925,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             currentGenre = '';
             currentQuickFilter = '';
 
+            // Clear Graphlings filter when switching tabs
+            currentGraphlingsSource = '';
+            currentGraphlingsModel = '';
+            document.querySelectorAll('.graphlings-type-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.graphlings-source').forEach(source => source.classList.remove('expanded'));
+
             // Update tab active states
             document.querySelectorAll('.type-tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.type === type);
@@ -10123,7 +10944,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             document.querySelectorAll('.quick-filter-btn').forEach(btn => btn.classList.remove('active'));
 
             // Update category for filtering
-            if (type === 'all') {
+            if (type === 'all' || type === 'graphlings') {
                 currentCategory = '';
             } else {
                 currentCategory = type;
@@ -10157,16 +10978,20 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             });
             document.querySelectorAll('.quick-filter-btn').forEach(btn => btn.classList.remove('active'));
 
-            // Map genre to category/subcategory
-            const musicGenres = ['ambient', 'electronic', 'cinematic', 'acoustic', 'lofi', 'upbeat', 'retro'];
-            const sfxGenres = ['nature', 'mechanical', 'human', 'fantasy', 'ui', 'impacts', 'whoosh'];
+            // Always set the subcategory for filtering
+            currentSubcategory = genre;
 
-            if (musicGenres.includes(genre)) {
-                currentCategory = 'music';
-                currentSubcategory = genre;
-            } else if (sfxGenres.includes(genre)) {
-                currentCategory = 'audio';
-                currentSubcategory = genre;
+            // Determine model type based on which section the genre is in
+            // Music genres are in .music-genres, SFX genres are in .sfx-genres, Speech in .speech-genres
+            const genreEl = document.querySelector(`.genre-item[data-genre="${genre}"]`);
+            if (genreEl) {
+                if (genreEl.closest('.music-genres')) {
+                    currentCategory = 'music';
+                } else if (genreEl.closest('.sfx-genres')) {
+                    currentCategory = 'audio';
+                } else if (genreEl.closest('.speech-genres')) {
+                    currentCategory = 'voice';
+                }
             }
 
             updateSearchPlaceholder();
@@ -10209,6 +11034,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             currentCategory = '';
             currentSubcategory = '';
 
+            // Clear Graphlings filters
+            currentGraphlingsSource = '';
+            currentGraphlingsModel = '';
+
             // Clear search box
             const searchInput = document.getElementById('library-search');
             if (searchInput) searchInput.value = '';
@@ -10216,6 +11045,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             // Reset all active states
             document.querySelectorAll('.genre-item').forEach(item => item.classList.remove('active'));
             document.querySelectorAll('.quick-filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.graphlings-type-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.graphlings-source').forEach(source => source.classList.remove('expanded'));
             document.getElementById('category-sidebar').dataset.type = 'all';
 
             updateSearchPlaceholder();
@@ -10229,12 +11060,17 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             const searchInput = document.getElementById('library-search');
             if (currentQuickFilter === 'favorites') {
                 searchInput.placeholder = 'Search your favorites...';
+            } else if (currentGraphlingsSource) {
+                const sourceName = graphlingsSources[currentGraphlingsSource]?.name || currentGraphlingsSource;
+                searchInput.placeholder = `Search ${sourceName} audio...`;
             } else if (currentGenre) {
                 searchInput.placeholder = `Search ${currentGenre} sounds...`;
             } else if (currentTypeTab === 'music') {
                 searchInput.placeholder = 'Search music tracks...';
             } else if (currentTypeTab === 'audio') {
                 searchInput.placeholder = 'Search sound effects...';
+            } else if (currentTypeTab === 'graphlings') {
+                searchInput.placeholder = 'Search Graphlings game audio...';
             } else {
                 searchInput.placeholder = 'Search music, sound effects, prompts...';
             }
@@ -10244,7 +11080,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             const btn = document.getElementById('clear-filter-btn');
             const searchInput = document.getElementById('library-search');
             const hasSearch = searchInput && searchInput.value.trim().length > 0;
-            const hasFilters = currentGenre || currentQuickFilter || hasSearch;
+            const hasFilters = currentGenre || currentQuickFilter || currentGraphlingsSource || hasSearch;
             btn.style.display = hasFilters ? 'flex' : 'none';
         }
 
@@ -10282,18 +11118,55 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
             // Only show "View Feedback" button to adult accounts
             const viewFeedbackBtn = isAdultAccount
-                ? `<button class="comments-btn" onclick="viewFeedback('${item.id}')" title="View feedback">
+                ? `<button class="comments-btn" onclick="viewFeedback('${escapeJsString(item.id)}')" title="View feedback">
                     <svg class="icon"><use href="#icon-library"/></svg> Feedback
                    </button>`
                 : '';
 
-            const modelIcon = item.model === 'music' ? '#icon-music' : '#icon-volume';
-            const modelClass = item.model === 'music' ? 'music' : 'audio';
+            const modelIcon = item.model === 'music' ? '#icon-music' : item.model === 'voice' ? '#icon-mic' : '#icon-volume';
+            const modelClass = item.model === 'music' ? 'music' : item.model === 'voice' ? 'voice' : 'audio';
+            const modelTitle = item.model === 'music' ? 'Music' : item.model === 'voice' ? 'Speech' : 'Sound Effect';
+
+            // Voice-specific info for speech clips
+            let voiceInfoHtml = '';
+            if (item.model === 'voice') {
+                // Parse categories to find gender and accent
+                let categories = [];
+                try {
+                    categories = typeof item.category === 'string' ? JSON.parse(item.category) : (item.category || []);
+                } catch (e) { categories = []; }
+
+                const isFemale = categories.includes('female');
+                const isMale = categories.includes('male');
+                const isBritish = categories.includes('british');
+                const isAmerican = categories.includes('american');
+
+                // Extract voice name from voice_id (e.g., 'en_GB-vctk-medium' -> 'VCTK')
+                let voiceName = '';
+                if (item.voice_id) {
+                    const parts = item.voice_id.split('-');
+                    if (parts.length >= 2) {
+                        voiceName = parts[1].toUpperCase();
+                    }
+                }
+
+                const genderTag = isFemale ? '<span class="voice-gender-tag female">Female</span>' :
+                                  isMale ? '<span class="voice-gender-tag male">Male</span>' : '';
+                const accentTag = isBritish ? '<span class="voice-accent-tag">UK</span>' :
+                                  isAmerican ? '<span class="voice-accent-tag">US</span>' : '';
+                const voiceTag = voiceName ? `<span class="voice-name-tag">${escapeHtml(voiceName)}</span>` : '';
+
+                voiceInfoHtml = `
+                    <span class="voice-info-tags">
+                        ${genderTag}${accentTag}${voiceTag}
+                    </span>
+                `;
+            }
 
             return `
                 <div class="library-item" data-id="${item.id}" data-model="${item.model || 'music'}">
                     <div class="item-header">
-                        <div class="model-badge ${modelClass}" title="${item.model === 'music' ? 'Music' : 'Sound Effect'}">
+                        <div class="model-badge ${modelClass}" title="${modelTitle}">
                             <svg class="icon"><use href="${modelIcon}"/></svg>
                         </div>
                         <div class="item-info">
@@ -10303,32 +11176,33 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                                     <svg class="icon"><use href="#icon-clock"/></svg>
                                     ${item.duration}s
                                 </span>
+                                ${voiceInfoHtml}
                             </div>
                         </div>
                     </div>
                     <div class="styled-audio">
-                        <audio controls src="/audio/${item.filename}" onplay="stopOtherAudio(this)"></audio>
+                        <audio controls src="/audio/${encodeURIComponent(item.filename)}" onplay="stopOtherAudio(this)"></audio>
                     </div>
                     <div class="item-actions">
-                        <button class="action-btn favorite-btn ${favClass}" onclick="toggleLibraryFavorite('${item.id}')" title="${isFavorited ? 'Remove from favorites' : 'Add to favorites'}">
+                        <button class="action-btn favorite-btn ${favClass}" onclick="toggleLibraryFavorite('${escapeJsString(item.id)}')" title="${isFavorited ? 'Remove from favorites' : 'Add to favorites'}">
                             <svg class="icon"><use href="${favIcon}"/></svg>
                         </button>
-                        <button class="action-btn vote-up ${upClass}" onclick="showLibraryPositiveFeedback('${item.id}')" title="Like this track">
+                        <button class="action-btn vote-up ${upClass}" onclick="showLibraryPositiveFeedback('${escapeJsString(item.id)}')" title="Like this track">
                             <svg class="icon"><use href="#icon-thumb-up"/></svg>
                             <span class="vote-count">${item.upvotes || 0}</span>
                         </button>
-                        <button class="action-btn vote-down ${downClass}" onclick="showLibraryFeedback('${item.id}')" title="Dislike this track">
+                        <button class="action-btn vote-down ${downClass}" onclick="showLibraryFeedback('${escapeJsString(item.id)}')" title="Dislike this track">
                             <svg class="icon"><use href="#icon-thumb-down"/></svg>
                             <span class="vote-count">${item.downvotes || 0}</span>
                         </button>
-                        <button class="action-btn" onclick="showAddToPlaylistModal('${item.id}')" title="Add to playlist">
+                        <button class="action-btn" onclick="showAddToPlaylistModal('${escapeJsString(item.id)}')" title="Add to playlist">
                             <svg class="icon"><use href="#icon-plus"/></svg>
                         </button>
-                        <button class="action-btn" onclick="showTagSuggestionModal('${item.id}')" title="Review">
+                        <button class="action-btn" onclick="showTagSuggestionModal('${escapeJsString(item.id)}')" title="Review">
                             <svg class="icon"><use href="#icon-tag"/></svg>
                         </button>
                         ${viewFeedbackBtn}
-                        <a href="/download/${item.filename}" class="action-btn download" title="Download">
+                        <a href="/download/${encodeURIComponent(item.filename)}" class="action-btn download" title="Download">
                             <svg class="icon"><use href="#icon-download"/></svg>
                         </a>
                     </div>
@@ -10345,7 +11219,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             // If this item is already playing, toggle pause
             if (currentPlayingLibraryItemId === genId && currentRadioTrack?.id === genId) {
                 if (radioPlayer.paused) {
-                    radioPlayer.play();
+                    radioPlayer.play().catch(e => console.warn('Library play failed:', e.message));
                 } else {
                     radioPlayer.pause();
                 }
@@ -10456,6 +11330,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             document.getElementById('radio-duration').textContent = item.duration + 's';
             document.getElementById('radio-upvotes').textContent = item.upvotes || 0;
             document.getElementById('radio-downvotes').textContent = item.downvotes || 0;
+            updateRadioVoiceInfo(item);
 
             // Reset vote button states
             document.getElementById('radio-vote-up').classList.remove('voted-up');
@@ -10467,8 +11342,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
             // Play the audio
             autoUnmuteOnPlay();
-            radioPlayer.src = '/audio/' + item.filename;
-            radioPlayer.play();
+            radioPlayer.src = '/audio/' + encodeURIComponent(item.filename);
+            radioPlayer.play().catch(e => console.warn('Library item play failed:', e.message));
 
             // Update queue display
             updateRadioQueue();
@@ -10863,7 +11738,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     }
 
                     const cancelBtn = (isOwnJob && !isProcessing) ?
-                        `<button class="cancel-btn" onclick="cancelQueueJob('${job.id}')" title="Cancel job">×</button>` : '';
+                        `<button class="cancel-btn" onclick="cancelQueueJob('${escapeJsString(job.id)}')" title="Cancel job">×</button>` : '';
 
                     return `
                         <div class="queue-item ${isProcessing ? 'processing' : ''} ${isOwnJob ? 'own-job' : ''}">
@@ -11042,7 +11917,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 // Set audio source but don't play
                 const audio = document.getElementById('radio-player');
                 if (audio) {
-                    audio.src = `/audio/${track.filename}`;
+                    audio.src = `/audio/${encodeURIComponent(track.filename)}`;
                 }
 
                 // Show paused state for EQ visualizer
@@ -11379,7 +12254,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
     </script>
 
     <!-- Feedback Modal Overlay -->
-    <div class="feedback-modal-overlay hidden" id="feedback-modal-overlay" onclick="closeFeedbackModal(event)">
+    <div class="feedback-modal-overlay hidden" id="feedback-modal-overlay" onclick="closeFeedbackModal(event)" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
         <!-- Floating particles -->
         <div class="feedback-particles" id="feedback-particles"></div>
         <div class="feedback-modal" id="feedback-modal-container" onclick="event.stopPropagation()">
@@ -11407,10 +12282,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
     </div>
 
     <!-- Tag Suggestion Modal -->
-    <div class="tag-modal-overlay hidden" id="tag-modal-overlay" onclick="closeTagModal(event)">
+    <div class="tag-modal-overlay hidden" id="tag-modal-overlay" onclick="closeTagModal(event)" role="dialog" aria-modal="true" aria-labelledby="tag-modal-title">
         <div class="tag-modal" onclick="event.stopPropagation()">
             <div class="tag-modal-header">
-                <h3 class="tag-modal-title">
+                <h3 class="tag-modal-title" id="tag-modal-title">
                     <svg class="icon"><use href="#icon-tag"/></svg>
                     Review Track
                 </h3>
@@ -11464,10 +12339,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
     </div>
 
     <!-- Add to Playlist Modal -->
-    <div class="playlist-modal-overlay hidden" id="playlist-modal-overlay" onclick="closePlaylistModal(event)">
+    <div class="playlist-modal-overlay hidden" id="playlist-modal-overlay" onclick="closePlaylistModal(event)" role="dialog" aria-modal="true" aria-labelledby="playlist-modal-title">
         <div class="playlist-modal" onclick="event.stopPropagation()">
             <div class="playlist-modal-header">
-                <h3 class="playlist-modal-title">
+                <h3 class="playlist-modal-title" id="playlist-modal-title">
                     <svg class="icon"><use href="#icon-plus"/></svg>
                     Add to Playlist
                 </h3>
@@ -11498,7 +12373,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
     </div>
 
     <!-- Playlist Detail Overlay -->
-    <div class="playlist-detail-overlay hidden" id="playlist-detail-overlay" onclick="closePlaylistDetail(event)">
+    <div class="playlist-detail-overlay hidden" id="playlist-detail-overlay" onclick="closePlaylistDetail(event)" role="dialog" aria-modal="true" aria-labelledby="playlist-detail-name">
         <div class="playlist-detail-panel" onclick="event.stopPropagation()">
             <div class="playlist-detail-header">
                 <div class="playlist-detail-info">
@@ -11530,10 +12405,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
     </div>
 
     <!-- Playlist Options Modal (Rename/Delete) -->
-    <div class="playlist-options-overlay hidden" id="playlist-options-overlay" onclick="closePlaylistOptions(event)">
+    <div class="playlist-options-overlay hidden" id="playlist-options-overlay" onclick="closePlaylistOptions(event)" role="dialog" aria-modal="true" aria-labelledby="playlist-options-title">
         <div class="playlist-options-modal" onclick="event.stopPropagation()">
             <div class="playlist-options-header">
-                <h3>Playlist Settings</h3>
+                <h3 id="playlist-options-title">Playlist Settings</h3>
                 <button class="btn btn-icon" onclick="closePlaylistOptions()">&times;</button>
             </div>
             <div class="playlist-options-content">
@@ -12568,6 +13443,40 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             color: #ef4444;
         }
 
+        /* User's own suggestions - highlight and show cancel */
+        .pending-tag.user-suggested {
+            border-style: solid;
+            border-width: 2px;
+        }
+
+        .pending-tag.user-suggested.pending-add {
+            border-color: rgba(34, 197, 94, 0.5);
+            background: rgba(34, 197, 94, 0.15);
+        }
+
+        .pending-tag.user-suggested.pending-remove {
+            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .cancel-suggestion-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0 2px;
+            margin-left: 4px;
+            font-size: 1rem;
+            line-height: 1;
+            opacity: 0.7;
+            transition: opacity 0.15s, color 0.15s;
+        }
+
+        .cancel-suggestion-btn:hover {
+            opacity: 1;
+            color: #ef4444;
+        }
+
         /* Suggest Tag Button Style */
         .action-btn.suggest-tag {
             border-color: rgba(139, 92, 246, 0.3);
@@ -12751,6 +13660,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         let currentTagModalGenId = null;
         let currentTagModalModel = 'music';
         let allCategoriesData = null; // Store for filtering
+        // Track user's current suggestions for toggle behavior
+        let currentUserAddSuggestions = [];
+        let currentUserRemoveSuggestions = [];
 
         // Recently used tags management (stored in localStorage)
         const RECENT_TAGS_KEY = 'soundbox_recent_tags';
@@ -12852,8 +13764,11 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             }
 
             // Set track info
+            let tagModalIcon = '#icon-volume';
+            if (currentTagModalModel === 'music') tagModalIcon = '#icon-music';
+            else if (currentTagModalModel === 'voice') tagModalIcon = '#icon-mic';
             document.getElementById('tag-modal-badge').innerHTML =
-                `<svg class="icon icon-sm" style="vertical-align: -2px;"><use href="${currentTagModalModel === 'music' ? '#icon-music' : '#icon-volume'}"/></svg>`;
+                `<svg class="icon icon-sm" style="vertical-align: -2px;"><use href="${tagModalIcon}"/></svg>`;
             document.getElementById('tag-modal-prompt').textContent = item.prompt;
 
             // Clear status
@@ -12871,7 +13786,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 const categoriesData = await categoriesRes.json();
                 allCategoriesData = categoriesData;
 
-                // Display current categories (click to vote for removal)
+                // Display current categories (click to vote for removal, click again to cancel)
                 const currentTagsEl = document.getElementById('tag-modal-current-tags');
                 const userRemoveSuggestions = suggestionsData.user_suggestions?.remove || [];
                 if (suggestionsData.current_categories && suggestionsData.current_categories.length > 0) {
@@ -12879,9 +13794,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                         .map(cat => {
                             const alreadyVotedRemove = userRemoveSuggestions.includes(cat);
                             const votedClass = alreadyVotedRemove ? ' voted-remove' : '';
-                            const title = alreadyVotedRemove ? 'You voted to remove this' : 'Click to vote for removal';
-                            return `<span class="current-tag${votedClass}" onclick="suggestTagRemoval('${cat}')" title="${title}">
-                                ${cat.replace(/_/g, ' ')}
+                            const title = alreadyVotedRemove ? 'Click to cancel removal vote' : 'Click to vote for removal';
+                            return `<span class="current-tag${votedClass}" onclick="suggestTagRemoval('${escapeJsString(cat)}')" title="${title}">
+                                ${escapeHtml(cat.replace(/_/g, ' '))}
                             </span>`;
                         })
                         .join('');
@@ -12891,16 +13806,28 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
                 // Display pending additions
                 const pendingAddEl = document.getElementById('tag-modal-pending-add');
+                // Get user's own suggestions and store globally for toggle behavior
+                const userAddSuggestionsList = suggestionsData.user_suggestions?.add || [];
+                const userRemoveSuggestionsList = suggestionsData.user_suggestions?.remove || [];
+                currentUserAddSuggestions = userAddSuggestionsList;
+                currentUserRemoveSuggestions = userRemoveSuggestionsList;
+
                 const addSuggestions = suggestionsData.suggestions?.add || suggestionsData.suggestions || {};
                 if (Object.keys(addSuggestions).length > 0) {
                     pendingAddEl.innerHTML = Object.entries(addSuggestions)
-                        .map(([cat, count]) => `
-                            <span class="pending-tag pending-add">
+                        .map(([cat, count]) => {
+                            const isUserSuggestion = userAddSuggestionsList.includes(cat);
+                            const cancelBtn = isUserSuggestion
+                                ? `<button class="cancel-suggestion-btn" onclick="cancelTagSuggestion('${escapeJsString(cat)}', 'add')" title="Cancel your suggestion">×</button>`
+                                : '';
+                            return `
+                            <span class="pending-tag pending-add ${isUserSuggestion ? 'user-suggested' : ''}">
                                 <span class="action-indicator">+</span>
-                                ${cat.replace(/_/g, ' ')}
+                                ${escapeHtml(cat.replace(/_/g, ' '))}
                                 <span class="vote-count">${count}/${suggestionsData.threshold}</span>
-                            </span>
-                        `)
+                                ${cancelBtn}
+                            </span>`;
+                        })
                         .join('');
                 } else {
                     pendingAddEl.innerHTML = '<span class="no-tags">None</span>';
@@ -12911,13 +13838,19 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 const removeSuggestions = suggestionsData.suggestions?.remove || {};
                 if (Object.keys(removeSuggestions).length > 0) {
                     pendingRemoveEl.innerHTML = Object.entries(removeSuggestions)
-                        .map(([cat, count]) => `
-                            <span class="pending-tag pending-remove">
+                        .map(([cat, count]) => {
+                            const isUserSuggestion = userRemoveSuggestionsList.includes(cat);
+                            const cancelBtn = isUserSuggestion
+                                ? `<button class="cancel-suggestion-btn" onclick="cancelTagSuggestion('${escapeJsString(cat)}', 'remove')" title="Cancel your suggestion">×</button>`
+                                : '';
+                            return `
+                            <span class="pending-tag pending-remove ${isUserSuggestion ? 'user-suggested' : ''}">
                                 <span class="action-indicator">−</span>
-                                ${cat.replace(/_/g, ' ')}
+                                ${escapeHtml(cat.replace(/_/g, ' '))}
                                 <span class="vote-count">${count}/${suggestionsData.threshold}</span>
-                            </span>
-                        `)
+                                ${cancelBtn}
+                            </span>`;
+                        })
                         .join('');
                 } else {
                     pendingRemoveEl.innerHTML = '<span class="no-tags">None</span>';
@@ -12945,8 +13878,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                             else if (isSuggested) className += ' suggested';
 
                             const displayName = categoriesData.categories[cat] || cat.replace(/_/g, ' ');
-                            return `<button class="${className}" onclick="suggestTag('${cat}')" ${isApplied ? 'disabled' : ''}>
-                                ${displayName}
+                            const title = isApplied ? 'Already applied' : isSuggested ? 'Click to cancel suggestion' : 'Click to suggest adding';
+                            return `<button class="${className}" onclick="suggestTag('${escapeJsString(cat)}')" title="${title}" ${isApplied ? 'disabled' : ''}>
+                                ${escapeHtml(displayName)}
                             </button>`;
                         })
                         .join('');
@@ -12958,29 +13892,15 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 const groupsEl = document.getElementById('tag-category-groups');
                 const categoriesWithCounts = categoriesData.categories_with_counts || {};
 
-                // Define category groups
-                const CATEGORY_GROUPS = currentTagModalModel === 'music' ? {
-                    'Electronic & Dance': ['electronic', 'edm', 'house', 'techno', 'trance', 'dubstep', 'drum_and_bass', 'synthwave'],
-                    'Ambient & Atmospheric': ['ambient', 'drone', 'meditation', 'nature_music', 'space', 'dark_ambient'],
-                    'Cinematic': ['cinematic', 'epic', 'orchestral', 'trailer', 'dramatic', 'suspense', 'heroic', 'romantic'],
-                    'Classical & Acoustic': ['classical', 'piano', 'guitar', 'strings', 'orchestra_section', 'acoustic'],
-                    'Lo-Fi & Chill': ['lofi', 'chillhop', 'chill', 'study', 'cafe'],
-                    'Hip Hop': ['hiphop', 'trap', 'boom_bap', 'instrumental_hiphop'],
-                    'Rock & Alternative': ['rock', 'indie', 'metal', 'punk', 'grunge'],
-                    'Jazz & Blues': ['jazz', 'blues', 'soul', 'funk'],
-                    'World & Ethnic': ['world', 'asian', 'latin', 'african', 'celtic', 'middle_eastern'],
-                    'Moods & Emotions': ['happy', 'sad', 'angry', 'peaceful', 'mysterious', 'scary', 'inspirational'],
-                    'Energy Levels': ['upbeat', 'relaxing', 'intense', 'gentle'],
-                    'Retro & Vintage': ['retro', 'chiptune', 'arcade', '80s', '70s', '60s'],
-                    'Use Cases': ['corporate', 'advertising', 'youtube', 'podcast', 'game_music', 'holiday', 'workout', 'kids']
-                } : {
-                    'UI & Interface': ['notification', 'button', 'menu', 'success', 'error', 'typing'],
-                    'Actions & Movements': ['whoosh', 'impact', 'explosion', 'crash', 'jump', 'footstep'],
-                    'Nature & Weather': ['rain', 'wind', 'thunder', 'water', 'ocean', 'fire', 'forest'],
-                    'Animals': ['bird', 'dog', 'cat', 'insect', 'creature', 'monster'],
-                    'Vehicles & Machines': ['car', 'engine', 'machine', 'electricity', 'robot'],
-                    'Sci-Fi & Fantasy': ['laser', 'magic', 'teleport', 'alien', 'futuristic']
-                };
+                // Use shared category definitions (defined at top of script)
+                let CATEGORY_GROUPS;
+                if (currentTagModalModel === 'music') {
+                    CATEGORY_GROUPS = MUSIC_CATEGORY_GROUPS;
+                } else if (currentTagModalModel === 'voice') {
+                    CATEGORY_GROUPS = SPEECH_CATEGORY_GROUPS;
+                } else {
+                    CATEGORY_GROUPS = SFX_CATEGORY_GROUPS;
+                }
 
                 let groupsHtml = '';
                 for (const [groupName, groupCategories] of Object.entries(CATEGORY_GROUPS)) {
@@ -12994,8 +13914,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                             if (isApplied) className += ' already-applied';
                             else if (isSuggested) className += ' suggested';
                             const countDisplay = data.count > 0 ? `<span class="usage-count">(${data.count})</span>` : '';
-                            return `<button class="${className}" data-category="${cat}" onclick="suggestTag('${cat}')" ${isApplied ? 'disabled' : ''}>
-                                ${data.display}${countDisplay}
+                            const title = isApplied ? 'Already applied' : isSuggested ? 'Click to cancel suggestion' : 'Click to suggest adding';
+                            return `<button class="${className}" data-category="${escapeHtml(cat)}" onclick="suggestTag('${escapeJsString(cat)}')" title="${title}" ${isApplied ? 'disabled' : ''}>
+                                ${escapeHtml(data.display)}${countDisplay}
                             </button>`;
                         });
 
@@ -13003,7 +13924,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                         groupsHtml += `
                             <div class="tag-category-group">
                                 <div class="tag-group-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                                    <span class="tag-group-name">${groupName}</span>
+                                    <span class="tag-group-name">${escapeHtml(groupName)}</span>
                                     <svg class="tag-group-toggle icon"><use href="#icon-chevron"/></svg>
                                 </div>
                                 <div class="tag-group-items">${groupItems.join('')}</div>
@@ -13025,8 +13946,26 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             }
         }
 
+        let tagSuggestionSubmitting = false;  // Prevent double-submit
+
         async function suggestTag(category, action = 'add') {
             if (!currentTagModalGenId) return;
+
+            // Prevent double-submit
+            if (tagSuggestionSubmitting) return;
+            tagSuggestionSubmitting = true;
+
+            // Toggle behavior: if user already suggested this, cancel instead
+            const alreadySuggested = action === 'add'
+                ? currentUserAddSuggestions.includes(category)
+                : currentUserRemoveSuggestions.includes(category);
+
+            if (alreadySuggested) {
+                // User clicked again - toggle off (cancel the suggestion)
+                await cancelTagSuggestion(category, action);
+                tagSuggestionSubmitting = false;
+                return;
+            }
 
             const statusEl = document.getElementById('tag-modal-status');
             statusEl.className = 'tag-modal-status';
@@ -13059,8 +13998,14 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                         showFeedbackToast(actionMsg + ' suggestion recorded');
                     }
 
-                    // Refresh the modal
-                    setTimeout(() => showTagSuggestionModal(currentTagModalGenId), 500);
+                    // Refresh the modal (capture genId to avoid race condition if modal closes)
+                    const refreshGenId = currentTagModalGenId;
+                    setTimeout(() => {
+                        // Only refresh if modal is still open for the same track
+                        if (currentTagModalGenId === refreshGenId) {
+                            showTagSuggestionModal(refreshGenId);
+                        }
+                    }, 500);
 
                 } else {
                     statusEl.className = 'tag-modal-status error';
@@ -13071,11 +14016,52 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 console.error('Failed to suggest tag:', err);
                 statusEl.className = 'tag-modal-status error';
                 statusEl.textContent = 'Failed to submit suggestion';
+            } finally {
+                tagSuggestionSubmitting = false;
             }
         }
 
         async function suggestTagRemoval(category) {
+            // This now inherits toggle behavior from suggestTag
             await suggestTag(category, 'remove');
+        }
+
+        async function cancelTagSuggestion(category, action = 'add') {
+            if (!currentTagModalGenId) return;
+
+            // Capture current state to avoid race conditions
+            const genId = currentTagModalGenId;
+
+            const statusEl = document.getElementById('tag-modal-status');
+            statusEl.className = 'tag-modal-status';
+            statusEl.textContent = 'Canceling...';
+
+            try {
+                const response = await fetch(`/api/library/${genId}/cancel-tag`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category, action })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusEl.className = 'tag-modal-status success';
+                    statusEl.textContent = 'Suggestion canceled';
+                    // Refresh the modal to show updated state (only if still open for same track)
+                    setTimeout(() => {
+                        if (currentTagModalGenId === genId) {
+                            showTagSuggestionModal(genId);
+                        }
+                    }, 500);
+                } else {
+                    statusEl.className = 'tag-modal-status error';
+                    statusEl.textContent = data.message || data.error || 'Failed to cancel';
+                }
+            } catch (err) {
+                console.error('Failed to cancel suggestion:', err);
+                statusEl.className = 'tag-modal-status error';
+                statusEl.textContent = 'Failed to cancel suggestion';
+            }
         }
 
         // Custom tags functionality
@@ -13085,7 +14071,13 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             if (!currentTagModalGenId) return;
 
             // Load from localStorage for now (will be API-backed later)
-            const allTags = JSON.parse(localStorage.getItem('soundbox_custom_tags') || '{}');
+            let allTags = {};
+            try {
+                allTags = JSON.parse(localStorage.getItem('soundbox_custom_tags') || '{}');
+            } catch (e) {
+                console.warn('Failed to parse custom tags from localStorage:', e);
+                allTags = {};
+            }
             currentTrackCustomTags = allTags[currentTagModalGenId] || [];
             renderCustomTags();
         }
@@ -13144,7 +14136,13 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         function saveCustomTags() {
             if (!currentTagModalGenId) return;
 
-            const allTags = JSON.parse(localStorage.getItem('soundbox_custom_tags') || '{}');
+            let allTags = {};
+            try {
+                allTags = JSON.parse(localStorage.getItem('soundbox_custom_tags') || '{}');
+            } catch (e) {
+                console.warn('Failed to parse custom tags from localStorage:', e);
+                allTags = {};
+            }
             if (currentTrackCustomTags.length > 0) {
                 allTags[currentTagModalGenId] = currentTrackCustomTags;
             } else {
@@ -13166,6 +14164,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             document.getElementById('tag-modal-overlay').classList.add('hidden');
             currentTagModalGenId = null;
             currentTrackCustomTags = [];
+            // Reset user suggestion state
+            currentUserAddSuggestions = [];
+            currentUserRemoveSuggestions = [];
         }
 
         // Close modal on Escape key
@@ -13181,6 +14182,25 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 const tagModal = document.getElementById('tag-modal-overlay');
                 if (tagModal && !tagModal.classList.contains('hidden')) {
                     closeTagModal();
+                    return;
+                }
+                // Check playlist options modal
+                const playlistOptionsModal = document.getElementById('playlist-options-overlay');
+                if (playlistOptionsModal && !playlistOptionsModal.classList.contains('hidden')) {
+                    closePlaylistOptions();
+                    return;
+                }
+                // Check playlist detail modal
+                const playlistDetailModal = document.getElementById('playlist-detail-overlay');
+                if (playlistDetailModal && !playlistDetailModal.classList.contains('hidden')) {
+                    closePlaylistDetail();
+                    return;
+                }
+                // Check playlist add modal
+                const playlistModal = document.getElementById('playlist-modal-overlay');
+                if (playlistModal && !playlistModal.classList.contains('hidden')) {
+                    closePlaylistModal();
+                    return;
                 }
             }
         });
@@ -13339,7 +14359,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     closeTagModal();
                     return;
                 }
-                const feedbackModal = document.getElementById('feedback-modal');
+                const feedbackModal = document.getElementById('feedback-modal-overlay');
                 if (feedbackModal && !feedbackModal.classList.contains('hidden')) {
                     closeFeedbackModal();
                     return;
@@ -13567,7 +14587,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
         <!-- Controls -->
         <div class="mini-player-controls">
-            <button class="mini-player-btn primary" onclick="radioPlayer.paused ? radioPlayer.play() : radioPlayer.pause()" id="mini-player-play" title="Play/Pause" data-tooltip="Play/Pause">
+            <button class="mini-player-btn primary" onclick="toggleRadioPlayPause()" id="mini-player-play" title="Play/Pause" data-tooltip="Play/Pause">
                 <svg class="icon"><use href="#icon-pause"/></svg>
             </button>
             <button class="mini-player-btn" onclick="skipTrack()" title="Next" data-tooltip="Next">

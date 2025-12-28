@@ -13,6 +13,20 @@ DB_PATH = 'soundbox.db'
 METADATA_FILE = 'generations.json'
 
 # =============================================================================
+# User Storage Limits (by subscription tier)
+# =============================================================================
+# Maximum number of private generations a user can store in "My Generations"
+# When limit is exceeded, oldest non-favorited generations are auto-deleted
+# (Favorites are exempt from auto-deletion)
+
+USER_STORAGE_LIMITS = {
+    'creator': 500,    # $20/mo - generous allocation
+    'premium': 200,    # $10/mo
+    'supporter': 100,  # $5/mo
+    'free': 20         # Free tier - just enough to try the service
+}
+
+# =============================================================================
 # Category Keyword Mappings for Auto-Categorization
 # =============================================================================
 
@@ -214,6 +228,107 @@ SFX_CATEGORIES = {
     'transition': ['transition', 'riser', 'build', 'swell', 'drop', 'sweep', 'downer']
 }
 
+# Speech/Voice categories for TTS content
+# Organized by: Gender, Style, Content Type, Phrases, Instructions, Media
+SPEECH_CATEGORIES = {
+    # === VOICE GENDER ===
+    'male': ['male', 'man', 'gentleman', 'guy', 'masculine', 'his', 'he'],
+    'female': ['female', 'woman', 'lady', 'feminine', 'her', 'she'],
+    'child': ['child', 'kid', 'young', 'youth', 'little'],
+    'neutral': ['neutral', 'androgynous', 'robotic'],
+
+    # === VOICE STYLE ===
+    'natural': ['natural', 'conversational', 'casual', 'normal'],
+    'professional': ['professional', 'formal', 'business', 'corporate'],
+    'dramatic': ['dramatic', 'theatrical', 'expressive', 'emotional'],
+    'whisper': ['whisper', 'soft', 'quiet', 'hushed', 'asmr'],
+    'robotic': ['robotic', 'mechanical', 'synthetic', 'ai', 'digital'],
+    'announcer': ['announcer', 'broadcast', 'radio', 'presenter', 'dj'],
+
+    # === CONTENT TYPE ===
+    'announcement': ['announce', 'attention', 'notice', 'announcement', 'announcing'],
+    'narration': ['narration', 'narrator', 'story', 'storytelling', 'narrative'],
+    'dialogue': ['dialogue', 'conversation', 'talk', 'speaking', 'chat'],
+    'monologue': ['monologue', 'solo', 'speech', 'address'],
+    'voiceover': ['voiceover', 'voice-over', 'vo', 'narrate'],
+    'audiobook': ['audiobook', 'book', 'reading', 'chapter', 'novel'],
+
+    # === NUMBERS & DATA ===
+    'numbers': ['number', 'digit', 'count', 'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'hundred', 'thousand', 'million'],
+    'counting': ['counting', 'count', 'sequence', 'series'],
+    'time': ['time', 'clock', 'hour', 'minute', 'second', 'o\'clock', 'am', 'pm', 'noon', 'midnight'],
+    'date': ['date', 'day', 'month', 'year', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'],
+    'currency': ['dollar', 'cent', 'price', 'money', 'cost', 'pound', 'euro', 'yen'],
+    'phone_number': ['phone', 'call', 'dial', 'telephone', 'number'],
+    'address': ['address', 'street', 'avenue', 'road', 'city', 'state', 'zip', 'location'],
+
+    # === COMMON PHRASES ===
+    'greeting': ['hello', 'hi', 'hey', 'welcome', 'good morning', 'good afternoon', 'good evening', 'greetings'],
+    'farewell': ['goodbye', 'bye', 'farewell', 'see you', 'take care', 'later', 'goodnight'],
+    'thanks': ['thank', 'thanks', 'appreciate', 'grateful', 'gratitude'],
+    'apology': ['sorry', 'apologize', 'apology', 'excuse me', 'pardon', 'forgive'],
+    'confirmation': ['yes', 'correct', 'confirmed', 'okay', 'right', 'affirmative', 'agreed', 'indeed'],
+    'denial': ['no', 'incorrect', 'wrong', 'denied', 'negative', 'refuse', 'decline'],
+    'question': ['what', 'where', 'when', 'how', 'why', 'who', 'which', 'can', 'could', 'would', 'should'],
+
+    # === INSTRUCTIONS ===
+    'directions': ['turn', 'left', 'right', 'straight', 'continue', 'proceed', 'navigate', 'route'],
+    'tutorial': ['step', 'first', 'next', 'then', 'finally', 'begin', 'start', 'end', 'complete'],
+    'warning': ['warning', 'caution', 'danger', 'alert', 'careful', 'beware', 'hazard'],
+    'reminder': ['remember', 'don\'t forget', 'reminder', 'note', 'recall'],
+    'prompt': ['please', 'enter', 'press', 'select', 'choose', 'click', 'tap', 'input'],
+
+    # === MEDIA & ENTERTAINMENT ===
+    'commercial': ['buy', 'sale', 'discount', 'offer', 'limited', 'shop', 'order', 'deal'],
+    'trailer_voice': ['coming soon', 'this summer', 'one man', 'in a world', 'epic', 'adventure'],
+    'podcast': ['episode', 'today we', 'welcome to', 'podcast', 'show', 'host', 'guest'],
+    'radio': ['station', 'fm', 'am', 'live', 'broadcast', 'on air', 'tune in'],
+    'game_voice': ['game over', 'level', 'player', 'score', 'ready', 'fight', 'victory', 'defeat'],
+    'character': ['hero', 'villain', 'wizard', 'knight', 'princess', 'dragon', 'monster'],
+    'news': ['breaking', 'report', 'tonight', 'sources', 'according', 'headline', 'update'],
+    'weather': ['temperature', 'degrees', 'forecast', 'rain', 'sunny', 'cloudy', 'wind', 'humidity'],
+    'sports': ['goal', 'score', 'team', 'player', 'game', 'match', 'championship', 'winner'],
+    'traffic': ['traffic', 'highway', 'road', 'congestion', 'delay', 'accident', 'route'],
+
+    # === PHONETIC & LETTERS ===
+    'alphabet': ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'letter', 'alphabet', 'spelling'],
+    'phonetic': ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'nato', 'phonetic'],
+
+    # === SYSTEM & UI ===
+    'system': ['system', 'error', 'loading', 'complete', 'processing', 'ready', 'standby', 'initializing'],
+    'assistant': ['assistant', 'help', 'support', 'service', 'customer', 'agent'],
+
+    # === ACCENTS (from voice metadata) ===
+    'british': ['british', 'uk', 'england', 'english'],
+    'american': ['american', 'usa', 'us', 'united states'],
+    'australian': ['australian', 'aussie', 'australia'],
+    'scottish': ['scottish', 'scotland', 'scots'],
+    'irish': ['irish', 'ireland'],
+}
+
+# =============================================================================
+# Graphlings Game/App Sources
+# =============================================================================
+# Assets can be tagged with a source to indicate which game or app uses them.
+# This enables a unified "Graphlings" tab showing all game audio in one place.
+# Format: 'source_id': {'name': 'Display Name', 'icon': 'icon-name', 'type': 'game'|'app'}
+
+GRAPHLINGS_SOURCES = {
+    'byk3s': {
+        'name': 'BYK3S',
+        'description': 'Cyberpunk bike combat game',
+        'icon': 'gamepad',
+        'type': 'game'
+    },
+    # Future games/apps can be added here:
+    # 'creature-lab': {
+    #     'name': 'Creature Lab',
+    #     'description': 'Graphlings creature builder',
+    #     'icon': 'flask',
+    #     'type': 'app'
+    # },
+}
+
 SCHEMA = """
 -- Generations table (replaces generations.json)
 CREATE TABLE IF NOT EXISTS generations (
@@ -305,6 +420,8 @@ CREATE TABLE IF NOT EXISTS playlist_tracks (
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_generations_model ON generations(model);
 CREATE INDEX IF NOT EXISTS idx_generations_created ON generations(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_generations_user_id ON generations(user_id);
+-- idx_generations_public created after is_public column migration in init_db()
 CREATE INDEX IF NOT EXISTS idx_votes_generation ON votes(generation_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_generation ON favorites(generation_id);
@@ -344,12 +461,17 @@ END;
 
 @contextmanager
 def get_db():
-    """Get database connection with row factory."""
-    conn = sqlite3.connect(DB_PATH)
+    """Get database connection with row factory and proper concurrency settings."""
+    conn = sqlite3.connect(DB_PATH, timeout=30.0)  # 30 second timeout for locks
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")  # Better concurrency
+    conn.execute("PRAGMA busy_timeout = 30000")  # 30 second busy timeout
     try:
         yield conn
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
@@ -422,6 +544,29 @@ def init_db():
         # Index for creator lookups
         conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_creator ON generations(creator_id)")
 
+        # Migration: Add is_public column for content moderation
+        # New generations start private, admin reviews before promoting to public library
+        try:
+            conn.execute("ALTER TABLE generations ADD COLUMN is_public BOOLEAN DEFAULT FALSE")
+            print("[DB] Added is_public column to generations table")
+            # Mark ALL existing generations as public (grandfathered in)
+            # Use is_public = 0 check since DEFAULT FALSE gives 0, not NULL
+            conn.execute("UPDATE generations SET is_public = TRUE WHERE is_public = 0 OR is_public IS NULL")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        # Create index for is_public after column exists
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_public ON generations(is_public)")
+
+        # Migration: Add admin_reviewed flag for moderation workflow
+        try:
+            conn.execute("ALTER TABLE generations ADD COLUMN admin_reviewed BOOLEAN DEFAULT FALSE")
+            print("[DB] Added admin_reviewed column to generations table")
+            # Mark existing as reviewed (grandfathered)
+            conn.execute("UPDATE generations SET admin_reviewed = TRUE WHERE admin_reviewed IS NULL")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
         # Migration: Add play/download tracking for analytics
         try:
             conn.execute("ALTER TABLE generations ADD COLUMN play_count INTEGER DEFAULT 0")
@@ -469,6 +614,27 @@ def init_db():
             )
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_download_events_generation ON download_events(generation_id)")
+
+        # Migration: Add voice_id column for TTS voice tracking
+        try:
+            conn.execute("ALTER TABLE generations ADD COLUMN voice_id TEXT")
+            print("[DB] Added voice_id column to generations table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        # Create index for voice_id lookups
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_voice ON generations(voice_id)")
+
+        # Migration: Add source column for Graphlings game/app tagging
+        # Allows assets to be tagged with which game/app uses them (e.g., 'byk3s')
+        try:
+            conn.execute("ALTER TABLE generations ADD COLUMN source TEXT")
+            print("[DB] Added source column to generations table for Graphlings tagging")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        # Create index for source lookups (fast filtering by game/app)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_source ON generations(source)")
 
         # Migration: Add action column to tag_suggestions if missing
         try:
@@ -567,18 +733,47 @@ def migrate_from_json():
 # =============================================================================
 
 def create_generation(gen_id, filename, prompt, model, duration, is_loop=False,
-                      quality_score=None, spectrogram=None, user_id=None):
-    """Create a new generation record with auto-categorization."""
+                      quality_score=None, spectrogram=None, user_id=None, is_public=False,
+                      voice_id=None, tags=None):
+    """Create a new generation record with auto-categorization.
+
+    Args:
+        gen_id: Unique generation ID
+        filename: Output audio filename
+        prompt: Generation prompt text
+        model: Model type ('music', 'audio', 'voice')
+        duration: Audio duration in seconds
+        is_loop: Whether audio is loopable
+        quality_score: Quality analysis score (0-100)
+        spectrogram: Path to spectrogram image
+        user_id: Creator's user ID (from Graphlings auth)
+        is_public: Whether to add to public library (default False for moderation)
+        voice_id: For voice model, the TTS voice ID used (e.g., 'en_GB-vctk-medium')
+        tags: Optional list of category tags to merge with auto-categorization
+
+    New generations start as private (is_public=False) and require admin review
+    before being promoted to the public library. All content is CC0 licensed.
+    """
     # Auto-categorize based on prompt
-    categories = categorize_prompt(prompt, model)
-    category_json = json.dumps(categories) if categories else None
+    auto_categories = categorize_prompt(prompt, model)
+
+    # Merge with provided tags if any
+    if tags:
+        # Combine auto categories with provided tags, removing duplicates
+        all_categories = list(set(auto_categories + tags))
+    else:
+        all_categories = auto_categories
+
+    category_json = json.dumps(all_categories) if all_categories else None
 
     with get_db() as conn:
+        # If is_public=True, it's from localhost/admin and doesn't need review
+        admin_reviewed = is_public
         conn.execute("""
             INSERT INTO generations
-            (id, filename, prompt, model, duration, is_loop, quality_score, spectrogram, user_id, category)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (gen_id, filename, prompt, model, duration, is_loop, quality_score, spectrogram, user_id, category_json))
+            (id, filename, prompt, model, duration, is_loop, quality_score, spectrogram, user_id, category, is_public, admin_reviewed, voice_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (gen_id, filename, prompt, model, duration, is_loop, quality_score, spectrogram, user_id, category_json, is_public, admin_reviewed, voice_id))
         conn.commit()
 
 
@@ -591,9 +786,12 @@ def get_generation(gen_id):
         return dict(row) if row else None
 
 
-def get_library(page=1, per_page=20, model=None, search=None, sort='recent', user_id=None, category=None):
+def get_library(page=1, per_page=20, model=None, search=None, sort='recent', user_id=None, category=None, source=None):
     """
-    Get paginated library with filters.
+    Get paginated PUBLIC library with filters.
+
+    The public library only shows generations that have been reviewed and approved.
+    For user's own private generations, use get_user_generations() instead.
 
     Args:
         page: Page number (1-indexed)
@@ -601,8 +799,9 @@ def get_library(page=1, per_page=20, model=None, search=None, sort='recent', use
         model: Filter by 'music' or 'audio'
         search: Full-text search query
         sort: 'recent', 'popular', or 'rating'
-        user_id: Optional user filter for 'my generations'
+        user_id: Deprecated - use get_user_generations() for private content
         category: Filter by category/genre (e.g., 'ambient', 'nature')
+        source: Filter by Graphlings source (e.g., 'byk3s')
 
     Returns:
         dict with items, total, page, per_page, pages
@@ -610,14 +809,15 @@ def get_library(page=1, per_page=20, model=None, search=None, sort='recent', use
     per_page = min(per_page, 100)
     offset = (page - 1) * per_page
 
-    # Build query
-    conditions = []
+    # Build query - PUBLIC library only shows approved content
+    conditions = ["g.is_public = TRUE"]
     params = []
 
     if model:
         conditions.append("g.model = ?")
         params.append(model)
 
+    # user_id filter deprecated for library - use get_user_generations() for private content
     if user_id:
         conditions.append("g.user_id = ?")
         params.append(user_id)
@@ -627,15 +827,29 @@ def get_library(page=1, per_page=20, model=None, search=None, sort='recent', use
         conditions.append("g.category LIKE ?")
         params.append(f'%"{category}"%')
 
+    # Source filter for Graphlings games/apps
+    if source:
+        conditions.append("g.source = ?")
+        params.append(source)
+
     # Full-text search (OR logic for multiple words)
-    # Quote each term to handle special chars like hyphens (lo-fi)
+    # Quote each term and escape FTS5 special characters
     if search:
-        words = search.strip().split()
+        # Strip FTS5 operators and special characters to prevent query injection
+        import re
+        # Remove FTS5 operators: *, ^, +, - (prefix), NOT, AND, OR, NEAR
+        clean_search = re.sub(r'[*^+]', '', search)
+        # Remove standalone operators (case insensitive)
+        clean_search = re.sub(r'\b(NOT|AND|OR|NEAR)\b', '', clean_search, flags=re.IGNORECASE)
+
+        words = clean_search.strip().split()
         if words:
-            quoted_words = ['"' + w.replace('"', '') + '"' for w in words]
-            fts_query = ' OR '.join(quoted_words)
-            conditions.append("g.rowid IN (SELECT rowid FROM generations_fts WHERE generations_fts MATCH ?)")
-            params.append(fts_query)
+            # Quote each term and remove any remaining quotes
+            quoted_words = ['"' + w.replace('"', '').strip() + '"' for w in words if w.strip()]
+            if quoted_words:
+                fts_query = ' OR '.join(quoted_words)
+                conditions.append("g.rowid IN (SELECT rowid FROM generations_fts WHERE generations_fts MATCH ?)")
+                params.append(fts_query)
 
     where_clause = " AND ".join(conditions) if conditions else "1=1"
 
@@ -760,6 +974,319 @@ def delete_generation(gen_id):
     with get_db() as conn:
         conn.execute("DELETE FROM generations WHERE id = ?", (gen_id,))
         conn.commit()
+
+
+# =============================================================================
+# User Generations ("My Generations") - Private Content Management
+# =============================================================================
+
+def get_user_generations(user_id, model=None, page=1, per_page=50):
+    """
+    Get a user's private generations grouped by model type.
+
+    This returns the user's own generations (both public and private),
+    organized for the "My Generations" section of their profile.
+
+    Args:
+        user_id: The user's ID
+        model: Optional filter by 'music', 'audio', or 'voice'
+        page: Page number
+        per_page: Items per page
+
+    Returns:
+        dict with items, total, page, per_page, pages, and grouped counts
+    """
+    if not user_id:
+        return {'items': [], 'total': 0, 'page': 1, 'pages': 0, 'by_model': {}}
+
+    per_page = min(per_page, 100)
+    offset = (page - 1) * per_page
+
+    conditions = ["g.user_id = ?"]
+    params = [user_id]
+
+    if model:
+        conditions.append("g.model = ?")
+        params.append(model)
+
+    where_clause = " AND ".join(conditions)
+
+    with get_db() as conn:
+        # Get total count
+        total = conn.execute(
+            f"SELECT COUNT(*) FROM generations g WHERE {where_clause}",
+            params
+        ).fetchone()[0]
+
+        # Get items with favorite status
+        items_sql = f"""
+            SELECT g.*,
+                   (SELECT 1 FROM favorites f WHERE f.generation_id = g.id AND f.user_id = ?) as is_favorite
+            FROM generations g
+            WHERE {where_clause}
+            ORDER BY g.created_at DESC
+            LIMIT ? OFFSET ?
+        """
+        rows = conn.execute(items_sql, [user_id] + params + [per_page, offset]).fetchall()
+
+        # Get counts by model type
+        counts = conn.execute("""
+            SELECT model, COUNT(*) as count
+            FROM generations
+            WHERE user_id = ?
+            GROUP BY model
+        """, (user_id,)).fetchall()
+
+    items = [dict(row) for row in rows]
+    pages = (total + per_page - 1) // per_page if total > 0 else 0
+    by_model = {row['model']: row['count'] for row in counts}
+
+    return {
+        'items': items,
+        'total': total,
+        'page': page,
+        'per_page': per_page,
+        'pages': pages,
+        'by_model': by_model
+    }
+
+
+def get_user_storage_info(user_id, tier='free'):
+    """
+    Get storage usage information for a user.
+
+    Args:
+        user_id: The user's ID
+        tier: User's subscription tier for limit lookup
+
+    Returns:
+        dict with used, limit, percent_used, can_generate
+    """
+    limit = USER_STORAGE_LIMITS.get(tier, USER_STORAGE_LIMITS['free'])
+
+    with get_db() as conn:
+        used = conn.execute(
+            "SELECT COUNT(*) FROM generations WHERE user_id = ? AND is_public = FALSE",
+            (user_id,)
+        ).fetchone()[0]
+
+        # Count favorites (these are protected from auto-deletion)
+        favorites = conn.execute("""
+            SELECT COUNT(*) FROM favorites f
+            JOIN generations g ON f.generation_id = g.id
+            WHERE f.user_id = ? AND g.user_id = ?
+        """, (user_id, user_id)).fetchone()[0]
+
+    percent = (used / limit * 100) if limit > 0 else 0
+
+    return {
+        'used': used,
+        'limit': limit,
+        'favorites': favorites,
+        'percent_used': round(percent, 1),
+        'can_generate': used < limit,
+        'near_limit': percent >= 80,
+        'at_limit': used >= limit
+    }
+
+
+def cleanup_old_generations(user_id, tier='free', keep_count=None):
+    """
+    Remove oldest non-favorited generations to make room for new ones.
+
+    Called automatically when user exceeds storage limit.
+    Favorites are NEVER deleted - only non-favorited generations.
+
+    Args:
+        user_id: The user's ID
+        tier: User's subscription tier
+        keep_count: Override number to keep (default: tier limit)
+
+    Returns:
+        Number of generations deleted
+    """
+    limit = keep_count if keep_count is not None else USER_STORAGE_LIMITS.get(tier, USER_STORAGE_LIMITS['free'])
+
+    with get_db() as conn:
+        # Get IDs of generations to delete (oldest first, excluding favorites)
+        # Only delete private (is_public=FALSE) generations that aren't favorited
+        to_delete = conn.execute("""
+            SELECT g.id, g.filename, g.spectrogram
+            FROM generations g
+            WHERE g.user_id = ?
+              AND g.is_public = FALSE
+              AND g.id NOT IN (SELECT generation_id FROM favorites WHERE user_id = ?)
+            ORDER BY g.created_at ASC
+            LIMIT (
+                SELECT MAX(0, COUNT(*) - ?) FROM generations
+                WHERE user_id = ? AND is_public = FALSE
+                  AND id NOT IN (SELECT generation_id FROM favorites WHERE user_id = ?)
+            )
+        """, (user_id, user_id, limit, user_id, user_id)).fetchall()
+
+        deleted_count = 0
+        for row in to_delete:
+            gen_id = row['id']
+            filename = row['filename']
+            spectrogram = row['spectrogram']
+
+            # Delete files from disk
+            audio_path = os.path.join('generated', filename)
+            if os.path.exists(audio_path):
+                try:
+                    os.remove(audio_path)
+                except OSError:
+                    pass
+
+            if spectrogram:
+                spec_path = os.path.join('spectrograms', spectrogram)
+                if os.path.exists(spec_path):
+                    try:
+                        os.remove(spec_path)
+                    except OSError:
+                        pass
+
+            # Delete from database
+            conn.execute("DELETE FROM generations WHERE id = ?", (gen_id,))
+            deleted_count += 1
+
+        if deleted_count > 0:
+            conn.commit()
+            print(f"[Storage] Cleaned up {deleted_count} old generations for user {user_id[:8]}...")
+
+    return deleted_count
+
+
+# =============================================================================
+# Admin Moderation Functions
+# =============================================================================
+
+def get_pending_moderation(page=1, per_page=50, model=None):
+    """
+    Get generations pending admin review.
+
+    Args:
+        page: Page number
+        per_page: Items per page
+        model: Optional filter by model type
+
+    Returns:
+        dict with items and pagination info
+    """
+    per_page = min(per_page, 100)
+    offset = (page - 1) * per_page
+
+    conditions = ["admin_reviewed = FALSE"]
+    params = []
+
+    if model:
+        conditions.append("model = ?")
+        params.append(model)
+
+    where_clause = " AND ".join(conditions)
+
+    with get_db() as conn:
+        total = conn.execute(
+            f"SELECT COUNT(*) FROM generations WHERE {where_clause}",
+            params
+        ).fetchone()[0]
+
+        rows = conn.execute(f"""
+            SELECT * FROM generations
+            WHERE {where_clause}
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        """, params + [per_page, offset]).fetchall()
+
+    items = [dict(row) for row in rows]
+    pages = (total + per_page - 1) // per_page if total > 0 else 0
+
+    return {
+        'items': items,
+        'total': total,
+        'page': page,
+        'per_page': per_page,
+        'pages': pages
+    }
+
+
+def moderate_generation(gen_id, admin_user_id, action, reason=None):
+    """
+    Moderate a generation (approve/reject for public library).
+
+    Args:
+        gen_id: Generation ID
+        admin_user_id: ID of admin performing moderation
+        action: 'approve' (add to public) or 'reject' (keep private/delete)
+        reason: Optional reason for rejection
+
+    Returns:
+        dict with success status
+    """
+    with get_db() as conn:
+        gen = conn.execute("SELECT * FROM generations WHERE id = ?", (gen_id,)).fetchone()
+        if not gen:
+            return {'success': False, 'error': 'Generation not found'}
+
+        if action == 'approve':
+            conn.execute("""
+                UPDATE generations
+                SET is_public = TRUE, admin_reviewed = TRUE
+                WHERE id = ?
+            """, (gen_id,))
+            conn.commit()
+            return {'success': True, 'action': 'approved', 'is_public': True}
+
+        elif action == 'reject':
+            # Keep private, mark as reviewed
+            conn.execute("""
+                UPDATE generations
+                SET is_public = FALSE, admin_reviewed = TRUE
+                WHERE id = ?
+            """, (gen_id,))
+            conn.commit()
+            return {'success': True, 'action': 'rejected', 'is_public': False}
+
+        elif action == 'delete':
+            # Remove entirely (for really bad content)
+            conn.execute("DELETE FROM generations WHERE id = ?", (gen_id,))
+            conn.commit()
+            return {'success': True, 'action': 'deleted'}
+
+        return {'success': False, 'error': f'Unknown action: {action}'}
+
+
+def bulk_moderate(gen_ids, admin_user_id, action):
+    """
+    Moderate multiple generations at once.
+
+    Args:
+        gen_ids: List of generation IDs
+        admin_user_id: ID of admin
+        action: 'approve', 'reject', or 'delete'
+
+    Returns:
+        dict with count of processed items
+    """
+    if not gen_ids:
+        return {'success': True, 'processed': 0}
+
+    processed = 0
+    errors = []
+    for gen_id in gen_ids:
+        try:
+            result = moderate_generation(gen_id, admin_user_id, action)
+            if result.get('success'):
+                processed += 1
+            else:
+                errors.append({'id': gen_id, 'error': result.get('error', 'Unknown error')})
+        except Exception as e:
+            errors.append({'id': gen_id, 'error': str(e)})
+
+    result = {'success': True, 'processed': processed, 'total': len(gen_ids)}
+    if errors:
+        result['errors'] = errors
+    return result
 
 
 # =============================================================================
@@ -956,11 +1483,13 @@ def get_library_counts():
         total = conn.execute("SELECT COUNT(*) FROM generations").fetchone()[0]
         music = conn.execute("SELECT COUNT(*) FROM generations WHERE model = 'music'").fetchone()[0]
         audio = conn.execute("SELECT COUNT(*) FROM generations WHERE model = 'audio'").fetchone()[0]
+        voice = conn.execute("SELECT COUNT(*) FROM generations WHERE model = 'voice'").fetchone()[0]
 
     return {
         'total': total,
         'music': music,
-        'audio': audio
+        'audio': audio,
+        'voice': voice
     }
 
 
@@ -985,7 +1514,12 @@ def categorize_prompt(prompt: str, model: str) -> list:
     # Tokenize: split on non-alphanumeric, keep hyphens for things like "lo-fi"
     words = set(re.findall(r'[\w-]+', prompt_lower))
 
-    categories = MUSIC_CATEGORIES if model == 'music' else SFX_CATEGORIES
+    if model == 'music':
+        categories = MUSIC_CATEGORIES
+    elif model == 'voice':
+        categories = SPEECH_CATEGORIES
+    else:
+        categories = SFX_CATEGORIES
 
     matches = []
     for category, keywords in categories.items():
@@ -1021,6 +1555,14 @@ def categorize_prompt(prompt: str, model: str) -> list:
                 result = ['advertising']
             else:
                 result = ['acoustic']  # Generic fallback
+        elif model == 'voice':
+            # Check for common voice patterns
+            if any(q in prompt_lower for q in ['?', 'what', 'where', 'when', 'how', 'why']):
+                result = ['question']
+            elif any(g in prompt_lower for g in ['hello', 'hi ', 'welcome', 'good morning', 'good afternoon']):
+                result = ['greeting']
+            else:
+                result = ['natural']  # Generic fallback
         else:
             if 'game' in words:
                 result = ['button']
@@ -1084,7 +1626,8 @@ def get_category_counts(model=None):
     """
     all_categories = {
         'music': list(MUSIC_CATEGORIES.keys()),
-        'audio': list(SFX_CATEGORIES.keys())
+        'audio': list(SFX_CATEGORIES.keys()),
+        'voice': list(SPEECH_CATEGORIES.keys())
     }
 
     counts = {}
@@ -1528,6 +2071,171 @@ def get_stats():
     }
 
 
+def get_user_stats(user_id):
+    """
+    Get generation and usage statistics for a specific user.
+
+    Args:
+        user_id: The user ID to get stats for
+
+    Returns:
+        dict with user's generation counts, plays, downloads, etc.
+    """
+    with get_db() as conn:
+        # Generation counts by model
+        gen_stats = conn.execute("""
+            SELECT
+                model,
+                COUNT(*) as count,
+                SUM(duration) as total_duration
+            FROM generations
+            WHERE user_id = ?
+            GROUP BY model
+        """, (user_id,)).fetchall()
+
+        gen_by_model = {row['model']: {'count': row['count'], 'duration': row['total_duration'] or 0}
+                        for row in gen_stats}
+        total_generations = sum(m['count'] for m in gen_by_model.values())
+
+        # Play events (how many times user's content was played by others)
+        content_plays = conn.execute("""
+            SELECT COUNT(*) as plays, COUNT(DISTINCT pe.user_id) as unique_listeners
+            FROM play_events pe
+            JOIN generations g ON pe.generation_id = g.id
+            WHERE g.user_id = ? AND pe.user_id != ?
+        """, (user_id, user_id)).fetchone()
+
+        # User's own listening activity
+        listening = conn.execute("""
+            SELECT COUNT(*) as plays, COUNT(DISTINCT generation_id) as unique_tracks
+            FROM play_events
+            WHERE user_id = ?
+        """, (user_id,)).fetchone()
+
+        # Downloads of user's content
+        downloads = conn.execute("""
+            SELECT COUNT(*) as count
+            FROM download_events de
+            JOIN generations g ON de.generation_id = g.id
+            WHERE g.user_id = ?
+        """, (user_id,)).fetchone()
+
+        # Votes received
+        votes = conn.execute("""
+            SELECT
+                SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END) as upvotes,
+                SUM(CASE WHEN v.vote = -1 THEN 1 ELSE 0 END) as downvotes
+            FROM votes v
+            JOIN generations g ON v.generation_id = g.id
+            WHERE g.user_id = ?
+        """, (user_id,)).fetchone()
+
+        # Favorites received
+        favorites = conn.execute("""
+            SELECT COUNT(*) as count
+            FROM favorites f
+            JOIN generations g ON f.generation_id = g.id
+            WHERE g.user_id = ?
+        """, (user_id,)).fetchone()
+
+        # Recent activity (last 24h, 7d, 30d)
+        recent = conn.execute("""
+            SELECT
+                SUM(CASE WHEN created_at > datetime('now', '-1 day') THEN 1 ELSE 0 END) as last_24h,
+                SUM(CASE WHEN created_at > datetime('now', '-7 days') THEN 1 ELSE 0 END) as last_7d,
+                SUM(CASE WHEN created_at > datetime('now', '-30 days') THEN 1 ELSE 0 END) as last_30d
+            FROM generations
+            WHERE user_id = ?
+        """, (user_id,)).fetchone()
+
+    return {
+        'user_id': user_id,
+        'generations': {
+            'total': total_generations,
+            'by_model': gen_by_model,
+            'recent': {
+                'last_24h': recent['last_24h'] or 0,
+                'last_7d': recent['last_7d'] or 0,
+                'last_30d': recent['last_30d'] or 0
+            }
+        },
+        'content_stats': {
+            'plays_received': content_plays['plays'] or 0,
+            'unique_listeners': content_plays['unique_listeners'] or 0,
+            'downloads': downloads['count'] or 0,
+            'upvotes': votes['upvotes'] or 0,
+            'downvotes': votes['downvotes'] or 0,
+            'favorites': favorites['count'] or 0
+        },
+        'listening': {
+            'total_plays': listening['plays'] or 0,
+            'unique_tracks': listening['unique_tracks'] or 0
+        }
+    }
+
+
+def get_system_stats():
+    """
+    Get overall system statistics for admin dashboard.
+
+    Returns:
+        dict with system-wide stats including user counts, generation rates, etc.
+    """
+    with get_db() as conn:
+        # Total counts
+        totals = conn.execute("""
+            SELECT
+                COUNT(*) as total_generations,
+                COUNT(DISTINCT user_id) as unique_users,
+                SUM(duration) as total_duration,
+                SUM(play_count) as total_plays,
+                SUM(download_count) as total_downloads
+            FROM generations
+        """).fetchone()
+
+        # By model
+        by_model = conn.execute("""
+            SELECT model, COUNT(*) as count, SUM(duration) as duration
+            FROM generations
+            GROUP BY model
+        """).fetchall()
+
+        # Generation rate (last 24h, 7d)
+        rate = conn.execute("""
+            SELECT
+                SUM(CASE WHEN created_at > datetime('now', '-1 day') THEN 1 ELSE 0 END) as last_24h,
+                SUM(CASE WHEN created_at > datetime('now', '-7 days') THEN 1 ELSE 0 END) as last_7d
+            FROM generations
+        """).fetchone()
+
+        # Top users by generation count
+        top_users = conn.execute("""
+            SELECT user_id, COUNT(*) as count
+            FROM generations
+            WHERE user_id IS NOT NULL
+            GROUP BY user_id
+            ORDER BY count DESC
+            LIMIT 10
+        """).fetchall()
+
+    return {
+        'totals': {
+            'generations': totals['total_generations'] or 0,
+            'unique_users': totals['unique_users'] or 0,
+            'total_duration_seconds': totals['total_duration'] or 0,
+            'total_plays': totals['total_plays'] or 0,
+            'total_downloads': totals['total_downloads'] or 0
+        },
+        'by_model': {row['model']: {'count': row['count'], 'duration': row['duration'] or 0}
+                     for row in by_model},
+        'generation_rate': {
+            'last_24h': rate['last_24h'] or 0,
+            'last_7d': rate['last_7d'] or 0
+        },
+        'top_users': [{'user_id': row['user_id'], 'count': row['count']} for row in top_users]
+    }
+
+
 # =============================================================================
 # Tag Suggestions - Crowdsourced Categorization
 # =============================================================================
@@ -1553,8 +2261,8 @@ def submit_tag_suggestion(generation_id, user_id, suggested_category, action='ad
     if action not in ('add', 'remove'):
         return {'success': False, 'message': f'Invalid action: {action}. Must be "add" or "remove"'}
 
-    # Validate the category exists
-    all_categories = list(MUSIC_CATEGORIES.keys()) + list(SFX_CATEGORIES.keys())
+    # Validate the category exists (music, audio, OR voice categories are all valid)
+    all_categories = list(MUSIC_CATEGORIES.keys()) + list(SFX_CATEGORIES.keys()) + list(SPEECH_CATEGORIES.keys())
     if suggested_category not in all_categories:
         return {'success': False, 'message': f'Invalid category: {suggested_category}'}
 
@@ -1586,7 +2294,7 @@ def submit_tag_suggestion(generation_id, user_id, suggested_category, action='ad
                    VALUES (?, ?, ?, ?)""",
                 (generation_id, user_id, suggested_category, action)
             )
-            conn.commit()
+            # Note: Don't commit here - wait until all operations complete for atomicity
         except sqlite3.IntegrityError:
             action_verb = 'adding' if action == 'add' else 'removing'
             return {'success': False, 'message': f'You already suggested {action_verb} this category'}
@@ -1633,6 +2341,9 @@ def submit_tag_suggestion(generation_id, user_id, suggested_category, action='ad
                 'new_categories': new_categories,
                 'action': action
             }
+
+        # Commit the suggestion (no consensus reached yet)
+        conn.commit()
 
         action_verb = 'add' if action == 'add' else 'remove'
         return {
@@ -1692,6 +2403,41 @@ def get_user_suggestions(generation_id, user_id):
     return result
 
 
+def cancel_tag_suggestion(generation_id, user_id, suggested_category, action='add'):
+    """
+    Cancel a user's own tag suggestion.
+
+    Args:
+        generation_id: The ID of the generation
+        user_id: The ID of the user canceling their suggestion
+        suggested_category: The category to cancel
+        action: 'add' or 'remove' - which type of suggestion to cancel
+
+    Returns:
+        dict with 'success' boolean and 'message'
+    """
+    with get_db() as conn:
+        # Check if the suggestion exists
+        existing = conn.execute(
+            """SELECT id FROM tag_suggestions
+               WHERE generation_id = ? AND user_id = ? AND suggested_category = ? AND action = ?""",
+            (generation_id, user_id, suggested_category, action)
+        ).fetchone()
+
+        if not existing:
+            return {'success': False, 'message': 'Suggestion not found'}
+
+        # Delete the suggestion
+        conn.execute(
+            """DELETE FROM tag_suggestions
+               WHERE generation_id = ? AND user_id = ? AND suggested_category = ? AND action = ?""",
+            (generation_id, user_id, suggested_category, action)
+        )
+        conn.commit()
+
+        return {'success': True, 'message': 'Suggestion canceled'}
+
+
 def get_pending_consensus():
     """
     Get generations that are close to reaching consensus.
@@ -1725,13 +2471,15 @@ def get_available_categories(model):
     Get all available categories for a given model type.
 
     Args:
-        model: 'music' or 'audio'
+        model: 'music', 'audio', or 'voice'
 
     Returns:
         dict of category name -> display name
     """
     if model == 'music':
         categories = MUSIC_CATEGORIES
+    elif model == 'voice':
+        categories = SPEECH_CATEGORIES
     else:
         categories = SFX_CATEGORIES
 
@@ -1740,6 +2488,109 @@ def get_available_categories(model):
         cat: cat.replace('_', ' ').title()
         for cat in categories.keys()
     }
+
+
+# =============================================================================
+# Graphlings Game/App Source Functions
+# =============================================================================
+
+def get_graphlings_sources():
+    """
+    Get all available Graphlings sources (games/apps).
+
+    Returns:
+        dict of source_id -> source info
+    """
+    return GRAPHLINGS_SOURCES
+
+
+def get_graphlings_source_counts():
+    """
+    Get counts of assets per Graphlings source, broken down by model type.
+
+    Returns:
+        dict of source_id -> {music: count, audio: count, voice: count, total: count}
+    """
+    counts = {}
+
+    with get_db() as conn:
+        # Get counts grouped by source and model
+        rows = conn.execute("""
+            SELECT source, model, COUNT(*) as count
+            FROM generations
+            WHERE source IS NOT NULL AND is_public = TRUE
+            GROUP BY source, model
+        """).fetchall()
+
+        for row in rows:
+            source = row['source']
+            model = row['model']
+            count = row['count']
+
+            if source not in counts:
+                counts[source] = {'music': 0, 'audio': 0, 'voice': 0, 'total': 0}
+
+            counts[source][model] = count
+            counts[source]['total'] += count
+
+    return counts
+
+
+def set_generation_source(generation_id, source):
+    """
+    Set or update the source for a generation.
+
+    Args:
+        generation_id: The generation ID
+        source: Source ID (e.g., 'byk3s') or None to clear
+
+    Returns:
+        True on success, False on error
+    """
+    # Validate source if provided
+    if source and source not in GRAPHLINGS_SOURCES:
+        return False
+
+    with get_db() as conn:
+        try:
+            conn.execute("""
+                UPDATE generations SET source = ? WHERE id = ?
+            """, (source, generation_id))
+            conn.commit()
+            return True
+        except sqlite3.Error:
+            return False
+
+
+def bulk_set_source(generation_ids, source):
+    """
+    Set source for multiple generations at once.
+
+    Args:
+        generation_ids: List of generation IDs
+        source: Source ID or None to clear
+
+    Returns:
+        Number of rows updated
+    """
+    if source and source not in GRAPHLINGS_SOURCES:
+        return 0
+
+    if not generation_ids:
+        return 0
+
+    placeholders = ','.join('?' * len(generation_ids))
+
+    with get_db() as conn:
+        try:
+            cursor = conn.execute(f"""
+                UPDATE generations SET source = ?
+                WHERE id IN ({placeholders})
+            """, [source] + list(generation_ids))
+            conn.commit()
+            return cursor.rowcount
+        except sqlite3.Error:
+            return 0
 
 
 # =============================================================================
