@@ -3433,8 +3433,8 @@ def get_available_voices():
                         config = json.load(f)
                         sample_rate = config.get('audio', {}).get('sample_rate', 22050)
                         description = config.get('description', '')
-                except:
-                    pass
+                except (json.JSONDecodeError, OSError):
+                    pass  # Use defaults if config is invalid
 
             # Get license information
             license_info = voice_licenses.get_voice_license_info(voice_id)
