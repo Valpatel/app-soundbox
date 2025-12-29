@@ -6,8 +6,50 @@ No public comments - feedback stored privately with votes.
 import sqlite3
 import json
 import os
+import re
 from contextlib import contextmanager
 from datetime import datetime
+
+
+def sanitize_fts5_query(search):
+    """
+    Sanitize search input for FTS5 to prevent query injection.
+
+    FTS5 has special operators like *, ^, +, -, NOT, AND, OR, NEAR that can
+    cause query parsing errors or unexpected behavior if not sanitized.
+
+    Args:
+        search: Raw search string from user input
+
+    Returns:
+        Sanitized FTS5 query string with terms quoted and joined with OR,
+        or None if no valid terms remain.
+    """
+    if not search:
+        return None
+
+    # Remove FTS5 operators and special characters
+    clean_search = re.sub(r'[*^+\-]', '', search)
+    # Remove standalone operators (case insensitive)
+    clean_search = re.sub(r'\b(NOT|AND|OR|NEAR)\b', '', clean_search, flags=re.IGNORECASE)
+    # Remove colons (used for column specifiers in FTS5)
+    clean_search = clean_search.replace(':', ' ')
+
+    words = clean_search.strip().split()
+    if not words:
+        return None
+
+    # Quote each term and remove any embedded quotes
+    quoted_words = []
+    for w in words:
+        w = w.replace('"', '').strip()
+        if w:  # Skip empty strings
+            quoted_words.append(f'"{w}"')
+
+    if not quoted_words:
+        return None
+
+    return ' OR '.join(quoted_words)
 
 DB_PATH = 'soundbox.db'
 METADATA_FILE = 'generations.json'
@@ -832,24 +874,12 @@ def get_library(page=1, per_page=20, model=None, search=None, sort='recent', use
         conditions.append("g.source = ?")
         params.append(source)
 
-    # Full-text search (OR logic for multiple words)
-    # Quote each term and escape FTS5 special characters
+    # Full-text search (sanitized for FTS5 injection prevention)
     if search:
-        # Strip FTS5 operators and special characters to prevent query injection
-        import re
-        # Remove FTS5 operators: *, ^, +, - (prefix), NOT, AND, OR, NEAR
-        clean_search = re.sub(r'[*^+]', '', search)
-        # Remove standalone operators (case insensitive)
-        clean_search = re.sub(r'\b(NOT|AND|OR|NEAR)\b', '', clean_search, flags=re.IGNORECASE)
-
-        words = clean_search.strip().split()
-        if words:
-            # Quote each term and remove any remaining quotes
-            quoted_words = ['"' + w.replace('"', '').strip() + '"' for w in words if w.strip()]
-            if quoted_words:
-                fts_query = ' OR '.join(quoted_words)
-                conditions.append("g.rowid IN (SELECT rowid FROM generations_fts WHERE generations_fts MATCH ?)")
-                params.append(fts_query)
+        fts_query = sanitize_fts5_query(search)
+        if fts_query:
+            conditions.append("g.rowid IN (SELECT rowid FROM generations_fts WHERE generations_fts MATCH ?)")
+            params.append(fts_query)
 
     where_clause = " AND ".join(conditions) if conditions else "1=1"
 
@@ -902,14 +932,10 @@ def get_random_tracks(model=None, search=None, count=10, min_duration=60):
         conditions.append("g.model = ?")
         params.append(model)
 
+    # Full-text search (sanitized for FTS5 injection prevention)
     if search:
-        # Convert multi-word search to OR query for FTS5 (match any word)
-        # Quote each term to handle special chars like hyphens (lo-fi)
-        words = search.strip().split()
-        if words:
-            # Quote each word and join with OR
-            quoted_words = ['"' + w.replace('"', '') + '"' for w in words]
-            fts_query = ' OR '.join(quoted_words)
+        fts_query = sanitize_fts5_query(search)
+        if fts_query:
             conditions.append("g.rowid IN (SELECT rowid FROM generations_fts WHERE generations_fts MATCH ?)")
             params.append(fts_query)
 
@@ -947,11 +973,10 @@ def get_random_tracks_excluding(model=None, search=None, count=10, min_duration=
         conditions.append(f"g.id NOT IN ({placeholders})")
         params.extend(exclude_ids)
 
+    # Full-text search (sanitized for FTS5 injection prevention)
     if search:
-        words = search.strip().split()
-        if words:
-            quoted_words = ['"' + w.replace('"', '') + '"' for w in words]
-            fts_query = ' OR '.join(quoted_words)
+        fts_query = sanitize_fts5_query(search)
+        if fts_query:
             conditions.append("g.rowid IN (SELECT rowid FROM generations_fts WHERE generations_fts MATCH ?)")
             params.append(fts_query)
 
