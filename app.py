@@ -1727,6 +1727,7 @@ def api_queue():
 
 
 @app.route('/api/queue/<job_id>/cancel', methods=['POST'])
+@limiter.limit("60 per hour")  # Rate limit job cancellation
 @require_auth
 def api_cancel_job(job_id):
     """Cancel a queued job. Only the job owner can cancel."""
@@ -2202,6 +2203,7 @@ def history():
 
 
 @app.route('/rate', methods=['POST'])
+@limiter.limit("100 per hour")  # Rate limit rating actions
 @optional_auth
 def rate():
     data = request.json
@@ -2250,7 +2252,7 @@ def api_library():
     Query params:
         page: Page number (default 1)
         per_page: Items per page (default 20, max 100)
-        model: Filter by 'music' or 'audio'
+        model: Filter by 'music', 'audio', or 'voice'
         search: Full-text search in prompts
         sort: 'recent', 'popular', or 'rating'
         user_id: Filter by creator
@@ -2258,12 +2260,33 @@ def api_library():
         source: Filter by Graphlings source (e.g., 'byk3s')
     """
     page, per_page = get_pagination_params()
+
+    # Validate model parameter (whitelist)
     model = request.args.get('model')
+    if model and model not in ('music', 'audio', 'voice'):
+        model = None  # Invalid model, ignore
+
     search = request.args.get('search')
+
+    # Validate sort parameter (whitelist)
     sort = request.args.get('sort', 'recent')
+    if sort not in ('recent', 'popular', 'rating'):
+        sort = 'recent'
+
     user_id = request.args.get('user_id')
+
+    # Validate category parameter - must be alphanumeric with underscores
     category = request.args.get('category')
+    if category:
+        # Sanitize: only allow alphanumeric, underscores, and hyphens
+        import re
+        if not re.match(r'^[a-zA-Z0-9_-]+$', category):
+            category = None  # Invalid category, ignore
+
+    # Validate source parameter
     source = request.args.get('source')
+    if source and source not in db.GRAPHLINGS_SOURCES:
+        source = None  # Invalid source, ignore
 
     result = db.get_library(
         page=page,
@@ -2608,6 +2631,7 @@ def api_vote(gen_id):
 
 
 @app.route('/api/library/votes', methods=['POST'])
+@limiter.limit("200 per hour")  # Rate limit batch vote lookups
 @require_auth
 def api_get_votes():
     """
@@ -3007,6 +3031,7 @@ def api_get_favorites():
 
 
 @app.route('/api/favorites/check', methods=['POST'])
+@limiter.limit("200 per hour")  # Rate limit batch favorite checks
 @require_auth
 def api_check_favorites():
     """Check which generations are favorited by user. Requires authentication."""
@@ -3298,6 +3323,7 @@ def api_stats():
 # =============================================================================
 
 @app.route('/api/track/<gen_id>/play', methods=['POST', 'OPTIONS'])
+@limiter.limit("300 per hour")  # Rate limit play tracking to prevent inflation
 @optional_auth
 def api_record_play(gen_id):
     """Record a play event for analytics."""
@@ -3493,6 +3519,7 @@ def api_voice_licenses():
 
 
 @app.route('/api/tts/generate', methods=['POST'])
+@limiter.limit("60 per hour")  # Base rate limit (tier-based limits checked in handler)
 @require_auth_or_localhost  # Authentication required, but localhost can bypass for batch generation
 def api_tts_generate():
     """
@@ -3733,6 +3760,7 @@ def download(filename):
 
 
 @app.route('/random-prompt', methods=['POST'])
+@limiter.limit("120 per hour")  # Rate limit prompt generation
 def random_prompt():
     """Generate a random prompt using varied pattern templates with extensive vocabulary."""
     import random
