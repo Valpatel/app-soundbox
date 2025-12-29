@@ -315,7 +315,7 @@ SPEECH_CATEGORIES = {
 
 GRAPHLINGS_SOURCES = {
     'byk3s': {
-        'name': 'BYK3S',
+        'name': 'Byk3s',
         'description': 'Cyberpunk bike combat game',
         'icon': 'gamepad',
         'type': 'game'

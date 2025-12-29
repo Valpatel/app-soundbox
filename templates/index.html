@@ -25,8 +25,12 @@
             --bg-input: #0d1117;
             --accent: #a855f7;
             --accent-glow: rgba(168, 85, 247, 0.4);
-            --cyan: #00d4ff;
-            --cyan-glow: rgba(0, 212, 255, 0.3);
+            --accent-light: #c084fc;
+            --accent-light-glow: rgba(192, 132, 252, 0.3);
+            /* Legacy cyan aliases - now point to accent-light for unified purple theme */
+            --cyan: var(--accent-light);
+            --cyan-glow: var(--accent-light-glow);
+            --secondary: var(--accent-light);
             --text: #f1f5f9;
             --text-dim: #94a3b8;
             --text-muted: #64748b;
@@ -35,7 +39,9 @@
             --success: #10b981;
             --error: #ef4444;
             --gradient-accent: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-            --gradient-cyan: linear-gradient(135deg, #00d4ff 0%, #0ea5e9 100%);
+            --gradient-secondary: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
+            /* Legacy alias */
+            --gradient-cyan: var(--gradient-secondary);
         }
 
         * {
@@ -49,7 +55,7 @@
             background: var(--bg-dark);
             background-image:
                 radial-gradient(ellipse at top, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at bottom right, rgba(0, 212, 255, 0.08) 0%, transparent 50%);
+                radial-gradient(ellipse at bottom right, rgba(168, 85, 247, 0.06) 0%, transparent 50%);
             color: var(--text);
             min-height: 100vh;
         }
@@ -135,12 +141,21 @@
         .widget-bar-top {
             display: flex;
             justify-content: center;
+            align-items: center;
             padding: 20px 16px 12px;
             min-height: 70px;
             background: linear-gradient(180deg, rgba(168, 85, 247, 0.08) 0%, transparent 100%);
             border-bottom: 1px solid var(--border);
             margin-bottom: 8px;
         }
+
+        #wallet-widget-container {
+            display: block;
+            margin: 0 auto;
+            width: fit-content;
+        }
+
+        /* Sign-in prompt styles are now handled by Graphlings SDK */
 
         /* Dark themed audio player using filter inversion */
         audio {
@@ -849,18 +864,7 @@
             animation: none;
         }
 
-        /* Auth-disabled state for vote/favorite buttons */
-        .auth-disabled {
-            opacity: 0.35 !important;
-            cursor: not-allowed !important;
-            pointer-events: none !important;
-        }
-
-        .auth-disabled:hover {
-            transform: none !important;
-            background: inherit !important;
-        }
-
+        
         /* Disabled inputs */
         textarea:disabled,
         input:disabled,
@@ -1181,7 +1185,7 @@
            UNIFIED SERVER STATUS CARD
            ======================================== */
         .server-status-card {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(192, 132, 252, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%);
             padding: 0;
             overflow: hidden;
         }
@@ -1334,8 +1338,8 @@
             color: var(--accent);
         }
         .job-progress {
-            background: rgba(0, 212, 255, 0.1);
-            border: 1px solid rgba(0, 212, 255, 0.3);
+            background: rgba(192, 132, 252, 0.1);
+            border: 1px solid rgba(192, 132, 252, 0.3);
             border-radius: 8px;
             padding: 15px;
             margin-top: 15px;
@@ -1347,7 +1351,7 @@
             margin-bottom: 5px;
         }
         .job-progress .progress-text {
-            color: #00d4ff;
+            color: var(--accent-light);
             font-weight: 500;
         }
         .progress-bar-container {
@@ -1360,7 +1364,7 @@
         }
         .progress-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #00d4ff 0%, #0099cc 100%);
+            background: linear-gradient(90deg, #c084fc 0%, #a855f7 100%);
             border-radius: 4px;
             transition: width 0.3s ease;
             width: 0%;
@@ -1478,13 +1482,13 @@
 
         .queue-item.processing {
             border-color: var(--cyan);
-            background: rgba(0, 212, 255, 0.1);
+            background: rgba(192, 132, 252, 0.1);
             animation: processingPulse 2s ease-in-out infinite;
         }
 
         @keyframes processingPulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4); }
-            50% { box-shadow: 0 0 20px 0 rgba(0, 212, 255, 0.2); }
+            0%, 100% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.4); }
+            50% { box-shadow: 0 0 20px 0 rgba(192, 132, 252, 0.2); }
         }
 
         .queue-item.own-job {
@@ -1539,7 +1543,7 @@
         }
 
         .queue-item-meta .model-badge.audio {
-            background: rgba(0, 212, 255, 0.2);
+            background: rgba(192, 132, 252, 0.2);
             color: var(--cyan);
         }
 
@@ -2466,8 +2470,8 @@
            RADIO STATION - REDESIGNED
            ======================================== */
         .radio-card {
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(0, 212, 255, 0.08) 100%);
-            border: 2px solid var(--accent);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(192, 132, 252, 0.08) 100%);
+            border: 1px solid var(--border);
             padding: 20px;
         }
 
@@ -2724,7 +2728,7 @@
             justify-content: center;
             gap: 16px;
             padding: 20px 28px;
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(0, 212, 255, 0.2) 100%);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(192, 132, 252, 0.2) 100%);
             border: 2px solid rgba(168, 85, 247, 0.4);
             border-radius: 16px;
             cursor: pointer;
@@ -2859,7 +2863,7 @@
             flex-direction: column;
             gap: 16px;
             padding: 24px;
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(0,0,0,0.3) 50%, rgba(0, 212, 255, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(0,0,0,0.3) 50%, rgba(192, 132, 252, 0.05) 100%);
             border-radius: 20px;
             margin-bottom: 16px;
             border: 1px solid rgba(168, 85, 247, 0.3);
@@ -3114,6 +3118,13 @@
             box-shadow: 0 6px 25px var(--accent-glow);
         }
 
+        .control-btn:disabled,
+        .control-btn[disabled] {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         /* Rating controls group */
         .rating-controls {
             display: flex;
@@ -3189,6 +3200,13 @@
             text-align: center;
         }
 
+        .rating-btn:disabled,
+        .rating-btn[disabled] {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         /* Favorite button in control bar */
         .control-bar .favorite-btn {
             width: 40px;
@@ -3213,6 +3231,13 @@
         .control-bar .favorite-btn.favorited {
             background: rgba(225, 29, 72, 0.25);
             border-color: #e11d48;
+        }
+
+        .control-bar .favorite-btn:disabled,
+        .control-bar .favorite-btn[disabled] {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
         }
 
         /* Separator */
@@ -3527,15 +3552,15 @@
         }
 
         .reclassify-option:hover {
-            border-color: var(--cyan);
-            color: var(--cyan);
-            background: rgba(0, 212, 255, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(168, 85, 247, 0.1);
         }
 
         .reclassify-option.selected {
-            border-color: var(--cyan);
-            color: var(--cyan);
-            background: rgba(0, 212, 255, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(168, 85, 247, 0.15);
         }
 
         /* Feedback Modal - Enhanced with Particles & Glow */
@@ -3722,7 +3747,7 @@
             align-items: center;
             gap: 12px;
             padding: 16px;
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(192, 132, 252, 0.1) 100%);
             border: 1px solid var(--border);
             border-radius: 14px;
             margin-bottom: 24px;
@@ -3870,18 +3895,18 @@
         }
 
         .feedback-modal-reclassify .reclassify-option:hover {
-            border-color: var(--cyan);
-            color: var(--cyan);
-            background: rgba(0, 212, 255, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(168, 85, 247, 0.15);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.25);
+            box-shadow: 0 6px 20px var(--accent-glow);
         }
 
         .feedback-modal-reclassify .reclassify-option.selected {
-            border-color: var(--cyan);
+            border-color: var(--accent);
             color: white;
-            background: linear-gradient(135deg, var(--cyan), #0ea5e9);
-            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+            background: var(--gradient-accent);
+            box-shadow: 0 4px 20px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
             transform: translateY(-2px);
         }
 
@@ -4050,13 +4075,13 @@
            LIBRARY - REDESIGNED
            ======================================== */
         .library-card {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%);
-            border: 2px solid var(--cyan);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border: 1px solid var(--border);
         }
 
         .library-card h2 {
             font-size: 1.3rem;
-            color: var(--cyan);
+            color: var(--accent);
             display: flex;
             align-items: center;
             gap: 8px;
@@ -4506,7 +4531,9 @@
         }
 
         .graphlings-source {
-            margin-bottom: 12px;
+            margin-bottom: 8px;
+            overflow: hidden;
+            border-radius: 10px;
         }
 
         .graphlings-source-header {
@@ -4515,15 +4542,12 @@
             gap: 10px;
             padding: 12px 14px;
             background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(139, 92, 246, 0.1));
-            border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s ease;
-            border: 1px solid rgba(168, 85, 247, 0.2);
         }
 
         .graphlings-source-header:hover {
             background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(139, 92, 246, 0.15));
-            border-color: rgba(168, 85, 247, 0.4);
         }
 
         .graphlings-source-header .source-icon {
@@ -4779,7 +4803,7 @@
         }
 
         .model-badge.audio {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(16, 185, 129, 0.2));
+            background: linear-gradient(135deg, rgba(192, 132, 252, 0.2), rgba(16, 185, 129, 0.2));
             color: var(--cyan);
         }
 
@@ -4924,7 +4948,7 @@
         .add-queue-btn:hover {
             background: rgba(255, 255, 255, 0.1);
             color: var(--text);
-            border-color: var(--cyan);
+            border-color: var(--accent);
         }
 
         .add-queue-btn .icon {
@@ -5065,9 +5089,9 @@
         }
 
         .action-btn:hover {
-            border-color: var(--cyan);
-            color: var(--cyan);
-            background: rgba(0, 212, 255, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(168, 85, 247, 0.1);
         }
 
         .action-btn .icon {
@@ -5233,9 +5257,9 @@
         }
 
         .page-btn:hover:not(:disabled):not(.active) {
-            border-color: var(--cyan);
-            color: var(--cyan);
-            background: rgba(0, 212, 255, 0.05);
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(168, 85, 247, 0.05);
         }
 
         .page-btn:disabled {
@@ -5244,8 +5268,8 @@
         }
 
         .page-btn.active {
-            background: var(--cyan);
-            border-color: var(--cyan);
+            background: var(--accent);
+            border-color: var(--accent);
             color: white;
         }
 
@@ -6028,10 +6052,10 @@
                     <div class="control-bar">
                         <!-- Playback Controls -->
                         <div class="playback-controls">
-                            <button class="control-btn" onclick="playPreviousTrack()" title="Play previous track">
+                            <button class="control-btn" id="radio-prev-btn" onclick="playPreviousTrack()" title="Play previous track" disabled>
                                 <svg class="icon"><use href="#icon-skip-prev"/></svg>
                             </button>
-                            <button class="control-btn" onclick="skipTrack()" title="Skip to next track">
+                            <button class="control-btn" id="radio-skip-btn" onclick="skipTrack()" title="Skip to next track" disabled>
                                 <svg class="icon"><use href="#icon-skip-next"/></svg>
                             </button>
                         </div>
@@ -6044,17 +6068,17 @@
                         </button>
 
                         <!-- Review/Tag -->
-                        <button class="control-btn" onclick="tagCurrentTrack()" title="Review and categorize this track">
+                        <button class="control-btn" id="radio-tag-btn" onclick="tagCurrentTrack()" title="Review and categorize this track">
                             <svg class="icon"><use href="#icon-tag"/></svg>
                         </button>
 
                         <!-- Download -->
-                        <button class="control-btn" onclick="downloadCurrentTrack()" title="Download this track">
+                        <button class="control-btn" id="radio-download-btn" onclick="downloadCurrentTrack()" title="Download this track">
                             <svg class="icon"><use href="#icon-download"/></svg>
                         </button>
 
                         <!-- Fullscreen -->
-                        <button class="control-btn" onclick="enterRadioFullscreen()" title="Enter fullscreen immersive mode">
+                        <button class="control-btn" id="radio-fullscreen-btn" onclick="enterRadioFullscreen()" title="Enter fullscreen immersive mode" disabled>
                             <svg class="icon"><use href="#icon-expand"/></svg>
                         </button>
 
@@ -6151,7 +6175,7 @@
                             <span class="tab-count" id="music-count">0</span>
                         </button>
                         <button class="type-tab" data-type="audio" onclick="selectTypeTab('audio')" title="Browse sound effects">
-                            <svg class="icon"><use href="#icon-soundwave"/></svg>
+                            <svg class="icon"><use href="#icon-volume"/></svg>
                             SFX
                             <span class="tab-count" id="sfx-count">0</span>
                         </button>
@@ -7201,13 +7225,16 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
 
         function showLoginPrompt(action) {
-            const message = action
-                ? `Please sign in to ${action}`
-                : 'Please sign in to use this feature';
-            showErrorToast(message);
-
-            // Scroll to top to make the Graphlings widget visible
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Use SDK's built-in sign-in prompt
+            if (window.graphlings && window.graphlings.promptSignIn) {
+                window.graphlings.promptSignIn({
+                    message: 'Sign in to unlock everything!',
+                    description: 'Create playlists, save favorites, generate custom sounds, and more. All audio is free to download and use!'
+                });
+            } else {
+                // Fallback: scroll to top where widget is
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         }
 
         // Update UI elements based on authentication state
@@ -7216,8 +7243,6 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             const generateBtn = document.getElementById('generate-btn');
             const durationSlider = document.getElementById('duration');
             const randomBtn = document.querySelector('.random-prompt-btn');
-            const voteButtons = document.querySelectorAll('.rating-btn, .vote-btn, [data-action="upvote"], [data-action="downvote"]');
-            const favoriteButtons = document.querySelectorAll('.favorite-btn, [data-action="favorite"]');
 
             if (isLoggedIn) {
                 // Enable all controls for logged-in users
@@ -7228,10 +7253,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 if (generateBtn) generateBtn.disabled = false;
                 if (durationSlider) durationSlider.disabled = false;
                 if (randomBtn) randomBtn.disabled = false;
-                voteButtons.forEach(btn => btn.classList.remove('auth-disabled'));
-                favoriteButtons.forEach(btn => btn.classList.remove('auth-disabled'));
             } else {
-                // Disable controls for guests
+                // Disable generation controls for guests
+                // Note: Vote/favorite buttons are NOT disabled - they show login prompt when clicked
                 if (promptInput) {
                     promptInput.disabled = true;
                     promptInput.placeholder = 'Sign in to generate audio...';
@@ -7239,8 +7263,6 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 if (generateBtn) generateBtn.disabled = true;
                 if (durationSlider) durationSlider.disabled = true;
                 if (randomBtn) randomBtn.disabled = true;
-                voteButtons.forEach(btn => btn.classList.add('auth-disabled'));
-                favoriteButtons.forEach(btn => btn.classList.add('auth-disabled'));
             }
         }
 
@@ -7630,6 +7652,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
 
         function createNewPlaylist() {
+            // Require authentication to use playlists
+            if (!isUserAuthenticated()) {
+                showLoginPrompt('create playlists');
+                return;
+            }
+
             // Open modal without a track pre-selected
             currentPlaylistModalTrackId = null;
             document.getElementById('playlist-modal-overlay').classList.remove('hidden');
@@ -7639,6 +7667,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
         // Add to Playlist Modal Functions
         function showAddToPlaylistModal(trackId) {
+            // Require authentication to use playlists
+            if (!isUserAuthenticated()) {
+                showLoginPrompt('use playlists');
+                return;
+            }
+
             currentPlaylistModalTrackId = trackId;
             const item = libraryItemsData[trackId] || currentRadioTrack;
 
@@ -7708,7 +7742,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
         async function addTrackToPlaylist(playlistId) {
             if (!isUserAuthenticated()) {
-                showErrorToast('Please sign in to add to playlists');
+                showLoginPrompt('add to playlists');
                 return;
             }
 
@@ -7773,7 +7807,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
         async function createPlaylistAndAdd() {
             if (!isUserAuthenticated()) {
-                showErrorToast('Please sign in to create playlists');
+                showLoginPrompt('create playlists');
                 return;
             }
 
@@ -9104,6 +9138,36 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         const radioQueueEl = document.getElementById('radio-queue');
         const queueItemsEl = document.getElementById('queue-items');
 
+        // Update radio control button states based on whether a track is loaded
+        function updateRadioControlsState() {
+            const hasTrack = !!currentRadioTrack;
+
+            // These controls require a track to be loaded
+            const trackRequiredControls = [
+                'radio-prev-btn',
+                'radio-skip-btn',
+                'radio-fullscreen-btn'
+            ];
+            trackRequiredControls.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = !hasTrack;
+            });
+
+            // These controls require a track AND show login prompt if not authenticated
+            // They should be enabled when a track is loaded (login check happens on click)
+            const authControls = [
+                'radio-favorite-btn',
+                'radio-tag-btn',
+                'radio-download-btn',
+                'radio-vote-up',
+                'radio-vote-down'
+            ];
+            authControls.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = !hasTrack;
+            });
+        }
+
         // Auto-play next track when current ends
         radioPlayer.addEventListener('ended', () => {
             playNextTrack();
@@ -9165,6 +9229,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 nowPlayingEl.classList.add('hidden');
                 radioQueueEl.classList.add('hidden');
                 currentRadioTrack = null;
+                updateRadioControlsState();
                 return;
             }
 
@@ -9215,6 +9280,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             // Load user's vote and favorite status for this track
             loadRadioTrackVote();
             checkRadioTrackFavorite();
+
+            // Enable radio controls now that we have a track
+            updateRadioControlsState();
 
             // Spectrogram element removed in redesign - EQ visualizer used instead
             const specImg = document.getElementById('radio-spectrogram');
@@ -9441,8 +9509,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         // DOWNLOAD
         // ========================================
         function downloadCurrentTrack() {
-            if (!currentRadioTrack) {
-                showErrorToast('No track to download');
+            if (!currentRadioTrack) return;
+            // Require authentication to download
+            if (!isUserAuthenticated()) {
+                showLoginPrompt('download tracks');
                 return;
             }
             const filename = currentRadioTrack.filename;
@@ -9459,10 +9529,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         let fullscreenWidget = null;
 
         function enterRadioFullscreen() {
-            if (!currentRadioTrack) {
-                showErrorToast('No track playing - start playback first');
-                return;
-            }
+            if (!currentRadioTrack) return;
 
             // Create fullscreen container if it doesn't exist
             let container = document.getElementById('fullscreen-radio-container');
@@ -9564,14 +9631,16 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
 
         function tagCurrentTrack() {
-            if (!currentRadioTrack) {
-                showErrorToast('No track to tag');
-                return;
-            }
+            if (!currentRadioTrack) return;
             showTagSuggestionModal(currentRadioTrack);
         }
 
         function downloadTrack(filename) {
+            // Require authentication to download
+            if (!isUserAuthenticated()) {
+                showLoginPrompt('download tracks');
+                return;
+            }
             const a = document.createElement('a');
             a.href = `/download/${encodeURIComponent(filename)}`;
             a.download = filename;
@@ -9972,6 +10041,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         };
 
         function openFeedbackModal(track, isPositive, source = 'radio') {
+            // Require authentication to provide feedback
+            if (!isUserAuthenticated()) {
+                showLoginPrompt('rate tracks');
+                return;
+            }
+
             feedbackModalState = {
                 track,
                 isPositive,
@@ -10289,6 +10364,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             loadRadioTrackVote();
             checkRadioTrackFavorite();
 
+            // Enable radio controls
+            updateRadioControlsState();
+
             // Play the audio (auto-unmute if user had muted)
             autoUnmuteOnPlay();
             radioPlayer.src = '/audio/' + encodeURIComponent(currentRadioTrack.filename);
@@ -10598,7 +10676,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                                 <span class="type-count">${counts.music || 0}</span>
                             </div>
                             <div class="graphlings-type-item" data-source="${sourceId}" data-model="audio" onclick="selectGraphlingsFilter('${sourceId}', 'audio')">
-                                <svg class="type-icon"><use href="#icon-soundwave"/></svg>
+                                <svg class="type-icon"><use href="#icon-volume"/></svg>
                                 <span class="type-name">SFX</span>
                                 <span class="type-count">${counts.audio || 0}</span>
                             </div>
@@ -10696,6 +10774,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
                 if (data.items.length === 0) {
                     let emptyMessage = '';
+                    // Check if any filters are active
+                    const hasActiveFilters = search || model || currentCategory || currentSubcategory || currentGraphlingsSource || currentQuickFilter;
+
                     if (search) {
                         emptyMessage = `
                             <div class="library-empty">
@@ -10704,17 +10785,16 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                                 <p>No results for "<strong>${escapeHtml(search)}</strong>". Try different keywords.</p>
                             </div>
                         `;
-                    } else if (model) {
-                        const emptyIcon = model === 'music' ? '#icon-music' : model === 'voice' ? '#icon-mic' : '#icon-volume';
-                        const emptyLabel = model === 'music' ? 'music' : model === 'voice' ? 'speech' : 'sound effects';
+                    } else if (hasActiveFilters) {
                         emptyMessage = `
                             <div class="library-empty">
-                                <svg class="empty-icon"><use href="${emptyIcon}"/></svg>
-                                <h3>No ${emptyLabel} yet</h3>
-                                <p>Generate some using the Generate tab!</p>
+                                <svg class="empty-icon"><use href="#icon-filter"/></svg>
+                                <h3>No matching tracks</h3>
+                                <p>Try adjusting the filters in the sidebar, or use the "Clear Filters" button.</p>
                             </div>
                         `;
                     } else {
+                        // No filters active and truly empty library
                         emptyMessage = `
                             <div class="library-empty">
                                 <svg class="empty-icon"><use href="#icon-wand"/></svg>
@@ -11028,7 +11108,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
 
         function clearAllFilters() {
-            currentTypeTab = 'all';
+            // Keep the current top-level type tab (Music, SFX, Speech, Graphlings)
+            // Only clear sub-filters
             currentGenre = '';
             currentQuickFilter = '';
             currentCategory = '';
@@ -11042,12 +11123,14 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             const searchInput = document.getElementById('library-search');
             if (searchInput) searchInput.value = '';
 
-            // Reset all active states
+            // Reset active states on sub-filters only
             document.querySelectorAll('.genre-item').forEach(item => item.classList.remove('active'));
             document.querySelectorAll('.quick-filter-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.graphlings-type-item').forEach(item => item.classList.remove('active'));
+
+            // Collapse all expanded menus
             document.querySelectorAll('.graphlings-source').forEach(source => source.classList.remove('expanded'));
-            document.getElementById('category-sidebar').dataset.type = 'all';
+            document.querySelectorAll('.genre-group').forEach(group => group.classList.add('collapsed'));
 
             updateSearchPlaceholder();
             updateClearFilterButton();
@@ -11202,9 +11285,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                             <svg class="icon"><use href="#icon-tag"/></svg>
                         </button>
                         ${viewFeedbackBtn}
-                        <a href="/download/${encodeURIComponent(item.filename)}" class="action-btn download" title="Download">
+                        <button class="action-btn download" onclick="downloadTrack('${escapeJsString(item.filename)}')" title="Download">
                             <svg class="icon"><use href="#icon-download"/></svg>
-                        </a>
+                        </button>
                     </div>
                     <div class="feedback-view hidden" id="feedback-view-${item.id}"></div>
                 </div>
@@ -11340,6 +11423,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             loadRadioTrackVote();
             checkRadioTrackFavorite();
 
+            // Enable radio controls
+            updateRadioControlsState();
+
             // Play the audio
             autoUnmuteOnPlay();
             radioPlayer.src = '/audio/' + encodeURIComponent(item.filename);
@@ -11432,6 +11518,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
         // Library feedback shortcuts - open modal or toggle vote off
         function showLibraryPositiveFeedback(genId) {
+            // Require authentication to vote
+            if (!isUserAuthenticated()) {
+                showLoginPrompt('rate tracks');
+                return;
+            }
+
             const item = libraryItemsData[genId];
             if (!item) return;
 
@@ -11448,6 +11540,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
 
         function showLibraryFeedback(genId) {
+            // Require authentication to vote
+            if (!isUserAuthenticated()) {
+                showLoginPrompt('rate tracks');
+                return;
+            }
+
             const item = libraryItemsData[genId];
             if (!item) return;
 
@@ -11465,6 +11563,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
         // Clear a library vote (toggle off)
         async function clearLibraryVote(genId) {
+            // Require authentication to vote
+            if (!isUserAuthenticated()) {
+                showLoginPrompt('rate tracks');
+                return;
+            }
+
             try {
                 const response = await authFetch(`/api/library/${genId}/vote`, {
                     method: 'POST',
@@ -12037,10 +12141,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 default: {
                     accent: '#a855f7',
                     accentGlow: 'rgba(168, 85, 247, 0.4)',
-                    secondary: '#00d4ff',
-                    secondaryGlow: 'rgba(0, 212, 255, 0.3)',
+                    secondary: '#c084fc',
+                    secondaryGlow: 'rgba(192, 132, 252, 0.3)',
                     gradientAccent: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-                    gradientSecondary: 'linear-gradient(135deg, #00d4ff 0%, #0ea5e9 100%)',
+                    gradientSecondary: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)',
                     success: '#10b981',
                     cardBorder: 'rgba(168, 85, 247, 0.2)',
                     chipBg: 'rgba(168, 85, 247, 0.1)',
@@ -12049,10 +12153,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 graphlings: {
                     accent: '#a855f7',
                     accentGlow: 'rgba(168, 85, 247, 0.4)',
-                    secondary: '#00d4ff',
-                    secondaryGlow: 'rgba(0, 212, 255, 0.3)',
+                    secondary: '#c084fc',
+                    secondaryGlow: 'rgba(192, 132, 252, 0.3)',
                     gradientAccent: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-                    gradientSecondary: 'linear-gradient(135deg, #00d4ff 0%, #0ea5e9 100%)',
+                    gradientSecondary: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)',
                     success: '#10b981',
                     cardBorder: 'rgba(168, 85, 247, 0.2)',
                     chipBg: 'rgba(168, 85, 247, 0.1)',
@@ -13736,6 +13840,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
 
         async function showTagSuggestionModal(genIdOrItem) {
+            // Require authentication to suggest tags
+            if (!isUserAuthenticated()) {
+                showLoginPrompt('suggest tags');
+                return;
+            }
+
             // Accept either a genId string or an item object
             let item, genId;
             if (typeof genIdOrItem === 'string') {
@@ -14527,9 +14637,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         .library-item:focus-visible,
         .main-tab:focus-visible,
         .genre-item:focus-visible {
-            outline: 2px solid var(--cyan);
+            outline: 2px solid var(--accent);
             outline-offset: 2px;
-            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.3);
+            box-shadow: 0 0 0 4px var(--accent-glow);
         }
 
         /* Make interactive elements focusable */
@@ -14673,7 +14783,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
         .mini-player-brand:hover .brand-text {
             color: var(--cyan);
-            text-shadow: 0 0 16px rgba(0, 212, 255, 0.8);
+            text-shadow: 0 0 16px rgba(192, 132, 252, 0.8);
         }
 
         .mini-player-info {
@@ -14902,7 +15012,80 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             visibility: visible;
             transform: translateX(-50%) translateY(0);
         }
+
+        /* Site Footer */
+        .site-footer {
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+            border-top: 1px solid var(--border);
+            padding: 40px 20px 30px;
+            margin-top: 60px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .footer-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .footer-brand {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .footer-brand a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .footer-brand a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-address {
+            margin: 12px 0;
+            line-height: 1.6;
+        }
+
+        .footer-contact {
+            margin-top: 12px;
+        }
+
+        .footer-contact a {
+            color: var(--secondary);
+            text-decoration: none;
+        }
+
+        .footer-contact a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-copyright {
+            margin-top: 16px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
     </style>
+
+    <!-- Site Footer -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-brand">Matthew Valancy DBA <a href="https://graphlings.net" target="_blank" rel="noopener">Graphlings.net</a></div>
+            <div class="footer-address">
+                6937 Village Pkwy #2451<br>
+                Dublin, CA 94568
+            </div>
+            <div class="footer-contact">
+                Questions or feedback? <a href="mailto:support@graphlings.net">support@graphlings.net</a>
+            </div>
+            <div class="footer-copyright">
+                © 2025 Graphlings. All sounds are free for any use — personal, commercial, no attribution required. <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener" style="color: inherit;">CC0 License</a>
+            </div>
+        </div>
+    </footer>
 
     <!-- Radio Widget Scripts -->
     <script src="/static/js/radio-widget-events.js"></script>

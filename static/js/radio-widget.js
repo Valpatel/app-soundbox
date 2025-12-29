@@ -826,18 +826,37 @@ class RadioWidgetInstance {
             });
         });
 
-        // Favorite
+        // Favorite - delegate to main app which has login check
         this.container.querySelectorAll('[data-action="favorite"]').forEach(btn => {
-            btn.addEventListener('click', () => this.core.toggleFavorite());
+            btn.addEventListener('click', () => {
+                if (window.toggleRadioFavorite) {
+                    window.toggleRadioFavorite();
+                } else if (window.isUserAuthenticated && !window.isUserAuthenticated()) {
+                    if (window.showLoginPrompt) window.showLoginPrompt('favorite tracks');
+                } else {
+                    this.core.toggleFavorite();
+                }
+            });
         });
 
-        // Vote buttons with visual feedback
+        // Vote buttons - delegate to main app's feedback modal if available
         this.container.querySelectorAll('[data-action="upvote"]').forEach(btn => {
             btn.addEventListener('click', () => {
                 // If already liked, do nothing (can't unlike for now)
                 if (btn.classList.contains('voted')) return;
 
-                // Add glow animation
+                // Delegate to main app's feedback modal (shows reason selection)
+                if (window.showPositiveFeedbackMenu) {
+                    window.showPositiveFeedbackMenu();
+                    return;
+                }
+
+                // Fallback: Check auth, then add glow animation and vote directly
+                if (window.isUserAuthenticated && !window.isUserAuthenticated()) {
+                    if (window.showLoginPrompt) window.showLoginPrompt('rate tracks');
+                    return;
+                }
+
                 btn.classList.add('voting');
                 this.core.vote(1);
 
@@ -853,7 +872,18 @@ class RadioWidgetInstance {
                 // If already disliked, do nothing
                 if (btn.classList.contains('voted')) return;
 
-                // Add glow animation
+                // Delegate to main app's feedback modal (shows reason selection)
+                if (window.showFeedbackMenu) {
+                    window.showFeedbackMenu();
+                    return;
+                }
+
+                // Fallback: Check auth, then add glow animation and vote directly
+                if (window.isUserAuthenticated && !window.isUserAuthenticated()) {
+                    if (window.showLoginPrompt) window.showLoginPrompt('rate tracks');
+                    return;
+                }
+
                 btn.classList.add('voting');
                 this.core.vote(-1);
 
@@ -869,12 +899,17 @@ class RadioWidgetInstance {
             });
         });
 
-        // Download button - delegate to main app's download function
+        // Download button - delegate to main app's download function (has login check)
         this.container.querySelectorAll('[data-action="download"]').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (window.downloadCurrentTrack) {
                     window.downloadCurrentTrack();
                 } else if (this.core.currentTrack?.filename) {
+                    // Fallback: Check auth before allowing download
+                    if (window.isUserAuthenticated && !window.isUserAuthenticated()) {
+                        if (window.showLoginPrompt) window.showLoginPrompt('download tracks');
+                        return;
+                    }
                     const a = document.createElement('a');
                     a.href = `/download/${this.core.currentTrack.filename}`;
                     a.download = this.core.currentTrack.filename;
@@ -885,11 +920,14 @@ class RadioWidgetInstance {
             });
         });
 
-        // Tag button - delegate to main app's tag function
+        // Tag button - delegate to main app's tag function (has login check)
         this.container.querySelectorAll('[data-action="tag"]').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (window.tagCurrentTrack) {
                     window.tagCurrentTrack();
+                } else if (window.isUserAuthenticated && !window.isUserAuthenticated()) {
+                    // Fallback: show login prompt if main function not available
+                    if (window.showLoginPrompt) window.showLoginPrompt('suggest tags');
                 }
             });
         });
