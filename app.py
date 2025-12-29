@@ -390,6 +390,18 @@ def add_security_headers(response):
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        # Content Security Policy - prevent XSS and injection attacks
+        # Allow self, inline styles/scripts (needed for the app), and specific external resources
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://graphlings.com https://*.graphlings.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data: blob:; "
+            "media-src 'self' blob:; "
+            "connect-src 'self' https://graphlings.com https://*.graphlings.com; "
+            "frame-ancestors 'self'"
+        )
 
     return response
 
