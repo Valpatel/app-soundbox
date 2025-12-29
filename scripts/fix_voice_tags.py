@@ -329,17 +329,29 @@ def get_voice_info_from_id(voice_id: str) -> dict:
 
     voice_lower = voice_id.lower()
 
-    # Common voice naming patterns
-    if any(x in voice_lower for x in ['female', 'woman', 'jenny', 'aria', 'sarah', 'emma', 'olivia']):
+    # Known voice configurations
+    KNOWN_VOICES = {
+        'en_gb-vctk-medium': {'gender': 'female', 'accent': 'british'},
+        'en_us-lessac-medium': {'gender': 'female', 'accent': 'american'},
+        'en_us-amy-medium': {'gender': 'female', 'accent': 'american'},
+        'en_us-ryan-medium': {'gender': 'male', 'accent': 'american'},
+    }
+
+    # Check known voices first
+    if voice_lower in KNOWN_VOICES:
+        return KNOWN_VOICES[voice_lower]
+
+    # Fallback to pattern matching
+    if any(x in voice_lower for x in ['female', 'woman', 'jenny', 'aria', 'sarah', 'emma', 'olivia', 'amy']):
         info['gender'] = 'female'
     elif any(x in voice_lower for x in ['male', 'man', 'guy', 'john', 'james', 'ryan', 'davis']):
         info['gender'] = 'male'
 
-    if 'british' in voice_lower or 'uk' in voice_lower or 'england' in voice_lower:
+    if 'en_gb' in voice_lower or 'british' in voice_lower or 'uk' in voice_lower:
         info['accent'] = 'british'
-    elif 'american' in voice_lower or 'us' in voice_lower:
+    elif 'en_us' in voice_lower or 'american' in voice_lower:
         info['accent'] = 'american'
-    elif 'australian' in voice_lower or 'aussie' in voice_lower:
+    elif 'en_au' in voice_lower or 'australian' in voice_lower:
         info['accent'] = 'australian'
 
     return info
