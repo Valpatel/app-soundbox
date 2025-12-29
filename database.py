@@ -599,6 +599,10 @@ def init_db():
 
         # Create index for is_public after column exists
         conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_public ON generations(is_public)")
+        # Composite index for common library query (public + sort by recent)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_public_created ON generations(is_public, created_at DESC)")
+        # Composite index for model filter with date sort
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_model_created ON generations(model, created_at DESC)")
 
         # Migration: Add admin_reviewed flag for moderation workflow
         try:
