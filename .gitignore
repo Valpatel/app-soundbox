@@ -20,6 +20,8 @@ models/
 # Environment
 .env
 soundbox.db
+soundbox.db-shm
+soundbox.db-wal
 
 # IDE
 .vscode/
