@@ -1164,16 +1164,16 @@ def cleanup_old_generations(user_id, tier='free', keep_count=None):
             if os.path.exists(audio_path):
                 try:
                     os.remove(audio_path)
-                except OSError:
-                    pass
+                except OSError as e:
+                    print(f"[Storage] Warning: Failed to remove audio file {audio_path}: {e}")
 
             if spectrogram:
                 spec_path = os.path.join('spectrograms', spectrogram)
                 if os.path.exists(spec_path):
                     try:
                         os.remove(spec_path)
-                    except OSError:
-                        pass
+                    except OSError as e:
+                        print(f"[Storage] Warning: Failed to remove spectrogram {spec_path}: {e}")
 
             # Delete from database
             conn.execute("DELETE FROM generations WHERE id = ?", (gen_id,))
@@ -1357,19 +1357,20 @@ def vote(generation_id, user_id, vote_value, feedback_reasons=None, notes=None, 
             """, (generation_id, user_id, vote_value, reasons_json, notes, suggested_model,
                   vote_value, reasons_json, notes, suggested_model))
 
-        # Recalculate denormalized counts
-        counts = conn.execute("""
-            SELECT
-                COALESCE(SUM(CASE WHEN vote = 1 THEN 1 ELSE 0 END), 0) as upvotes,
-                COALESCE(SUM(CASE WHEN vote = -1 THEN 1 ELSE 0 END), 0) as downvotes
-            FROM votes WHERE generation_id = ?
-        """, (generation_id,)).fetchone()
-
+        # Recalculate denormalized counts atomically using UPDATE with subquery
         conn.execute("""
-            UPDATE generations SET upvotes = ?, downvotes = ? WHERE id = ?
-        """, (counts['upvotes'], counts['downvotes'], generation_id))
+            UPDATE generations SET
+                upvotes = (SELECT COALESCE(SUM(CASE WHEN vote = 1 THEN 1 ELSE 0 END), 0) FROM votes WHERE generation_id = ?),
+                downvotes = (SELECT COALESCE(SUM(CASE WHEN vote = -1 THEN 1 ELSE 0 END), 0) FROM votes WHERE generation_id = ?)
+            WHERE id = ?
+        """, (generation_id, generation_id, generation_id))
 
         conn.commit()
+
+        # Get updated counts
+        counts = conn.execute("""
+            SELECT upvotes, downvotes FROM generations WHERE id = ?
+        """, (generation_id,)).fetchone()
 
         # Get user's current vote
         user_vote_row = conn.execute(
@@ -1920,7 +1921,7 @@ def get_user_play_history(user_id, limit=50, offset=0):
                 pe.source,
                 g.prompt,
                 g.category,
-                g.model_type,
+                g.model,
                 g.duration,
                 g.upvotes,
                 g.downvotes
@@ -1956,7 +1957,7 @@ def get_user_vote_history(user_id, limit=50, offset=0):
                 v.created_at,
                 g.prompt,
                 g.category,
-                g.model_type,
+                g.model,
                 g.duration,
                 g.upvotes,
                 g.downvotes

@@ -837,7 +837,9 @@ def wait_for_completion(job_id, timeout=120):
                 elif status == 'failed':
                     return False, data.get('error', 'Unknown error')
             time.sleep(2)
-        except:
+        except (requests.RequestException, KeyError, ValueError) as e:
+            # Log error but continue polling
+            print(f"  Poll error: {e}", end="", flush=True)
             time.sleep(2)
     return False, "Timeout"
 

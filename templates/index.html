@@ -5103,6 +5103,15 @@
             padding: 6px 8px;
         }
 
+        .action-btn.copy-id-btn {
+            border-color: rgba(59, 130, 246, 0.5);
+            color: #3b82f6;
+        }
+        .action-btn.copy-id-btn:hover {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.15);
+        }
+
         .action-btn.favorite-btn:hover,
         .action-btn.favorite-btn.favorited {
             border-color: #ef4444;
@@ -5699,14 +5708,6 @@
             <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
         </symbol>
 
-        <!-- Arrow Icons -->
-        <symbol id="icon-arrow-left" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-        </symbol>
-        <symbol id="icon-arrow-right" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
-        </symbol>
-
         <!-- More Options Icon -->
         <symbol id="icon-more-vertical" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
@@ -5756,9 +5757,6 @@
         <symbol id="icon-close" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
         </symbol>
-        <symbol id="icon-add" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-        </symbol>
         <symbol id="icon-settings" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
         </symbol>
@@ -5785,6 +5783,18 @@
         <symbol id="icon-search" viewBox="0 0 24 24" fill="currentColor">
             <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
         </symbol>
+        <symbol id="icon-copy" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+        </symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+        </symbol>
+        <symbol id="icon-grip-vertical" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 5h2v2H9zm0 6h2v2H9zm0 6h2v2H9zm4-12h2v2h-2zm0 6h2v2h-2zm0 6h2v2h-2z"/>
+        </symbol>
+        <symbol id="icon-lock" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+        </symbol>
         <symbol id="icon-chevron" viewBox="0 0 24 24" fill="currentColor">
             <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
         </symbol>
@@ -5798,9 +5808,6 @@
         </symbol>
         <symbol id="icon-cinematic" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/>
-        </symbol>
-        <symbol id="icon-acoustic" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.59 3H22v2h-1.41L16 9.59V8c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h9c1.1 0 2-.9 2-2v-1.59l4.59 4.59H22v2h-2.41L14 15.41V17c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2h8c1.1 0 2 .9 2 2v1.59l5.59-5.59z"/>
         </symbol>
         <symbol id="icon-upbeat" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
@@ -5954,7 +5961,7 @@
                     <option value="music">Music</option>
                     <option value="audio">Sound Effects</option>
                 </select>
-                <input type="text" id="radio-keywords" placeholder="Keywords (optional)...">
+                <input type="text" id="radio-keywords" placeholder="Keywords (optional)..." maxlength="100">
             </div>
 
             <!-- Station Presets -->
@@ -6122,7 +6129,7 @@
             <div class="library-controls">
                 <div class="library-search-wrapper">
                     <svg class="search-icon"><use href="#icon-search"/></svg>
-                    <input type="text" class="search-input" id="library-search" placeholder="Search music, sound effects, prompts..." title="Search by prompt keywords">
+                    <input type="text" class="search-input" id="library-search" placeholder="Search music, sound effects, prompts..." title="Search by prompt keywords" maxlength="200">
                 </div>
                 <select id="library-model" title="Filter by content type" style="display: none;">
                     <option value="">All Types</option>
@@ -6667,15 +6674,15 @@
                 <div class="voice-selector-header">
                     <div class="voice-search-box">
                         <svg class="icon" width="16" height="16"><use href="#icon-search"/></svg>
-                        <input type="text" id="voice-search" placeholder="Search voices..." oninput="filterVoices()">
+                        <input type="text" id="voice-search" placeholder="Search voices..." oninput="filterVoices()" maxlength="100">
                     </div>
                     <div class="voice-filters">
-                        <button class="voice-filter-btn active" data-filter="all" onclick="setVoiceFilter('all')">All</button>
-                        <button class="voice-filter-btn" data-filter="favorites" onclick="setVoiceFilter('favorites')">
+                        <button class="voice-filter-btn active" data-filter="all" onclick="setVoiceFilter('all')" title="Show all voices">All</button>
+                        <button class="voice-filter-btn" data-filter="favorites" onclick="setVoiceFilter('favorites')" title="Show favorite voices">
                             <svg class="icon" width="14" height="14"><use href="#icon-star"/></svg> Favorites
                         </button>
-                        <button class="voice-filter-btn" data-filter="en_US" onclick="setVoiceFilter('en_US')">US</button>
-                        <button class="voice-filter-btn" data-filter="en_GB" onclick="setVoiceFilter('en_GB')">UK</button>
+                        <button class="voice-filter-btn" data-filter="en_US" onclick="setVoiceFilter('en_US')" title="American English voices">US</button>
+                        <button class="voice-filter-btn" data-filter="en_GB" onclick="setVoiceFilter('en_GB')" title="British English voices">UK</button>
                     </div>
                 </div>
                 <div class="voice-list" id="voice-list">
@@ -6684,7 +6691,7 @@
             </div>
 
             <label for="prompt">Describe what you want to generate:</label>
-            <textarea id="prompt" placeholder="e.g., upbeat electronic dance music with heavy bass and synth leads"></textarea>
+            <textarea id="prompt" placeholder="e.g., upbeat electronic dance music with heavy bass and synth leads" maxlength="2000"></textarea>
 
             <div class="examples" id="music-examples">
                 <span>Try these:</span>
@@ -6757,7 +6764,7 @@
 
                 <div class="playlists-header">
                     <p class="playlists-intro">Create and manage your own playlists. Save your favorite tracks and share them with others.</p>
-                    <button class="btn btn-primary" onclick="createNewPlaylist()">
+                    <button class="btn btn-primary" onclick="createNewPlaylist()" title="Create a new playlist">
                         <svg class="icon"><use href="#icon-plus"/></svg>
                         New Playlist
                     </button>
@@ -6803,12 +6810,12 @@
                 <div class="history-content hidden" id="history-content">
                     <!-- History sub-tabs -->
                     <div class="history-tabs">
-                        <button class="history-tab active" data-tab="plays" onclick="switchHistoryTab('plays')">
+                        <button class="history-tab active" data-tab="plays" onclick="switchHistoryTab('plays')" title="View your play history">
                             <svg class="icon"><use href="#icon-play"/></svg>
                             Play History
                         </button>
-                        <button class="history-tab" data-tab="votes" onclick="switchHistoryTab('votes')">
-                            <svg class="icon"><use href="#icon-thumbs-up"/></svg>
+                        <button class="history-tab" data-tab="votes" onclick="switchHistoryTab('votes')" title="View your vote history">
+                            <svg class="icon"><use href="#icon-thumb-up"/></svg>
                             Vote History
                         </button>
                     </div>
@@ -6821,7 +6828,7 @@
                                 <p>Loading play history...</p>
                             </div>
                         </div>
-                        <button class="load-more-btn hidden" id="load-more-plays" onclick="loadMorePlayHistory()">
+                        <button class="load-more-btn hidden" id="load-more-plays" onclick="loadMorePlayHistory()" title="Load more play history">
                             Load More
                         </button>
                     </div>
@@ -6834,7 +6841,7 @@
                                 <p>Loading vote history...</p>
                             </div>
                         </div>
-                        <button class="load-more-btn hidden" id="load-more-votes" onclick="loadMoreVoteHistory()">
+                        <button class="load-more-btn hidden" id="load-more-votes" onclick="loadMoreVoteHistory()" title="Load more vote history">
                             Load More
                         </button>
                     </div>
@@ -6878,7 +6885,7 @@
                     <div class="code-block">
                         <div class="code-header">
                             <span>Embed Code</span>
-                            <button class="copy-btn" onclick="copyApiCode('widget-embed')">Copy</button>
+                            <button class="copy-btn" title="Copy to clipboard" onclick="copyApiCode('widget-embed')">Copy</button>
                         </div>
                         <pre id="widget-embed"><code>&lt;!-- Sound Box Radio Widget --&gt;
 &lt;!-- Load the widget scripts --&gt;
@@ -6924,7 +6931,7 @@
                         <div class="code-block">
                             <div class="code-header">
                                 <span>Example Request</span>
-                                <button class="copy-btn" onclick="copyApiCode('api-radio-example')">Copy</button>
+                                <button class="copy-btn" title="Copy to clipboard" onclick="copyApiCode('api-radio-example')">Copy</button>
                             </div>
                             <pre id="api-radio-example"><code># Get random tracks (shuffle station)
 curl "https://soundbox.graphlings.net/api/radio?station=shuffle&amp;limit=5"
@@ -7004,7 +7011,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     <div class="code-block attribution-block">
                         <div class="code-header">
                             <span>Suggested Credit</span>
-                            <button class="copy-btn" onclick="copyApiCode('attribution-text')">Copy</button>
+                            <button class="copy-btn" title="Copy to clipboard" onclick="copyApiCode('attribution-text')">Copy</button>
                         </div>
                         <pre id="attribution-text"><code>Music from Sound Box (soundbox.graphlings.net) - CC0 Public Domain</code></pre>
                     </div>
@@ -7462,7 +7469,11 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                                 </div>
                             </div>
                             <div class="history-item-actions">
-                                <button onclick="playHistoryItem('${escapeJsString(item.generation_id)}')">Play</button>
+                                <button onclick="playHistoryItem('${escapeJsString(item.generation_id)}')" title="Play">Play</button>
+                                <button onclick="copyLibraryItemId('${escapeJsString(item.generation_id)}')" title="Copy unique ID to clipboard" class="btn-icon-sm copy-id-btn" style="color:#3b82f6;">
+                                    <svg class="icon" style="width:14px;height:14px;"><use href="#icon-copy"/></svg>
+                                    <span style="font-size:11px;margin-left:2px;">ID</span>
+                                </button>
                             </div>
                         </div>
                     `);
@@ -7507,7 +7518,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 if (data.history.length === 0 && !append) {
                     list.innerHTML = `
                         <div class="history-empty-state">
-                            <svg class="icon"><use href="#icon-thumbs-up"/></svg>
+                            <svg class="icon"><use href="#icon-thumb-up"/></svg>
                             <h3>No votes yet</h3>
                             <p>Tracks you vote on will appear here</p>
                         </div>
@@ -7524,7 +7535,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     list.insertAdjacentHTML('beforeend', `
                         <div class="history-item" data-id="${item.generation_id}">
                             <div class="history-item-icon ${isUpvote ? 'upvote' : 'downvote'}">
-                                <svg class="icon"><use href="#icon-thumbs-${isUpvote ? 'up' : 'down'}"/></svg>
+                                <svg class="icon"><use href="#icon-thumb-${isUpvote ? 'up' : 'down'}"/></svg>
                             </div>
                             <div class="history-item-info">
                                 <div class="history-item-prompt">${escapeHtml(item.prompt || 'Untitled')}</div>
@@ -7535,7 +7546,11 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                                 </div>
                             </div>
                             <div class="history-item-actions">
-                                <button onclick="playHistoryItem('${escapeJsString(item.generation_id)}')">Play</button>
+                                <button onclick="playHistoryItem('${escapeJsString(item.generation_id)}')" title="Play">Play</button>
+                                <button onclick="copyLibraryItemId('${escapeJsString(item.generation_id)}')" title="Copy unique ID to clipboard" class="btn-icon-sm copy-id-btn" style="color:#3b82f6;">
+                                    <svg class="icon" style="width:14px;height:14px;"><use href="#icon-copy"/></svg>
+                                    <span style="font-size:11px;margin-left:2px;">ID</span>
+                                </button>
                             </div>
                         </div>
                     `);
@@ -7640,7 +7655,6 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                             template: 'default',
                             connectToExisting: true  // Connect to main widget's audio
                         });
-                        console.log(`[API Demos] Created ${size} widget`);
                     } catch (err) {
                         console.error(`[API Demos] Failed to create ${size} widget:`, err);
                     }
@@ -7949,6 +7963,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     <div class="track-actions">
                         <button class="btn btn-icon btn-sm" onclick="playTrackFromPlaylist('${escapeJsString(track.id)}', ${index})" title="Play">
                             <svg class="icon"><use href="#icon-play"/></svg>
+                        </button>
+                        <button class="btn btn-icon btn-sm copy-id-btn" onclick="copyLibraryItemId('${escapeJsString(track.id)}')" title="Copy unique ID to clipboard" style="color:#3b82f6;">
+                            <svg class="icon"><use href="#icon-copy"/></svg>
                         </button>
                         <button class="btn btn-icon btn-sm" onclick="removeFromPlaylist('${escapeJsString(track.id)}')" title="Remove">
                             <svg class="icon"><use href="#icon-trash"/></svg>
@@ -8394,16 +8411,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     const value = localStorage.getItem(key);
                     // JWT tokens start with 'eyJ'
                     if (value && value.startsWith('eyJ')) {
-                        console.log('[SFX-Music] Found token in localStorage key:', key);
                         return value;
                     }
                 }
             }
             return null;
         }
-
-        // Debug: Log all localStorage keys on load
-        console.log('[SFX-Music] localStorage keys:', Object.keys(localStorage));
 
         // Make authenticated API request
         async function authFetch(url, options = {}) {
@@ -9025,16 +9038,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 copyBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Copy button clicked, message:', message);
-
                     // Try modern clipboard API first
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(message).then(() => {
                             copyBtn.textContent = 'Copied!';
                             copyBtn.style.background = 'rgba(40, 167, 69, 0.6)';
-                            console.log('Copied via clipboard API');
-                        }).catch((err) => {
-                            console.log('Clipboard API failed, trying fallback:', err);
+                        }).catch(() => {
                             fallbackCopy();
                         });
                     } else {
@@ -9054,14 +9063,11 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                             if (success) {
                                 copyBtn.textContent = 'Copied!';
                                 copyBtn.style.background = 'rgba(40, 167, 69, 0.6)';
-                                console.log('Copied via execCommand');
                             } else {
                                 copyBtn.textContent = 'Failed';
-                                console.log('execCommand returned false');
                             }
                         } catch (err) {
                             copyBtn.textContent = 'Failed';
-                            console.error('Copy failed:', err);
                         }
                         document.body.removeChild(textArea);
                     }
@@ -9344,7 +9350,6 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     // Add new tracks to queue
                     radioQueue.push(...data.tracks);
                     updateRadioQueue();
-                    console.log(`[Radio] Added ${data.tracks.length} more tracks to queue`);
                 }
             } catch (err) {
                 console.error('Failed to fetch more tracks:', err);
@@ -9572,8 +9577,6 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         if (fullscreenWidget && fullscreenWidget._initVisualizer) {
-                            console.log('[Fullscreen] Initializing visualizer, container size:',
-                                container.clientWidth, 'x', container.clientHeight);
                             fullscreenWidget._initVisualizer();
                         }
                     });
@@ -9647,6 +9650,23 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             a.click();
             document.body.removeChild(a);
             showFeedbackToast('Downloading...');
+        }
+
+        // Copy library item ID to clipboard
+        function copyLibraryItemId(itemId) {
+            navigator.clipboard.writeText(itemId).then(() => {
+                showFeedbackToast(`✓ ID copied to clipboard: ${itemId}`);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = itemId;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showFeedbackToast(`✓ ID copied to clipboard: ${itemId}`);
+            });
         }
 
         // ========================================
@@ -11283,6 +11303,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                         <button class="action-btn" onclick="showTagSuggestionModal('${escapeJsString(item.id)}')" title="Review">
                             <svg class="icon"><use href="#icon-tag"/></svg>
                         </button>
+                        <button class="action-btn copy-id-btn" onclick="copyLibraryItemId('${escapeJsString(item.id)}')" title="Copy unique ID to clipboard">
+                            <svg class="icon"><use href="#icon-copy"/></svg>
+                            <span>ID</span>
+                        </button>
                         ${viewFeedbackBtn}
                         <button class="action-btn download" onclick="downloadTrack('${escapeJsString(item.filename)}')" title="Download">
                             <svg class="icon"><use href="#icon-download"/></svg>
@@ -12111,9 +12135,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     : isTailscale
                         ? `http://${hostname}:8002`
                         : 'https://accounts.graphlings.net',
-                debug: true
+                debug: false
             };
-            console.log('[SFX-Music] SDK Config:', SDK_CONFIG);
 
             // Set favicon from accounts server
             const faviconLink = document.getElementById('favicon-link');
@@ -12232,7 +12255,6 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
                 // Save to localStorage for persistence
                 localStorage.setItem('soundbox_theme', themeName);
-                console.log('[SFX-Music] Theme applied:', themeName);
             }
 
             // Load saved theme on page load
@@ -12259,37 +12281,26 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
                 // Listen for login to get user ID
                 window.graphlings.on('login', function(data) {
-                    console.log('[SFX-Music] Login data received:', Object.keys(data), data);
-                    // Log SDK methods to discover token access
-                    console.log('[SFX-Music] SDK methods:', Object.keys(window.graphlings));
-                    console.log('[SFX-Music] SDK.apiKey:', window.graphlings.apiKey);
-                    console.log('[SFX-Music] SDK.user:', window.graphlings.user);
-                    console.log('[SFX-Music] Full user data:', JSON.stringify(data.user, null, 2));
                     if (data.user && data.user.id) {
                         currentUserId = data.user.id;
                         // Store token if provided in event data
                         if (data.token) {
                             localStorage.setItem('graphlings_sfx-music_token', data.token);
-                            console.log('[SFX-Music] Token stored from login event');
                         }
                         // Also check user object for token
                         if (data.user.token) {
                             localStorage.setItem('graphlings_sfx-music_token', data.user.token);
-                            console.log('[SFX-Music] Token stored from user object');
                         }
                         // Check SDK for getToken method
                         if (typeof window.graphlings.getToken === 'function') {
                             const sdkToken = window.graphlings.getToken();
                             if (sdkToken) {
                                 localStorage.setItem('graphlings_sfx-music_token', sdkToken);
-                                console.log('[SFX-Music] Token stored from SDK.getToken()');
                             }
                         }
                         // Check if user is an adult account
                         isAdultAccount = data.user.account_type === 'adult' ||
                                         (data.user.account_type !== 'child' && !data.user.is_child);
-                        console.log('[SFX-Music] User logged in:', currentUserId, 'isAdult:', isAdultAccount);
-                        console.log('[SFX-Music] Auth token available:', !!getAuthToken());
                         updateAuthUI(true);
                         loadLibrary();  // Refresh library to show/hide feedback buttons
                         loadPlaylists(); // Load user playlists
@@ -12303,7 +12314,6 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 window.graphlings.on('logout', function() {
                     currentUserId = null;
                     isAdultAccount = false;
-                    console.log('[SFX-Music] User logged out');
                     updateAuthUI(false);
                     loadLibrary();  // Refresh library to update feedback button visibility
                     loadPlaylists(); // Clear playlists
@@ -12314,11 +12324,9 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
                 // Check if user is already logged in and apply their theme
                 window.graphlings.on('widgetReady', function(data) {
-                    console.log('[SFX-Music] widgetReady data:', Object.keys(data));
                     // Apply theme from widget (overrides local storage)
                     if (data.theme && THEMES[data.theme]) {
                         applyTheme(data.theme);
-                        console.log('[SFX-Music] Theme synced from widget:', data.theme);
                     }
 
                     if (data.authenticated && data.user && data.user.id) {
@@ -12326,13 +12334,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                         // Store token if provided (from ready message)
                         if (data.token) {
                             localStorage.setItem('graphlings_sfx-music_token', data.token);
-                            console.log('[SFX-Music] Token stored from widgetReady');
                         }
                         // Check if user is an adult account
                         isAdultAccount = data.user.account_type === 'adult' ||
                                         (data.user.account_type !== 'child' && !data.user.is_child);
-                        console.log('[SFX-Music] User already logged in:', currentUserId, 'isAdult:', isAdultAccount);
-                        console.log('[SFX-Music] Auth token available:', !!getAuthToken());
                         updateAuthUI(true);
                         loadLibrary();  // Refresh library to show/hide feedback buttons
                         loadPlaylists(); // Load user playlists
@@ -12347,11 +12352,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 window.graphlings.on('tokenReceived', function(data) {
                     if (data.token) {
                         localStorage.setItem('graphlings_sfx-music_token', data.token);
-                        console.log('[SFX-Music] Token received and stored');
                     }
                 });
-
-                console.log('[SFX-Music] Graphlings widget initialized');
             });
         })();
     </script>
@@ -12363,7 +12365,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         <div class="feedback-modal" id="feedback-modal-container" onclick="event.stopPropagation()">
             <div class="feedback-modal-header">
                 <span class="feedback-modal-title" id="feedback-modal-title">Rate this track</span>
-                <button class="feedback-modal-close" onclick="closeFeedbackModal()">&times;</button>
+                <button class="feedback-modal-close" onclick="closeFeedbackModal()" title="Close">&times;</button>
             </div>
             <div class="feedback-modal-track" id="feedback-modal-track">
                 <span class="model-badge" id="feedback-modal-badge"><svg class="icon icon-sm" style="vertical-align: -2px;"><use href="#icon-music"/></svg></span>
@@ -12378,8 +12380,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 <div class="feedback-modal-reclassify" id="feedback-modal-reclassify"></div>
             </div>
             <div class="feedback-modal-actions">
-                <button class="feedback-modal-cancel" onclick="closeFeedbackModal()">Cancel</button>
-                <button class="feedback-modal-submit" id="feedback-modal-submit" onclick="submitFeedbackModal()" disabled>Submit Feedback</button>
+                <button class="feedback-modal-cancel" onclick="closeFeedbackModal()" title="Cancel and close">Cancel</button>
+                <button class="feedback-modal-submit" id="feedback-modal-submit" onclick="submitFeedbackModal()" disabled title="Submit your feedback">Submit Feedback</button>
             </div>
         </div>
     </div>
@@ -12392,7 +12394,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     <svg class="icon"><use href="#icon-tag"/></svg>
                     Review Track
                 </h3>
-                <button class="tag-modal-close" onclick="closeTagModal()">&times;</button>
+                <button class="tag-modal-close" onclick="closeTagModal()" title="Close">&times;</button>
             </div>
             <div class="tag-modal-track" id="tag-modal-track">
                 <span class="model-badge" id="tag-modal-badge"></span>
@@ -12430,7 +12432,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     <div class="current-custom-tags" id="current-custom-tags"></div>
                     <div class="custom-tag-input-container">
                         <input type="text" id="custom-tag-input" class="custom-tag-input" placeholder="Add a tag..." maxlength="30">
-                        <button class="btn btn-sm btn-primary" onclick="addCustomTag()">
+                        <button class="btn btn-sm btn-primary" onclick="addCustomTag()" title="Add custom tag">
                             <svg class="icon"><use href="#icon-plus"/></svg>
                             Add
                         </button>
@@ -12449,7 +12451,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     <svg class="icon"><use href="#icon-plus"/></svg>
                     Add to Playlist
                 </h3>
-                <button class="playlist-modal-close" onclick="closePlaylistModal()">&times;</button>
+                <button class="playlist-modal-close" onclick="closePlaylistModal()" title="Close">&times;</button>
             </div>
             <div class="playlist-modal-track" id="playlist-modal-track">
                 <span class="model-badge" id="playlist-modal-badge"></span>
@@ -12464,8 +12466,8 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             <div class="playlist-modal-section create-section">
                 <div class="playlist-modal-label">Or create a new playlist:</div>
                 <div class="create-playlist-form">
-                    <input type="text" id="new-playlist-name" class="playlist-name-input" placeholder="Playlist name...">
-                    <button class="btn btn-primary btn-sm" onclick="createPlaylistAndAdd()">
+                    <input type="text" id="new-playlist-name" class="playlist-name-input" placeholder="Playlist name..." maxlength="100">
+                    <button class="btn btn-primary btn-sm" onclick="createPlaylistAndAdd()" title="Create new playlist and add track">
                         <svg class="icon"><use href="#icon-plus"/></svg>
                         Create & Add
                     </button>
@@ -12512,19 +12514,19 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         <div class="playlist-options-modal" onclick="event.stopPropagation()">
             <div class="playlist-options-header">
                 <h3 id="playlist-options-title">Playlist Settings</h3>
-                <button class="btn btn-icon" onclick="closePlaylistOptions()">&times;</button>
+                <button class="btn btn-icon" onclick="closePlaylistOptions()" title="Close">&times;</button>
             </div>
             <div class="playlist-options-content">
                 <div class="form-group">
                     <label for="playlist-options-name">Name</label>
-                    <input type="text" id="playlist-options-name" class="input" placeholder="Playlist name...">
+                    <input type="text" id="playlist-options-name" class="input" placeholder="Playlist name..." maxlength="100">
                 </div>
                 <div class="modal-actions">
-                    <button class="btn" onclick="closePlaylistOptions()">Cancel</button>
-                    <button class="btn btn-primary" onclick="renamePlaylist()">Save</button>
+                    <button class="btn" onclick="closePlaylistOptions()" title="Cancel changes">Cancel</button>
+                    <button class="btn btn-primary" onclick="renamePlaylist()" title="Save playlist name">Save</button>
                 </div>
                 <div class="danger-zone">
-                    <button class="btn btn-danger" onclick="deletePlaylist()">
+                    <button class="btn btn-danger" onclick="deletePlaylist()" title="Permanently delete this playlist">
                         <svg class="icon"><use href="#icon-trash"/></svg>
                         Delete Playlist
                     </button>
@@ -14585,7 +14587,6 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             init() {
                 this.initKeyboard();
                 this.initGamepad();
-                console.log('[GridNav] 2D grid navigation initialized');
             }
         };
 

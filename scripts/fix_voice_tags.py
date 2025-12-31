@@ -377,7 +377,7 @@ def fix_voice_tags():
         # Parse old categories
         try:
             old_cats = set(json.loads(old_category)) if old_category else set()
-        except:
+        except (json.JSONDecodeError, TypeError, ValueError):
             old_cats = set()
 
         # Get new categories from prompt

@@ -501,8 +501,8 @@ def generate_speech(text, voice_id, categories):
                             json={'category': cat, 'action': 'add'},
                             timeout=5
                         )
-                    except:
-                        pass
+                    except requests.RequestException:
+                        pass  # Tag suggestion is non-critical, continue on failure
 
             return True, data
         else:
@@ -533,8 +533,8 @@ def main():
         if response.status_code != 200:
             print("Error: Server not responding properly")
             return
-    except:
-        print("Error: Cannot connect to server at", BASE_URL)
+    except requests.RequestException as e:
+        print(f"Error: Cannot connect to server at {BASE_URL}: {e}")
         return
 
     # Generate all speech

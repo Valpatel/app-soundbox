@@ -267,7 +267,10 @@ def spend_aura(token, amount, item_description, job_id=None):
                 'transaction_id': data.get('transaction_id')
             }
         else:
-            error = response.json().get('detail', 'Payment failed')
+            try:
+                error = response.json().get('detail', 'Payment failed')
+            except (ValueError, requests.exceptions.JSONDecodeError):
+                error = 'Payment failed'
             return {'success': False, 'error': error}
 
     except requests.RequestException as e:
@@ -572,7 +575,10 @@ def verify_auth_token(token):
         )
 
         if response.status_code == 200:
-            user = response.json()
+            try:
+                user = response.json()
+            except (ValueError, requests.exceptions.JSONDecodeError):
+                return None
             # Cache the result (with lock)
             with _token_cache_lock:
                 _token_cache[token] = {
@@ -1681,7 +1687,7 @@ def status():
 
 @app.route('/queue-status')
 def queue_status():
-    """Return current queue status."""
+    """Return current queue status (public, no sensitive data)."""
     with queue_lock:
         queue_list = []
         for job_id, job in jobs.items():
@@ -1689,7 +1695,7 @@ def queue_status():
                 queue_list.append({
                     'id': job_id,
                     'status': job['status'],
-                    'prompt': job['prompt'][:50] + '...' if len(job['prompt']) > 50 else job['prompt'],
+                    'model': job.get('model', 'music'),
                     'priority': job.get('priority', 'standard'),
                     'position': job.get('position', 0)
                 })
@@ -1703,7 +1709,7 @@ def queue_status():
 
 @app.route('/api/queue')
 def api_queue():
-    """Get detailed queue status with all jobs for the Queue Explorer."""
+    """Get detailed queue status with all jobs for the Queue Explorer (no sensitive data)."""
     with queue_lock:
         queue_list = []
         for job_id, job in jobs.items():
@@ -1711,14 +1717,12 @@ def api_queue():
                 queue_list.append({
                     'id': job_id,
                     'status': job['status'],
-                    'prompt': job['prompt'][:80] + '...' if len(job['prompt']) > 80 else job['prompt'],
                     'model': job.get('model', 'music'),
                     'duration': job.get('duration', 8),
                     'priority': job.get('priority', 'standard'),
                     'created': job.get('created'),
                     'progress': job.get('progress', ''),
-                    'progress_pct': job.get('progress_pct', 0),
-                    'user_id': job.get('user_id')
+                    'progress_pct': job.get('progress_pct', 0)
                 })
 
         # Sort by priority (lower = higher priority) then by creation time
@@ -2871,7 +2875,11 @@ def api_graphlings_library():
 
     page, per_page = get_pagination_params()
     model = request.args.get('model')
+    if model and model not in ('music', 'audio', 'voice'):
+        model = None
     sort = request.args.get('sort', 'recent')
+    if sort not in ('recent', 'popular', 'rating'):
+        sort = 'recent'
 
     result = db.get_library(
         page=page,
@@ -3374,8 +3382,12 @@ def api_play_stats(gen_id):
 def api_trending():
     """Get trending tracks based on recent plays."""
     hours = request.args.get('hours', 24, type=int)
+    hours = max(1, min(hours, 8760))  # Clamp to 1 hour - 1 year
     limit = request.args.get('limit', 20, type=int)
+    limit = max(1, min(limit, 100))  # Clamp to 1-100
     model = request.args.get('model')
+    if model and model not in ('music', 'audio', 'voice'):
+        model = None
 
     tracks = db.get_trending_tracks(hours, limit, model)
     return jsonify({'tracks': tracks})
@@ -3385,8 +3397,13 @@ def api_trending():
 def api_most_played():
     """Get most played tracks."""
     limit = request.args.get('limit', 50, type=int)
+    limit = max(1, min(limit, 100))  # Clamp to 1-100
     model = request.args.get('model')
+    if model and model not in ('music', 'audio', 'voice'):
+        model = None
     days = request.args.get('days', type=int)
+    if days is not None:
+        days = max(1, min(days, 365))  # Clamp to 1-365 days
 
     tracks = db.get_most_played(limit, model, days)
     return jsonify({'tracks': tracks})
@@ -3450,6 +3467,7 @@ def get_available_voices():
 
             # Get license information
             license_info = voice_licenses.get_voice_license_info(voice_id)
+            license_data = license_info.get('license', {})
 
             voices.append({
                 'id': voice_id,
@@ -3460,12 +3478,12 @@ def get_available_voices():
                 'sample_rate': sample_rate,
                 'onnx_path': os.path.join(VOICES_DIR, filename),
                 # License information
-                'commercial_ok': license_info['commercial_ok'],
-                'license': license_info['license']['name'],
-                'license_short': license_info['license']['short'],
-                'attribution': license_info['attribution_text'],
+                'commercial_ok': license_info.get('commercial_ok', False),
+                'license': license_data.get('name', 'Unknown'),
+                'license_short': license_data.get('short', 'Unknown'),
+                'attribution': license_info.get('attribution_text', ''),
                 'attribution_url': license_info.get('attribution_url'),
-                'license_url': license_info['license'].get('url'),
+                'license_url': license_data.get('url'),
                 'license_warning': license_info.get('warning')
             })
 
@@ -3632,8 +3650,8 @@ def api_tts_generate():
                 if os.path.exists(filepath):
                     try:
                         os.remove(filepath)
-                    except OSError:
-                        pass
+                    except OSError as e:
+                        print(f"[TTS] Warning: Failed to clean up orphaned file {filepath}: {e}")
                 print(f"[TTS] Database save failed, cleaned up file: {db_err}")
                 return jsonify({'error': 'Failed to save to library'}), 500
 
@@ -3666,7 +3684,10 @@ def api_tts_generate():
             finally:
                 # Clean up temp file
                 if os.path.exists(tmp_path):
-                    os.unlink(tmp_path)
+                    try:
+                        os.unlink(tmp_path)
+                    except OSError as e:
+                        print(f"Warning: Failed to clean up temp file {tmp_path}: {e}")
 
             return jsonify({
                 'success': True,

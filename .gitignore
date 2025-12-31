@@ -12,6 +12,8 @@ node_modules/
 generated/
 spectrograms/
 generations.json
+generation_progress.json
+scripts/generation_progress.json
 *.log
 
 # Models (large binary files)
