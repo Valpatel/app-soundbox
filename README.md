@@ -1,311 +1,144 @@
 # Sound Box
 
-AI-powered music and sound effects generator built on Meta's AudioCraft models. An example Graphlings.net integrated app.
+AI-powered audio generation server built on Meta's AudioCraft and Piper TTS. Generate music, sound effects, and speech from text prompts.
+
+```mermaid
+graph LR
+    A[Text Prompt] --> B[Sound Box]
+    B --> C[🎵 Music]
+    B --> D[🔊 Sound Effects]
+    B --> E[🎤 Speech]
+```
 
 ## Features
 
-- **Music Generation** - Create original music from text prompts using MusicGen
-- **Sound Effects** - Generate ambient sounds and SFX using AudioGen
-- **Loop Mode** - Seamless looping with crossfade for game-ready audio
-- **Quality Analysis** - Automatic audio quality scoring with auto-retry
-- **Spectrograms** - Visual mel spectrogram display for each generation
-- **Priority Queue** - Multi-tier job queue (admin → premium → standard → free)
-- **Library & Voting** - Browse, search, and rate generations with feedback
-- **Radio Mode** - Shuffle play through generated audio with station presets
-- **Crowdsourced Tags** - Community category suggestions with consensus voting
-- **SQLite + FTS5** - Full-text search and efficient metadata storage
-- **Random Prompts** - Extensive vocabulary for creative prompt inspiration
-
-## Graphlings Integration
-
-Sound Box integrates with [Graphlings.net](https://graphlings.net) for:
-
-- **User Authentication** - Sign in with Graphlings account
-- **Theme Sync** - Automatically matches the user's selected Graphlings theme
-- **User History** - Generations are associated with authenticated users
-- **Future: Wallet Integration** - Sprite/Aura costs for premium generations
-
-```javascript
-// Theme sync from Graphlings widget
-window.graphlings.on('widgetReady', function(data) {
-    if (data.theme && THEMES[data.theme]) {
-        applyTheme(data.theme);
-    }
-    if (data.authenticated && data.user) {
-        currentUserId = data.user.id;
-        loadHistory();
-    }
-});
-```
-
-## Requirements
-
-- Python 3.10+
-- NVIDIA GPU with CUDA support (8GB+ VRAM recommended)
-- CUDA 12.1 or compatible version
-- FFmpeg
+- **Music Generation** - Original music from text using MusicGen
+- **Sound Effects** - Ambient sounds and SFX using AudioGen
+- **Text-to-Speech** - Natural voices with Piper TTS (20+ voices)
+- **Smart Queue** - Priority-based job processing with tier limits
+- **Quality Analysis** - Automatic scoring with retry on low quality
+- **Library & Search** - Full-text search, voting, playlists
+- **Radio Mode** - Continuous playback with visualizers
+- **Automated Backups** - Nightly backups with tiered retention
 
 ## Quick Start
 
 ```bash
-# Clone the repository
 git clone git@github.com:Valpatel/app-soundbox.git
 cd app-soundbox
-
-# Run setup script (installs system deps, creates venv, installs Python packages)
-# Note: May require sudo for system dependencies
-chmod +x setup.sh
-./setup.sh
-
-# Start the server
-./start.sh
+./setup.sh    # Install dependencies
+./start.sh    # Start server
 ```
 
-Open http://localhost:5309 in your browser.
+Open **http://localhost:5309**
 
-## Manual Setup
+## Requirements
 
-If you prefer manual installation:
+- Python 3.10+
+- NVIDIA GPU with 8GB+ VRAM (for music/SFX generation)
+- FFmpeg
 
-```bash
-# System dependencies (Ubuntu/Debian)
-sudo apt-get install -y ffmpeg libavformat-dev libavcodec-dev \
-    libavdevice-dev libavutil-dev libavfilter-dev \
-    libswscale-dev libswresample-dev pkg-config
+> **Note**: TTS works without a GPU. Music/SFX generation requires CUDA.
 
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
+## Documentation
 
-# Install dependencies
-pip install --upgrade pip
-pip install flask
-pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
-pip install librosa numpy matplotlib soundfile
-pip install audiocraft --no-deps
-pip install spacy av einops sentencepiece hydra-core hydra-colorlog num2words
-pip install flashy julius lameenc demucs xformers transformers encodec torchmetrics protobuf
-```
+| Document | Description |
+|----------|-------------|
+| [Getting Started](docs/GETTING-STARTED.md) | Installation, configuration, first run |
+| [Architecture](docs/ARCHITECTURE.md) | System design, components, data flow |
+| **API Reference** | |
+| ↳ [Overview](docs/api/README.md) | Authentication, rate limits |
+| ↳ [Generation](docs/api/generation.md) | /generate, /status, /queue |
+| ↳ [Library](docs/api/library.md) | Search, vote, favorites |
+| ↳ [Playlists](docs/api/playlists.md) | Create, manage playlists |
+| ↳ [TTS](docs/api/tts.md) | Voice synthesis |
+| **Systems** | |
+| ↳ [Audio Generation](docs/systems/audio-generation.md) | Models, pipeline, quality |
+| ↳ [Queue System](docs/systems/queue-system.md) | Priority, scheduling |
+| ↳ [Database](docs/systems/database.md) | Schema, categories, search |
+| ↳ [Authentication](docs/systems/authentication.md) | Auth flow, tiers |
+| **Frontend** | |
+| ↳ [Overview](docs/frontend/README.md) | UI components |
+| ↳ [Radio Widget](docs/frontend/radio-widget.md) | Embeddable player |
+| **Operations** | |
+| ↳ [Deployment](docs/operations/deployment.md) | Production setup |
+| ↳ [Backup](docs/operations/backup.md) | Backup & restore |
+| ↳ [Monitoring](docs/operations/monitoring.md) | Health, metrics |
 
 ## Configuration
 
-Copy `.env.example` to `.env` and customize as needed:
+Copy `.env.example` to `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-| Environment Variable | Description | Default |
-|---------------------|-------------|---------|
-| `HOST` | Server bind address | `0.0.0.0` |
-| `PORT` | Server port | `5309` |
-| `FLASK_DEBUG` | Enable debug mode with auto-reload | `false` |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HOST` | `0.0.0.0` | Server bind address |
+| `PORT` | `5309` | Server port |
+| `BACKUP_DIR` | *(disabled)* | Enable nightly backups |
+| `BACKUP_TIME` | `03:00` | Backup schedule (24h) |
 
-## API Reference
-
-See [docs/API.md](docs/API.md) for the complete API reference with all endpoints.
+## API Quick Reference
 
 ### Generate Audio
-```
-POST /generate
-Content-Type: application/json
-
-{
-    "prompt": "upbeat electronic music with synth arpeggios",
-    "duration": 10,
-    "model": "music",  // "music" or "audio"
-    "loop": true,
-    "priority": "standard",
-    "user_id": "optional-graphlings-user-id"
-}
-
-Response:
-{
-    "success": true,
-    "job_id": "abc123...",
-    "position": 1
-}
+```bash
+curl -X POST http://localhost:5309/generate \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "upbeat electronic music", "duration": 10, "model": "music"}'
 ```
 
-### Check Job Status
-```
-GET /job/<job_id>
-
-Response:
-{
-    "id": "abc123...",
-    "status": "completed",  // "queued", "processing", "completed", "failed"
-    "progress": "Done!",
-    "progress_pct": 100,
-    "filename": "abc123.wav",
-    "spectrogram": "abc123.png",
-    "quality": {
-        "score": 85,
-        "issues": [],
-        "is_good": true
-    }
-}
+### Check Status
+```bash
+curl http://localhost:5309/job/<job_id>
 ```
 
-### Get History
-```
-GET /history?user_id=xxx&model=music
-
-Response: [
-    {
-        "filename": "abc123.wav",
-        "prompt": "upbeat electronic music",
-        "model": "music",
-        "duration": 10,
-        "loop": true,
-        "rating": 1,
-        "quality_score": 85,
-        "spectrogram": "abc123.png"
-    }
-]
+### Search Library
+```bash
+curl "http://localhost:5309/api/library?q=ambient&model=audio"
 ```
 
-### Rate Generation
-```
-POST /rate
-Content-Type: application/json
-
-{
-    "filename": "abc123.wav",
-    "rating": 1  // 1 (thumbs up), -1 (thumbs down), or null (remove)
-}
-```
-
-### Random Prompt
-```
-POST /random-prompt
-Content-Type: application/json
-
-{
-    "model": "music"  // "music" or "audio"
-}
-
-Response:
-{
-    "success": true,
-    "prompt": "melancholic synthwave with warm pads"
-}
-```
-
-### System Status
-```
-GET /status
-
-Response:
-{
-    "models": {
-        "music": "ready",
-        "audio": "ready"
-    },
-    "gpu": {
-        "available": true,
-        "name": "NVIDIA GeForce RTX 4090",
-        "memory_used_gb": 4.2,
-        "memory_total_gb": 24.0,
-        "memory_percent": 17.5,
-        "busy": false
-    },
-    "queue_length": 0,
-    "estimated_wait": 0
-}
-```
+See [API Documentation](docs/api/README.md) for complete reference.
 
 ## Project Structure
 
 ```
 app-soundbox/
-├── app.py              # Flask server with AudioCraft integration
-├── database.py         # SQLite database layer with FTS5 search
-├── prompts.py          # Category definitions and random prompts
-├── batch_generate.py   # Utility for bulk content generation
+├── app.py              # Flask server (4,400 lines)
+├── database.py         # SQLite + FTS5 layer
+├── backup.py           # Automated backup system
 ├── templates/
-│   └── index.html      # Frontend SPA with Graphlings integration
-├── static/
-│   ├── js/             # RadioWidget JavaScript modules
-│   └── css/            # Widget and app stylesheets
-├── tests/              # Playwright test suites
+│   └── index.html      # Frontend SPA
+├── static/js/          # Radio widget modules
+├── models/voices/      # Piper TTS voice models
+├── generated/          # Output audio files
 ├── docs/               # Documentation
-│   ├── API.md          # Complete API reference
-│   ├── DATABASE.md     # Schema and queries
-│   ├── ARCHITECTURE.md # System design
-│   ├── FRONTEND.md     # UI documentation
-│   ├── DEPLOYMENT.md   # Installation guide
-│   └── TROUBLESHOOTING.md
-├── generated/          # Output audio files (created at runtime)
-├── spectrograms/       # Spectrogram images (created at runtime)
-├── soundbox.db         # SQLite database (created at runtime)
-├── setup.sh            # One-command setup script
-├── start.sh            # Server startup script
-├── requirements.txt    # Python dependencies
-├── CLAUDE.md           # AI assistant context notes
-└── README.md           # This file
+└── tests/              # Playwright E2E tests
 ```
 
 ## Models
 
-Sound Box uses Meta's AudioCraft models:
+| Model | VRAM | Use Case |
+|-------|------|----------|
+| MusicGen | 4GB | Background music, loops |
+| AudioGen | 5GB | Sound effects, ambience |
+| MAGNeT | 6GB | Experimental generation |
+| Piper TTS | 0.5GB | Speech synthesis |
 
-| Model | Size | Use Case | Generation Speed |
-|-------|------|----------|-----------------|
-| MusicGen Small | ~1GB | Music generation | ~1.5s per second of audio |
-| AudioGen Medium | ~1.5GB | Sound effects | ~0.5s per second of audio |
+## Tech Stack
 
-Models are loaded on startup in a background thread. Check `/status` to see loading progress.
-
-## Quality Analysis
-
-Generated audio is automatically analyzed for:
-
-- **Clipping** - Detects harsh distortion from values near ±1.0
-- **Silence** - Flags very low audio levels
-- **High-frequency noise** - Detects static or harsh artifacts
-- **Spectral flatness** - Identifies pure noise vs tonal content
-
-Low-quality generations are automatically retried up to 2 times.
-
-## Priority Queue
-
-Jobs are processed based on priority tier:
-
-1. **Admin** (priority 0) - Immediate processing
-2. **Premium** (priority 1) - High priority
-3. **Standard** (priority 2) - Default tier
-4. **Free** (priority 3) - Lowest priority
-
-Within each tier, jobs are processed in FIFO order.
-
-## Development
-
-```bash
-# Run with auto-reload (not recommended for production)
-FLASK_DEBUG=1 python app.py
-
-# Run production mode
-python app.py
-```
-
-## Troubleshooting
-
-See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for detailed solutions.
-
-**Quick checks:**
-
-- **Models fail to load** - Check GPU memory: `nvidia-smi`
-- **CUDA not detected** - Verify: `python -c "import torch; print(torch.cuda.is_available())"`
-- **No audio output** - Check FFmpeg: `ffmpeg -version`
-- **Database errors** - Initialize: `python database.py init`
+- **Backend**: Flask, PyTorch, AudioCraft, Piper TTS
+- **Database**: SQLite with FTS5 full-text search
+- **Frontend**: Vanilla JS, Web Audio API
+- **Queue**: Python threading with priority queue
 
 ## License
 
-MIT License - See LICENSE file for details.
+MIT License - See [LICENSE](LICENSE) for details.
 
 ## Credits
 
 - [AudioCraft](https://github.com/facebookresearch/audiocraft) by Meta AI
+- [Piper](https://github.com/rhasspy/piper) by Rhasspy
 - [Graphlings.net](https://graphlings.net) platform integration
-- Built with Flask, PyTorch, and librosa

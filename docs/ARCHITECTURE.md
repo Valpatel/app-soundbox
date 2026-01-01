@@ -1,212 +1,508 @@
-# Sound Box Architecture
+# Architecture Overview
 
-## Overview
+How Sound Box works internally. Use this guide to understand the system before diving into specific components.
 
-Sound Box is an AI-powered audio generation service that creates music and sound effects from text prompts using Meta's AudioCraft models.
+```mermaid
+graph TB
+    subgraph Clients
+        UI[Web UI]
+        API[API Client]
+        Widget[Radio Widget]
+    end
 
+    subgraph "Flask Server"
+        Routes[Route Handlers]
+        Auth[Auth Middleware]
+        Limiter[Rate Limiter]
+    end
+
+    subgraph "Background Threads"
+        Loader[Model Loader]
+        Worker[Queue Worker]
+        Backup[Backup Scheduler]
+    end
+
+    subgraph "AI Models"
+        MusicGen[MusicGen]
+        AudioGen[AudioGen]
+        MAGNeT[MAGNeT]
+        Piper[Piper TTS]
+    end
+
+    subgraph Storage
+        DB[(SQLite + FTS5)]
+        Audio[generated/]
+        Voices[models/voices/]
+    end
+
+    UI --> Routes
+    API --> Routes
+    Widget --> Routes
+    Routes --> Auth
+    Auth --> Limiter
+
+    Routes --> Worker
+    Worker --> MusicGen
+    Worker --> AudioGen
+    Worker --> MAGNeT
+    Routes --> Piper
+
+    Worker --> DB
+    Worker --> Audio
+    Piper --> Audio
+    Piper --> Voices
+    Backup --> DB
+    Backup --> Audio
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Web Browser                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │   Radio     │  │   Library   │  │  Generate   │              │
-│  │   Player    │  │   Browser   │  │    Form     │              │
-│  └─────────────┘  └─────────────┘  └─────────────┘              │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ HTTP/REST
-┌──────────────────────────▼──────────────────────────────────────┐
-│                      Flask Server (app.py)                       │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    API Endpoints                          │   │
-│  │  /generate  /job/{id}  /api/library  /api/radio  etc.    │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                           │                                      │
-│  ┌────────────────────────▼─────────────────────────────────┐   │
-│  │              Priority Queue System                        │   │
-│  │  Admin(0) → Premium(1) → Standard(2) → Free(3)           │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                           │                                      │
-│  ┌────────────────────────▼─────────────────────────────────┐   │
-│  │              AudioCraft Models (GPU)                      │   │
-│  │  ┌─────────────────┐  ┌─────────────────┐                │   │
-│  │  │   MusicGen      │  │   AudioGen      │                │   │
-│  │  │   (Small)       │  │   (Medium)      │                │   │
-│  │  │   ~1GB VRAM     │  │   ~1.5GB VRAM   │                │   │
-│  │  └─────────────────┘  └─────────────────┘                │   │
-│  └──────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                           │
-        ┌──────────────────┼──────────────────┐
-        ▼                  ▼                  ▼
-┌───────────────┐  ┌───────────────┐  ┌───────────────┐
-│   SQLite DB   │  │  generated/   │  │ spectrograms/ │
-│ (soundbox.db) │  │  (WAV files)  │  │  (PNG files)  │
-└───────────────┘  └───────────────┘  └───────────────┘
-```
 
-## Technology Stack
+## Core Components
 
-### Backend
-- **Python 3.10+** - Core runtime
-- **Flask** - Web framework
-- **PyTorch 2.0+** - Deep learning with CUDA
-- **AudioCraft** - Meta's audio generation models
-- **SQLite3** - Database with FTS5 full-text search
-- **librosa** - Audio analysis
-- **matplotlib** - Spectrogram visualization
+### Flask Application (`app.py`)
 
-### Frontend
-- **Vanilla JavaScript** - No framework, lightweight
-- **HTML5 Audio API** - Playback
-- **CSS3 Variables** - Theming support
-- **Graphlings SDK** - Authentication integration
+The main entry point (~4,400 lines). Handles:
+
+- **HTTP Routes** - REST API endpoints for all operations
+- **Authentication** - Token validation against external auth service (Valnet)
+- **Rate Limiting** - Per-endpoint limits using Flask-Limiter
+- **Job Submission** - Validates requests, adds to priority queue
+- **Static Serving** - Audio files, spectrograms, widget assets
+
+### Database Layer (`database.py`)
+
+SQLite with FTS5 full-text search (~800 lines). Provides:
+
+- **Schema Management** - Tables, indexes, migrations
+- **CRUD Operations** - Generations, votes, playlists
+- **Full-Text Search** - FTS5 virtual table for prompt search
+- **Category System** - Keyword-based auto-categorization
+- **Query Sanitization** - FTS5 injection prevention
+
+### Backup System (`backup.py`)
+
+Automated backup with tiered retention:
+
+- **Database Backup** - SQLite's backup command (safe while running)
+- **Audio Sync** - rsync with hardlinks to previous backup
+- **Retention Policy** - 14 days daily, then weekly for 2 months
+
+---
 
 ## Threading Model
 
-The application uses three concurrent threads:
+Sound Box uses multiple background threads for concurrent operations.
 
+```mermaid
+flowchart LR
+    subgraph "Main Thread"
+        Flask[Flask Server]
+    end
+
+    subgraph "Background Threads"
+        ML[Model Loader<br/>daemon=True]
+        QW[Queue Worker<br/>daemon=True]
+        BS[Backup Scheduler<br/>daemon=True]
+    end
+
+    Flask -->|"start on boot"| ML
+    Flask -->|"start on boot"| QW
+    Flask -->|"start if BACKUP_DIR"| BS
+
+    QW -->|"spawns per-job"| PT[Progress Tracker<br/>daemon=True]
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Main Thread                           │
-│  - Flask HTTP request handlers                          │
-│  - API endpoint logic                                   │
-│  - Database queries                                     │
-│  - File serving                                         │
-└─────────────────────────────────────────────────────────┘
-                           │
-          ┌────────────────┴────────────────┐
-          ▼                                 ▼
-┌─────────────────────────┐    ┌─────────────────────────┐
-│   Model Loader Thread   │    │   Queue Worker Thread   │
-│  - Preload MusicGen     │    │  - Monitor job queue    │
-│  - Preload AudioGen     │    │  - Execute generation   │
-│  - Background loading   │    │  - Quality analysis     │
-│  - Status updates       │    │  - Auto-retry           │
-└─────────────────────────┘    └─────────────────────────┘
-```
+
+| Thread | Purpose | Lifecycle |
+|--------|---------|-----------|
+| Main | Flask web server, handles all HTTP | Process lifetime |
+| Model Loader | Preloads commonly-used AI models on startup | Exits after loading |
+| Queue Worker | Processes generation jobs from priority queue | Process lifetime |
+| Progress Tracker | Updates job progress during generation | Per-job, exits on completion |
+| Backup Scheduler | Runs nightly backups via APScheduler | Process lifetime (if enabled) |
 
 ### Thread Safety
 
-The `queue_lock` (threading.Lock) protects:
-- `jobs` dictionary - all active/completed job states
-- `job_queue` - priority queue of pending jobs
-- `current_job` - ID of currently processing job
+- `queue_lock` - Protects `jobs` dict and job state transitions
+- `model_lock` - Protects model loading/unloading operations
+- `voice_models_lock` - Protects TTS voice model cache
 
-All operations that read or modify job state acquire this lock first.
+---
 
-## Data Flow
+## Request Flow
 
-### Generation Request
-```
-1. User submits prompt via /generate
-       ↓
-2. Job added to priority queue
-       ↓
-3. Queue worker picks up job (FIFO within tier)
-       ↓
-4. AudioCraft model generates audio
-       ↓
-5. Quality analysis (clipping, silence, noise)
-       ↓
-6. If quality < 50: retry (max 2 times)
-       ↓
-7. Save WAV to generated/
-       ↓
-8. Generate spectrogram PNG
-       ↓
-9. Save metadata to SQLite
-       ↓
-10. Client polls /job/{id} for completion
+### Audio Generation
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant F as Flask
+    participant Q as Queue Worker
+    participant M as AI Model
+    participant DB as Database
+
+    C->>+F: POST /generate
+    F->>F: Validate token
+    F->>F: Check rate limits
+    F->>F: Check user queue limit
+    F->>F: Add to PriorityQueue
+    F-->>-C: {job_id, position}
+
+    loop Until job processed
+        C->>F: GET /job/{id}
+        F-->>C: {status, progress}
+    end
+
+    Q->>Q: Pick next job (priority + affinity)
+    Q->>M: Load model if needed
+    Q->>M: Generate audio
+    M-->>Q: Audio tensor
+    Q->>Q: Quality analysis
+    Q->>Q: Save to generated/
+    Q->>DB: Insert metadata
+    Q->>Q: Generate spectrogram
+
+    C->>F: GET /job/{id}
+    F-->>C: {status: completed, audio_url}
+    C->>F: GET /audio/{file}
+    F-->>C: Audio file
 ```
 
-### Quality Analysis Pipeline
+### Text-to-Speech
+
+TTS bypasses the queue for instant response:
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant F as Flask
+    participant P as Piper TTS
+    participant V as Voice Cache
+
+    C->>+F: POST /api/tts/generate
+    F->>F: Validate text & voice
+    F->>V: Get voice model
+    alt Not in cache
+        V->>V: Load from disk
+        V->>V: Add to LRU cache
+    end
+    V-->>F: Voice model
+    F->>P: Synthesize
+    P-->>F: Audio bytes
+    F->>F: Save to generated/
+    F-->>-C: {audio_url}
 ```
-Audio Generated
-      ↓
-┌─────────────────────────────────────────┐
-│ Quality Checks (0-100 score)            │
-│  - Clipping: values > 0.98 for > 5%     │
-│  - Silence: RMS < 0.005                 │
-│  - High-freq noise: energy > 14kHz      │
-│  - Spectral flatness: pure noise check  │
-└─────────────────────────────────────────┘
-      ↓
-Score < 50 AND has issues?
-      ↓
-  Yes: Retry (max 2)
-  No: Accept and save
-```
+
+---
 
 ## Priority Queue System
 
-Jobs are processed in priority order, FIFO within each tier:
+Jobs are processed based on subscription tier with model affinity optimization.
 
-| Priority | Tier     | Use Case                |
-|----------|----------|-------------------------|
-| 0        | Admin    | System/testing          |
-| 1        | Premium  | Paid users              |
-| 2        | Standard | Authenticated users     |
-| 3        | Free     | Anonymous requests      |
+```mermaid
+graph TD
+    subgraph "Priority Levels"
+        P0[0: Admin]
+        P1[1: Creator - $20/mo]
+        P2[2: Premium - $10/mo]
+        P3[3: Supporter - $5/mo]
+        P4[4: Free]
+    end
 
-## File Organization
+    subgraph "Queue Worker Logic"
+        A{Same model<br/>as current?}
+        A -->|Yes| B[Process immediately<br/>batch up to 3]
+        A -->|No| C{Starving jobs?<br/>>60s wait}
+        C -->|Yes| D[Force model switch]
+        C -->|No| E[Continue batching]
+    end
+
+    P0 --> A
+    P1 --> A
+    P2 --> A
+    P3 --> A
+    P4 --> A
+```
+
+### Model Affinity
+
+The queue worker prefers jobs matching the currently-loaded model to avoid expensive model switches:
+
+1. **Batch Processing** - Process up to 3 jobs of same model type
+2. **Starvation Prevention** - Force switch after 60s of same-model jobs
+3. **Priority Override** - Higher priority always wins within batch
+
+### Queue Skip (Aura)
+
+Users can pay Aura (in-app currency) to skip the queue:
+
+| Duration | Cost |
+|----------|------|
+| 1-10s | 1 Aura |
+| 11-30s | 3 Aura |
+| 31-60s | 5 Aura |
+| 61-120s | 10 Aura |
+| 121s+ | 15 Aura |
+
+---
+
+## AI Models
+
+### Model Specifications
+
+| Model | Type | VRAM | Use Case |
+|-------|------|------|----------|
+| MusicGen | Music | 4GB | Background music, melodies, loops |
+| AudioGen | SFX | 5GB | Sound effects, ambience, nature |
+| MAGNeT | Experimental | 6GB | Alternative generation algorithm |
+| Piper TTS | Speech | 0.5GB | Voiceovers, narration |
+
+### On-Demand Loading
+
+Models are loaded only when needed to conserve GPU memory:
+
+```mermaid
+stateDiagram-v2
+    [*] --> unloaded: Startup
+    unloaded --> loading: Job arrives
+    loading --> ready: Load complete
+    ready --> generating: Start job
+    generating --> ready: Job complete
+    ready --> unloading: Memory pressure
+    unloading --> unloaded: Unload complete
+```
+
+- **Preloading** - AudioGen preloaded if 5GB+ free VRAM
+- **Idle Timeout** - Models unloaded after extended inactivity
+- **Memory Check** - Uses nvidia-smi to detect other GPU consumers (e.g., Ollama)
+
+### Quality Analysis
+
+Generated audio is analyzed before saving:
+
+```
+Quality checks performed:
+1. Clipping detection (>5% samples near +/-1.0)
+2. Silence detection (RMS < 0.005)
+3. High-frequency noise (>14kHz energy ratio)
+4. Spectral flatness (pure noise detection)
+
+Score 0-100, retry if score < 50
+```
+
+---
+
+## Database Schema
+
+```mermaid
+erDiagram
+    generations ||--o{ votes : has
+    generations ||--o{ favorites : has
+    generations ||--o{ playlist_tracks : in
+    generations ||--o{ tag_suggestions : has
+    generations ||--o{ play_events : tracks
+    playlists ||--o{ playlist_tracks : contains
+
+    generations {
+        text id PK
+        text filename UK
+        text prompt
+        text model
+        int duration
+        json category
+        text user_id
+        bool is_public
+        int upvotes
+        int downvotes
+        int plays
+        timestamp created_at
+    }
+
+    votes {
+        int id PK
+        text generation_id FK
+        text user_id
+        int vote
+        json feedback_reasons
+        timestamp created_at
+    }
+
+    playlists {
+        text id PK
+        text user_id
+        text name
+        text description
+        timestamp created_at
+    }
+
+    favorites {
+        int id PK
+        text user_id
+        text generation_id FK
+        timestamp created_at
+    }
+```
+
+### Full-Text Search
+
+FTS5 virtual table for fast prompt searching:
+
+```sql
+-- Virtual table for full-text search
+CREATE VIRTUAL TABLE IF NOT EXISTS generations_fts
+USING fts5(prompt, content=generations, content_rowid=rowid);
+
+-- Triggers keep FTS in sync with main table
+```
+
+### Category System
+
+Auto-categorization based on prompt keywords:
+
+- **Music Categories** - 50+ categories (genres, moods, instruments)
+- **SFX Categories** - 30+ categories (UI, actions, environment)
+- **Speech Categories** - Voice characteristics, languages
+
+---
+
+## File Structure
 
 ```
 app-soundbox/
-├── app.py              # Flask server (1,601 lines)
-│   ├── Model loading and caching
-│   ├── Job queue processing
-│   ├── API endpoint handlers
-│   ├── Quality analysis
-│   └── File serving
+├── app.py              # Flask server, routes, queue worker
+├── database.py         # SQLite layer, FTS5, categories
+├── backup.py           # Automated backup system
+├── voice_licenses.py   # TTS voice attribution data
+├── requirements.txt    # Python dependencies
+├── .env                # Configuration (not in repo)
 │
-├── database.py         # SQLite layer (1,339 lines)
-│   ├── Schema definitions
-│   ├── CRUD operations
-│   ├── Full-text search (FTS5)
-│   ├── Auto-categorization
-│   └── Migration utilities
+├── templates/
+│   └── index.html      # Main SPA (4,000+ lines)
 │
-├── prompts.py          # Prompt generation (905 lines)
-│   ├── Category definitions
-│   ├── Keyword mappings
-│   └── Random prompt templates
+├── static/js/
+│   ├── radio-widget.js       # Embeddable player entry
+│   ├── radio-widget-core.js  # Player logic
+│   ├── radio-widget-visualizer.js
+│   └── visualizations/       # Canvas visualizers
+│       ├── bars.js
+│       ├── wave.js
+│       ├── circle.js
+│       └── ...
 │
-├── batch_generate.py   # Batch utility (461 lines)
-│   ├── Parallel generation
-│   ├── CLI interface
-│   └── Progress tracking
+├── models/voices/      # Piper TTS voice models (~2GB)
+│   ├── en_US-lessac-medium.onnx
+│   └── ...
 │
-└── templates/
-    └── index.html      # Frontend SPA (7,977 lines)
-        ├── Radio player
-        ├── Library browser
-        ├── Generator interface
-        └── Modals & toasts
+├── generated/          # Output audio files (WAV)
+├── spectrograms/       # Waveform images (PNG)
+├── soundbox.db         # SQLite database
+│
+└── docs/               # This documentation
 ```
 
-## Key Design Decisions
+---
 
-### 1. Single-File Frontend
-All HTML, CSS, and JavaScript in one file for simplicity. No build step required.
+## Security
 
-### 2. SQLite with FTS5
-Full-text search built into the database for fast prompt searching without external dependencies.
+### Input Validation
 
-### 3. Priority Queue
-Fair processing while allowing priority for authenticated or premium users.
+- **Prompt Sanitization** - Length limits, character filtering
+- **FTS5 Query Sanitization** - Prevents query injection
+- **Path Traversal Prevention** - Filename validation
 
-### 4. Auto-Retry on Poor Quality
-Automatic quality detection prevents bad generations from polluting the library.
+### Rate Limiting
 
-### 5. Crowdsourced Categorization
-Users can suggest categories; consensus (3+ votes) auto-applies changes.
+Per-tier limits enforced by Flask-Limiter:
 
-### 6. Private Feedback
-All feedback is private (no public comments) to maintain quality discussion.
+| Tier | Generations/Hour | Max Duration |
+|------|------------------|--------------|
+| Creator | 60 | 180s |
+| Premium | 30 | 120s |
+| Supporter | 15 | 60s |
+| Free | 3 | 30s |
+
+### Headers
+
+Security headers applied to all responses:
+
+```
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+Referrer-Policy: strict-origin-when-cross-origin
+Content-Security-Policy: [configured for app needs]
+```
+
+---
+
+## External Dependencies
+
+### Authentication (Valnet)
+
+Token validation against external auth service:
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Sound Box
+    participant V as Valnet Auth
+
+    C->>S: Request with Bearer token
+    S->>V: GET /api/user/me
+    V-->>S: {user_id, tier, permissions}
+    S->>S: Cache user for request
+```
+
+### Graphlings Integration
+
+Optional integration for platform-specific features:
+
+- **User Profiles** - Link generations to Graphlings accounts
+- **Aura Payments** - Virtual currency for queue skipping
+- **Source Attribution** - Track which platform requested generation
+
+---
 
 ## Performance Considerations
 
-- **GPU Memory**: Models share VRAM; only one generation runs at a time
-- **Database Indexes**: Optimized for common queries (model, date, category, votes)
-- **Denormalized Counts**: Vote counts stored directly on generations for fast queries
-- **Pagination**: All list endpoints support pagination (max 100 items)
-- **Spectrogram Caching**: Generated once, served from disk thereafter
+### GPU Memory Management
+
+- Check system-wide free memory before loading models
+- Unload idle models when memory pressure detected
+- Skip preloading if other GPU consumers present (Ollama, etc.)
+
+### Database
+
+- Indexed columns for common queries
+- FTS5 for fast text search (no LIKE scans)
+- WAL mode for concurrent reads during writes
+
+### Caching
+
+- Voice models cached with LRU eviction (max 10)
+- User auth cached per-request (not globally)
+- Rate limit state stored in-memory
+
+---
+
+## Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| **Single-File Frontend** | No build step, simpler deployment, fast iteration |
+| **SQLite + FTS5** | Built-in full-text search, no external dependencies |
+| **Priority Queue** | Fair processing with tier-based prioritization |
+| **Auto-Retry on Poor Quality** | Prevents bad generations from polluting library |
+| **Crowdsourced Categorization** | Community improves metadata, consensus required |
+| **Private Feedback** | No public comments, maintains quality discussion |
+| **On-Demand Model Loading** | Conserves GPU memory when not actively generating |
+
+---
+
+## See Also
+
+- [Queue System](systems/queue-system.md) - Priority scheduling deep dive
+- [Audio Generation](systems/audio-generation.md) - Model details, quality analysis
+- [Database](systems/database.md) - Schema, categories, migrations
+- [API Reference](api/README.md) - Complete endpoint documentation
+
+---
+
+[← Back to README](../README.md)
