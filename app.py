@@ -9,6 +9,8 @@ visualization.
 See docs/ARCHITECTURE.md for system overview.
 """
 import os
+from dotenv import load_dotenv
+load_dotenv()  # Load .env file
 import uuid
 import json
 import threading
@@ -34,6 +36,7 @@ import wave
 import io
 import database as db
 import voice_licenses
+import backup
 
 # Voice models directory
 VOICES_DIR = os.path.join(os.path.dirname(__file__), "models", "voices")
@@ -2531,6 +2534,44 @@ def api_bulk_moderate():
     return jsonify(result)
 
 
+# =============================================================================
+# Backup API
+# =============================================================================
+
+@app.route('/api/backup/status')
+@require_auth
+def api_backup_status():
+    """
+    Get backup system status.
+    Shows if backups are enabled, last backup time, and configuration.
+    """
+    if not request.user.get('is_admin'):
+        return jsonify({'error': 'Admin access required'}), 403
+
+    return jsonify(backup.get_backup_status())
+
+
+@app.route('/api/backup/run', methods=['POST'])
+@limiter.limit("2 per hour")
+@require_auth
+def api_backup_run():
+    """
+    Trigger a manual backup (admin only).
+    Runs backup in background thread.
+    """
+    if not request.user.get('is_admin'):
+        return jsonify({'error': 'Admin access required'}), 403
+
+    if not os.environ.get('BACKUP_DIR'):
+        return jsonify({'error': 'BACKUP_DIR not configured'}), 400
+
+    # Run backup in background
+    backup_thread = threading.Thread(target=backup.run_backup, daemon=True)
+    backup_thread.start()
+
+    return jsonify({'status': 'started', 'message': 'Backup started in background'})
+
+
 @app.route('/api/stats/user/<user_id>')
 @require_auth
 def api_user_stats(user_id):
@@ -4328,6 +4369,20 @@ if __name__ == '__main__':
     # Start queue worker thread
     worker_thread = threading.Thread(target=process_queue, daemon=True)
     worker_thread.start()
+
+    # Start backup scheduler if BACKUP_DIR is configured
+    if os.environ.get('BACKUP_DIR'):
+        try:
+            from apscheduler.schedulers.background import BackgroundScheduler
+            scheduler = BackgroundScheduler()
+            backup_time = os.environ.get('BACKUP_TIME', '03:00')
+            hour, minute = map(int, backup_time.split(':'))
+            scheduler.add_job(backup.run_backup, 'cron', hour=hour, minute=minute)
+            scheduler.start()
+            print(f"Backup scheduler started - daily at {backup_time}")
+        except ImportError:
+            print("Warning: APScheduler not installed, backups disabled")
+            print("Install with: pip install apscheduler")
 
     print("Starting server... Models loading in background.")
     print(f"Access at http://{HOST if HOST != '0.0.0.0' else 'localhost'}:{PORT}")

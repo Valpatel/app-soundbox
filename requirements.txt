@@ -41,3 +41,9 @@ spacy
 # Piper TTS
 piper-tts
 onnxruntime  # Use onnxruntime-gpu for NVIDIA GPU acceleration
+
+# Scheduling
+apscheduler>=3.10
+
+# Configuration
+python-dotenv>=1.0

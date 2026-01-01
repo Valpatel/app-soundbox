@@ -1137,6 +1137,7 @@
         }
 
         .loading-banner {
+            display: none; /* Hidden for production - dev only */
             background: rgba(255, 193, 7, 0.15);
             border: 1px solid rgba(255, 193, 7, 0.4);
             border-radius: 10px;
@@ -6314,12 +6315,12 @@
                         <div class="genre-group collapsed">
                             <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Trailer & Cinematic</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
                             <div class="genre-list">
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('riser')" data-genre="riser"><span class="genre-name">Riser</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('hit')" data-genre="hit"><span class="genre-name">Hit/Slam</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('transition')" data-genre="transition"><span class="genre-name">Transition</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('riser')" data-genre="riser"><span class="genre-name">Riser</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('boom')" data-genre="boom"><span class="genre-name">Boom</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('stinger')" data-genre="stinger"><span class="genre-name">Stinger</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('swell')" data-genre="swell"><span class="genre-name">Swell</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('transition')" data-genre="transition"><span class="genre-name">Transition</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('buildup')" data-genre="buildup"><span class="genre-name">Buildup</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('drop')" data-genre="drop"><span class="genre-name">Drop</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('drone')" data-genre="drone"><span class="genre-name">Drone</span><span class="genre-count">0</span></div>
@@ -6363,12 +6364,12 @@
                         <div class="genre-group collapsed">
                             <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Animals & Creatures</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
                             <div class="genre-list">
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('creature')" data-genre="creature"><span class="genre-name">Creature</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('monster')" data-genre="monster"><span class="genre-name">Monster</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('bird')" data-genre="bird"><span class="genre-name">Birds</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('dog')" data-genre="dog"><span class="genre-name">Dog</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('cat')" data-genre="cat"><span class="genre-name">Cat</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('insect')" data-genre="insect"><span class="genre-name">Insects</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('creature')" data-genre="creature"><span class="genre-name">Creature</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('monster')" data-genre="monster"><span class="genre-name">Monster</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
                         <div class="genre-group collapsed">
@@ -6376,9 +6377,9 @@
                             <div class="genre-list">
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('voice')" data-genre="voice"><span class="genre-name">Voice</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('crowd')" data-genre="crowd"><span class="genre-name">Crowd</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('laugh')" data-genre="laugh"><span class="genre-name">Laugh</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('scream')" data-genre="scream"><span class="genre-name">Scream</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('breathing')" data-genre="breathing"><span class="genre-name">Breathing</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('laugh')" data-genre="laugh"><span class="genre-name">Laugh</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
                         <div class="genre-group collapsed">
@@ -6398,8 +6399,8 @@
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('car')" data-genre="car"><span class="genre-name">Car</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('engine')" data-genre="engine"><span class="genre-name">Engine</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('machine')" data-genre="machine"><span class="genre-name">Machine</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('electricity')" data-genre="electricity"><span class="genre-name">Electricity</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('robot')" data-genre="robot"><span class="genre-name">Robot</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('electricity')" data-genre="electricity"><span class="genre-name">Electricity</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('helicopter')" data-genre="helicopter"><span class="genre-name">Helicopter</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
@@ -6409,8 +6410,8 @@
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('laser')" data-genre="laser"><span class="genre-name">Laser</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('magic')" data-genre="magic"><span class="genre-name">Magic/Spell</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('sparkle')" data-genre="sparkle"><span class="genre-name">Sparkle</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('teleport')" data-genre="teleport"><span class="genre-name">Teleport</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('alien')" data-genre="alien"><span class="genre-name">Alien</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('teleport')" data-genre="teleport"><span class="genre-name">Teleport</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('futuristic')" data-genre="futuristic"><span class="genre-name">Futuristic</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('power_up')" data-genre="power_up"><span class="genre-name">Power Up</span><span class="genre-count">0</span></div>
                             </div>
@@ -6438,8 +6439,8 @@
                             <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Cartoon & Comedy</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
                             <div class="genre-list">
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('cartoon')" data-genre="cartoon"><span class="genre-name">Cartoon</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('funny')" data-genre="funny"><span class="genre-name">Funny</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('boing')" data-genre="boing"><span class="genre-name">Boing</span><span class="genre-count">0</span></div>
+                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('funny')" data-genre="funny"><span class="genre-name">Funny</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('slide_whistle')" data-genre="slide_whistle"><span class="genre-name">Slide Whistle</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
@@ -6452,8 +6453,6 @@
                             <div class="genre-list">
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('male')" data-genre="male"><span class="genre-name">Male</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('female')" data-genre="female"><span class="genre-name">Female</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('child')" data-genre="child"><span class="genre-name">Child</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('neutral')" data-genre="neutral"><span class="genre-name">Neutral</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
                         <div class="genre-group collapsed">
@@ -6461,10 +6460,8 @@
                             <div class="genre-list">
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('natural')" data-genre="natural"><span class="genre-name">Natural</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('professional')" data-genre="professional"><span class="genre-name">Professional</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('casual')" data-genre="casual"><span class="genre-name">Casual</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('dramatic')" data-genre="dramatic"><span class="genre-name">Dramatic</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('whisper')" data-genre="whisper"><span class="genre-name">Whisper</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('robotic')" data-genre="robotic"><span class="genre-name">Robotic/AI</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('announcer')" data-genre="announcer"><span class="genre-name">Announcer</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
@@ -6540,16 +6537,6 @@
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('alphabet')" data-genre="alphabet"><span class="genre-name">Alphabet</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('spelling')" data-genre="spelling"><span class="genre-name">Spelling</span><span class="genre-count">0</span></div>
                                 <div class="genre-item" onclick="event.stopPropagation(); selectGenre('phonetic')" data-genre="phonetic"><span class="genre-name">NATO Phonetic</span><span class="genre-count">0</span></div>
-                            </div>
-                        </div>
-                        <div class="genre-group collapsed">
-                            <div class="genre-section-header" onclick="toggleGenreGroup(this)"><span>Languages</span><svg class="icon chevron"><use href="#icon-chevron"/></svg></div>
-                            <div class="genre-list">
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('english')" data-genre="english"><span class="genre-name">English</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('spanish')" data-genre="spanish"><span class="genre-name">Spanish</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('french')" data-genre="french"><span class="genre-name">French</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('german')" data-genre="german"><span class="genre-name">German</span><span class="genre-count">0</span></div>
-                                <div class="genre-item" onclick="event.stopPropagation(); selectGenre('accent')" data-genre="accent"><span class="genre-name">Accented</span><span class="genre-count">0</span></div>
                             </div>
                         </div>
                     </div>
@@ -7119,18 +7106,18 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         };
 
         const SFX_CATEGORY_GROUPS = {
-            'Trailer & Cinematic': ['riser', 'hit', 'boom', 'stinger', 'swell', 'transition', 'buildup', 'drop', 'drone', 'sub_bass'],
-            'UI & Interface': ['notification', 'button', 'menu', 'success', 'error', 'typing'],
+            'Trailer & Cinematic': ['hit', 'transition', 'riser', 'boom', 'stinger', 'swell', 'buildup', 'drop', 'drone', 'sub_bass'],
+            'UI & Interface': ['notification', 'button', 'success', 'error', 'typing', 'menu'],
             'Actions & Movement': ['whoosh', 'impact', 'explosion', 'crash', 'jump', 'footstep'],
             'Nature & Weather': ['rain', 'wind', 'thunder', 'water', 'ocean', 'fire', 'forest'],
-            'Animals & Creatures': ['bird', 'dog', 'cat', 'insect', 'creature', 'monster'],
-            'Human Sounds': ['voice', 'crowd', 'laugh', 'scream', 'breath'],
+            'Animals & Creatures': ['creature', 'monster', 'bird', 'dog', 'cat', 'insect'],
+            'Human Sounds': ['voice', 'crowd', 'scream', 'breathing', 'laugh'],
             'Objects & Materials': ['door', 'bell', 'glass', 'metal', 'wood', 'paper'],
-            'Vehicles & Machines': ['car', 'engine', 'machine', 'electricity', 'robot', 'helicopter'],
-            'Sci-Fi & Fantasy': ['laser', 'magic', 'sparkle', 'teleport', 'alien', 'futuristic', 'power_up'],
+            'Vehicles & Machines': ['car', 'engine', 'machine', 'robot', 'electricity', 'helicopter'],
+            'Sci-Fi & Fantasy': ['laser', 'magic', 'sparkle', 'alien', 'teleport', 'futuristic', 'power_up'],
             'Weapons & Combat': ['gun', 'sword', 'punch', 'fight'],
             'Horror & Tension': ['horror', 'tension', 'creepy', 'ghost', 'jumpscare'],
-            'Cartoon & Comedy': ['cartoon', 'funny', 'boing', 'slide_whistle']
+            'Cartoon & Comedy': ['cartoon', 'boing', 'funny', 'slide_whistle']
         };
 
         // Display names for categories (for UI rendering)
@@ -7358,7 +7345,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                         <div class="favorite-item" data-id="${escapeHtml(item.id)}">
                             <div class="favorite-info">
                                 <span class="favorite-prompt">${escapeHtml(item.prompt || 'Untitled')}</span>
-                                <span class="favorite-duration">${item.duration || 30}s</span>
+                                <span class="favorite-duration">${Number(item.duration || 30).toFixed(1)}s</span>
                             </div>
                             <div class="favorite-actions">
                                 <button class="btn btn-sm" onclick="playFavorite('${escapeJsString(item.id)}')">
@@ -7465,7 +7452,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                                 <div class="history-item-meta">
                                     <span><svg class="icon" style="width:12px;height:12px;"><use href="#icon-clock"/></svg> ${timeAgo}</span>
                                     <span>${item.category || item.model_type}</span>
-                                    <span>${item.duration || 30}s</span>
+                                    <span>${Number(item.duration || 30).toFixed(1)}s</span>
                                 </div>
                             </div>
                             <div class="history-item-actions">
@@ -7542,7 +7529,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                                 <div class="history-item-meta">
                                     <span><svg class="icon" style="width:12px;height:12px;"><use href="#icon-clock"/></svg> ${timeAgo}</span>
                                     <span>${item.category || item.model_type}</span>
-                                    <span>${item.duration || 30}s</span>
+                                    <span>${Number(item.duration || 30).toFixed(1)}s</span>
                                 </div>
                             </div>
                             <div class="history-item-actions">
@@ -7958,7 +7945,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     <span class="track-number">${index + 1}</span>
                     <div class="track-info">
                         <span class="track-prompt">${escapeHtml(track.prompt || 'Untitled')}</span>
-                        <span class="track-duration">${track.duration || 30}s</span>
+                        <span class="track-duration">${Number(track.duration || 30).toFixed(1)}s</span>
                     </div>
                     <div class="track-actions">
                         <button class="btn btn-icon btn-sm" onclick="playTrackFromPlaylist('${escapeJsString(track.id)}', ${index})" title="Play">
@@ -9273,7 +9260,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
             // Update now playing display
             document.getElementById('radio-prompt').textContent = currentRadioTrack.prompt;
-            document.getElementById('radio-duration').textContent = currentRadioTrack.duration + 's';
+            document.getElementById('radio-duration').textContent = Number(currentRadioTrack.duration).toFixed(1) + 's';
             document.getElementById('radio-upvotes').textContent = currentRadioTrack.upvotes || 0;
             document.getElementById('radio-downvotes').textContent = currentRadioTrack.downvotes || 0;
             updateRadioVoiceInfo(currentRadioTrack);
@@ -9654,19 +9641,40 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
         // Copy library item ID to clipboard
         function copyLibraryItemId(itemId) {
-            navigator.clipboard.writeText(itemId).then(() => {
-                showFeedbackToast(`✓ ID copied to clipboard: ${itemId}`);
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                // Fallback for older browsers
+            if (!itemId) {
+                showFeedbackToast('No ID to copy', 'error');
+                return;
+            }
+
+            // Try modern clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(itemId).then(() => {
+                    showFeedbackToast(`Copied: ${itemId}`);
+                }).catch(err => {
+                    console.error('Clipboard API failed:', err);
+                    fallbackCopy(itemId);
+                });
+            } else {
+                fallbackCopy(itemId);
+            }
+
+            function fallbackCopy(text) {
                 const textArea = document.createElement('textarea');
-                textArea.value = itemId;
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                textArea.style.top = '0';
                 document.body.appendChild(textArea);
+                textArea.focus();
                 textArea.select();
-                document.execCommand('copy');
+                try {
+                    document.execCommand('copy');
+                    showFeedbackToast(`Copied: ${text}`);
+                } catch (err) {
+                    showFeedbackToast('Failed to copy ID', 'error');
+                }
                 document.body.removeChild(textArea);
-                showFeedbackToast(`✓ ID copied to clipboard: ${itemId}`);
-            });
+            }
         }
 
         // ========================================
@@ -10368,7 +10376,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
             // Update UI
             document.getElementById('radio-prompt').textContent = currentRadioTrack.prompt;
-            document.getElementById('radio-duration').textContent = currentRadioTrack.duration + 's';
+            document.getElementById('radio-duration').textContent = Number(currentRadioTrack.duration).toFixed(1) + 's';
             document.getElementById('radio-upvotes').textContent = currentRadioTrack.upvotes || 0;
             document.getElementById('radio-downvotes').textContent = currentRadioTrack.downvotes || 0;
             updateRadioVoiceInfo(currentRadioTrack);
@@ -10421,7 +10429,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 <div class="queue-item">
                     <span class="queue-num">${i + 1}</span>
                     <span class="queue-prompt">${escapeHtml(track.prompt)}</span>
-                    <span class="queue-duration">${track.duration}s</span>
+                    <span class="queue-duration">${Number(track.duration).toFixed(1)}s</span>
                     <button class="queue-remove" onclick="removeFromQueue(${i})" title="Remove from queue">&times;</button>
                 </div>
             `).join('');
@@ -11276,7 +11284,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                             <div class="item-meta">
                                 <span class="duration" title="Duration">
                                     <svg class="icon"><use href="#icon-clock"/></svg>
-                                    ${item.duration}s
+                                    ${Number(item.duration).toFixed(1)}s
                                 </span>
                                 ${voiceInfoHtml}
                             </div>
@@ -11433,7 +11441,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
             // Update now playing display
             document.getElementById('radio-prompt').textContent = item.prompt;
-            document.getElementById('radio-duration').textContent = item.duration + 's';
+            document.getElementById('radio-duration').textContent = Number(item.duration).toFixed(1) + 's';
             document.getElementById('radio-upvotes').textContent = item.upvotes || 0;
             document.getElementById('radio-downvotes').textContent = item.downvotes || 0;
             updateRadioVoiceInfo(item);
@@ -11874,7 +11882,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                                 <div class="queue-item-prompt">${escapeHtml(job.prompt)}</div>
                                 <div class="queue-item-meta">
                                     <span class="model-badge ${modelBadgeClass}"><svg class="icon icon-sm" style="vertical-align: -2px; margin-right: 2px;"><use href="${job.model === 'music' ? '#icon-music' : '#icon-volume'}"/></svg>${job.model === 'music' ? 'Music' : 'SFX'}</span>
-                                    <span class="duration-badge">${job.duration}s</span>
+                                    <span class="duration-badge">${Number(job.duration).toFixed(1)}s</span>
                                     ${job.priority !== 'standard' ? `<span class="priority-badge ${priorityClass}">${job.priority}</span>` : ''}
                                 </div>
                                 ${progressHtml}
@@ -11912,18 +11920,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             }
         }
 
-        // Restore queue explorer state and initialize
+        // Queue explorer always starts collapsed for cleaner UX
+        // User can expand it manually if needed
         (function() {
-            const collapsed = localStorage.getItem('queue_explorer_collapsed');
-            // Default to collapsed (true), unless explicitly set to false
-            if (collapsed === 'false') {
-                const card = document.getElementById('server-status-card');
-                if (card) {
-                    card.classList.remove('collapsed');
-                    loadQueueExplorer();
-                    startQueuePolling();
-                }
-            }
+            // Intentionally not restoring from localStorage - always start collapsed
         })();
 
         // ========================================
