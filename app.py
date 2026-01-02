@@ -27,7 +27,8 @@ matplotlib.use('Agg')  # Non-interactive backend
 import matplotlib.pyplot as plt
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+# NOTE: Do NOT use flask_limiter.util.get_remote_address - it trusts X-Forwarded-For
+# which allows attackers to spoof localhost and bypass auth/rate limits
 import requests
 from audiocraft.models import MusicGen, AudioGen, MAGNeT
 from audiocraft.data.audio import audio_write
@@ -161,7 +162,8 @@ def analyze_audio_quality(audio_path, sample_rate=32000):
 
     except Exception as e:
         print(f"Quality analysis failed: {e}")
-        return {'score': 75, 'issues': [], 'is_good': True}  # Assume good if analysis fails
+        # Return unknown state - allow through but flag as unanalyzed
+        return {'score': None, 'issues': ['analysis_failed'], 'is_good': True, 'analysis_skipped': True}
 
 
 # Subscription tiers (matching Valnet/Graphlings):
@@ -347,12 +349,12 @@ def count_user_pending_jobs(user_id):
 
 def load_metadata():
     if os.path.exists(METADATA_FILE):
-        with open(METADATA_FILE, 'r') as f:
+        with open(METADATA_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {}
 
 def save_metadata(data):
-    with open(METADATA_FILE, 'w') as f:
+    with open(METADATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
 
 
@@ -416,9 +418,19 @@ def add_security_headers(response):
 # Rate Limiting - Prevent abuse and DoS
 # =============================================================================
 
+def get_secure_remote_address():
+    """Get the actual remote address without trusting X-Forwarded-For.
+
+    SECURITY: Never trust X-Forwarded-For headers from untrusted sources.
+    Attackers can spoof these headers to bypass localhost checks and rate limits.
+    Only use request.remote_addr which is set by the WSGI server.
+    """
+    return request.remote_addr
+
+
 def get_remote_address_or_exempt():
     """Get remote address, but exempt localhost from rate limiting."""
-    addr = get_remote_address()
+    addr = get_secure_remote_address()
     # Exempt localhost/127.0.0.1 from rate limiting for batch generation
     if addr in ('127.0.0.1', 'localhost', '::1'):
         return None  # Returning None exempts from rate limiting
@@ -430,8 +442,11 @@ def is_localhost_request():
 
     Localhost requests (server-side batch generation, admin scripts, etc.)
     are trusted and can bypass certain restrictions like content moderation.
+
+    SECURITY: Uses request.remote_addr directly, NOT X-Forwarded-For.
+    This prevents attackers from spoofing localhost via header injection.
     """
-    addr = get_remote_address()
+    addr = get_secure_remote_address()
     return addr in ('127.0.0.1', 'localhost', '::1')
 
 limiter = Limiter(
@@ -974,6 +989,23 @@ def validate_integer(value, field_name, min_val=None, max_val=None, default=None
     return True, int_val, None
 
 
+def is_valid_gen_id(gen_id):
+    """
+    Validate generation ID format.
+    Valid gen_ids are 32-character hex strings (UUID4 hex format).
+    Returns True if valid, False otherwise.
+    """
+    if not isinstance(gen_id, str):
+        return False
+    if len(gen_id) != 32:
+        return False
+    try:
+        int(gen_id, 16)  # Check if valid hex
+        return True
+    except ValueError:
+        return False
+
+
 def safe_int(value, default=0, min_val=None, max_val=None):
     """
     Safely parse an integer from a string value.
@@ -988,6 +1020,27 @@ def safe_int(value, default=0, min_val=None, max_val=None):
         return result
     except (ValueError, TypeError, OverflowError):
         return default
+
+
+def require_json_content_type():
+    """
+    Check if the request has a valid JSON content type.
+
+    SECURITY: Explicit Content-Type validation prevents:
+    - CSRF attacks that rely on form submissions (which use different content types)
+    - Accidental processing of non-JSON data
+    - Content-type confusion attacks
+
+    Returns (is_valid, error_response) tuple.
+    If is_valid is False, error_response should be returned immediately.
+    """
+    content_type = request.content_type or ''
+    if not content_type.startswith('application/json'):
+        return False, (jsonify({
+            'error': 'Content-Type must be application/json',
+            'received': content_type[:50] if content_type else 'none'
+        }), 415)  # 415 Unsupported Media Type
+    return True, None
 
 
 def get_pagination_params():
@@ -1076,9 +1129,26 @@ def cleanup_old_jobs():
 
     with queue_lock:
         to_remove = []
+        stuck_jobs = []
+
         for job_id, job in jobs.items():
-            # Only clean up completed or failed jobs
-            if job.get('status') not in ('completed', 'failed'):
+            status = job.get('status')
+
+            # Check for stuck 'processing' jobs (no response for > 10 minutes)
+            if status == 'processing':
+                started_time = job.get('started')
+                if started_time:
+                    try:
+                        started_dt = datetime.fromisoformat(started_time)
+                        processing_time = (datetime.now() - started_dt).total_seconds()
+                        if processing_time > 600:  # 10 minutes
+                            stuck_jobs.append(job_id)
+                    except (ValueError, TypeError):
+                        pass
+                continue
+
+            # Clean up completed, failed, or cancelled jobs
+            if status not in ('completed', 'failed', 'cancelled'):
                 continue
 
             # Check age based on completion time or creation time
@@ -1104,14 +1174,24 @@ def cleanup_old_jobs():
                     except (ValueError, TypeError):
                         pass
 
+        # Mark stuck processing jobs as failed
+        for job_id in stuck_jobs:
+            job = jobs[job_id]
+            job['status'] = 'failed'
+            job['error'] = 'Job timed out after 10 minutes'
+            job['completed'] = datetime.now().isoformat()
+            print(f"[Cleanup] Marked stuck job {job_id[:8]} as failed (processing > 10 min)")
+
         for job_id in to_remove:
             del jobs[job_id]
             removed += 1
 
     if removed > 0:
         print(f"[Cleanup] Removed {removed} old jobs from memory")
+    if stuck_jobs:
+        print(f"[Cleanup] Marked {len(stuck_jobs)} stuck jobs as failed")
 
-    return removed
+    return removed + len(stuck_jobs)
 
 
 def get_gpu_info():
@@ -1122,7 +1202,9 @@ def get_gpu_info():
     try:
         gpu_mem_used = torch.cuda.memory_allocated() / 1024**3
         gpu_mem_total = torch.cuda.get_device_properties(0).total_memory / 1024**3
-        gpu_mem_percent = (gpu_mem_used / gpu_mem_total) * 100
+        # Guard against division by zero and clamp to valid range
+        gpu_mem_percent = (gpu_mem_used / max(gpu_mem_total, 0.001)) * 100
+        gpu_mem_percent = max(0.0, min(100.0, gpu_mem_percent))
 
         return {
             'available': True,
@@ -1137,10 +1219,22 @@ def get_gpu_info():
         return {'available': True, 'error': 'GPU status check failed'}
 
 
+# GPU memory cache to avoid frequent nvidia-smi calls (5-second timeout is expensive)
+_gpu_memory_cache = {'value': 0.0, 'time': 0}
+_GPU_MEMORY_CACHE_TTL = 1.0  # Cache for 1 second
+
+
 def get_free_gpu_memory():
     """Get available GPU memory in GB (checking system-wide, not just our process)."""
+    global _gpu_memory_cache
+
     if not torch.cuda.is_available():
         return 0.0
+
+    # Return cached value if fresh
+    now = time.time()
+    if now - _gpu_memory_cache['time'] < _GPU_MEMORY_CACHE_TTL:
+        return _gpu_memory_cache['value']
 
     try:
         # Use nvidia-smi to get actual free memory (accounts for other processes like Ollama)
@@ -1151,7 +1245,9 @@ def get_free_gpu_memory():
         )
         if result.returncode == 0:
             free_mb = float(result.stdout.strip().split('\n')[0])
-            return free_mb / 1024.0  # Convert to GB
+            free_gb = free_mb / 1024.0
+            _gpu_memory_cache = {'value': free_gb, 'time': now}
+            return free_gb
     except Exception as e:
         print(f"[GPU] nvidia-smi failed, using torch estimate: {e}")
 
@@ -1159,7 +1255,9 @@ def get_free_gpu_memory():
     try:
         total = torch.cuda.get_device_properties(0).total_memory / 1024**3
         used = torch.cuda.memory_allocated() / 1024**3
-        return total - used
+        free_gb = total - used
+        _gpu_memory_cache = {'value': free_gb, 'time': now}
+        return free_gb
     except Exception:
         return 0.0
 
@@ -1189,26 +1287,31 @@ def can_load_model(model_type):
     return free >= (required + _MIN_FREE_MEMORY_GB)
 
 
-def unload_model(model_type):
-    """Unload a model to free GPU memory."""
+def _unload_model_unlocked(model_type):
+    """Internal: Unload a model without acquiring lock. Caller must hold model_lock."""
     global models, loading_status
 
-    with model_lock:
-        if model_type in models and models[model_type] is not None:
-            print(f"[GPU] Unloading {model_type} to free memory...")
-            del models[model_type]
-            models[model_type] = None
-            loading_status[model_type] = 'unloaded'
+    if model_type in models and models[model_type] is not None:
+        print(f"[GPU] Unloading {model_type} to free memory...")
+        del models[model_type]
+        models[model_type] = None
+        loading_status[model_type] = 'unloaded'
 
-            # Force garbage collection and clear CUDA cache
-            import gc
-            gc.collect()
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+        # Force garbage collection and clear CUDA cache
+        import gc
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
-            print(f"[GPU] {model_type} unloaded. Free memory: {get_free_gpu_memory():.1f}GB")
-            return True
+        print(f"[GPU] {model_type} unloaded. Free memory: {get_free_gpu_memory():.1f}GB")
+        return True
     return False
+
+
+def unload_model(model_type):
+    """Unload a model to free GPU memory."""
+    with model_lock:
+        return _unload_model_unlocked(model_type)
 
 
 def load_model_on_demand(model_type):
@@ -1254,7 +1357,7 @@ def load_model_on_demand(model_type):
                         )
                     if not needs_model:
                         print(f"[GPU] Unloading idle model {other_model} to make room for {model_type}")
-                        unload_model(other_model)
+                        _unload_model_unlocked(other_model)  # Use unlocked version - we already hold model_lock
                         break
 
             time.sleep(5)  # Check every 5 seconds
@@ -1288,7 +1391,7 @@ def load_model_on_demand(model_type):
             return True
 
         except Exception as e:
-            loading_status[model_type] = f'error: {str(e)[:50]}'
+            loading_status[model_type] = 'error'  # Hide internal error details from public API
             print(f"[GPU] Failed to load {model_type}: {e}")
             return False
 
@@ -1391,6 +1494,7 @@ def process_queue():
                     with queue_lock:
                         if job_id in jobs:
                             jobs[job_id]['status'] = 'queued'
+                    job_queue.task_done()  # Must call task_done() after get()
                     continue
                 except queue.Empty:
                     time.sleep(0.5)
@@ -1547,10 +1651,8 @@ def process_queue():
                 if not quality['is_good'] and job.get('retry_count', 0) < 2:
                     job['progress'] = f"Low quality detected (score: {quality['score']}), regenerating..."
                     job['retry_count'] = job.get('retry_count', 0) + 1
-                    # Re-queue the job
+                    # Re-queue the job - just set status, get_next_job_smart() will pick it up
                     job['status'] = 'queued'
-                    job_queue.put((PRIORITY_LEVELS.get(job.get('priority', 'standard'), 2),
-                                   time.time(), job_id))
 
             except Exception as e:
                 job['status'] = 'failed'
@@ -1578,7 +1680,9 @@ def process_queue():
             finally:
                 with queue_lock:
                     current_job = None
-                job_queue.task_done()
+                # Note: task_done() is NOT called here because get_next_job_smart()
+                # selects from jobs dict, not from job_queue. The legacy queue drain
+                # path at the top of the loop properly calls task_done() after get().
 
                 # Periodically cleanup old jobs to prevent memory exhaustion
                 cleanup_old_jobs()
@@ -1650,7 +1754,17 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/track/<track_id>')
+def track_page(track_id):
+    """Shareable track page - loads app with specific track."""
+    if not is_valid_gen_id(track_id):
+        return render_template('index.html')  # Invalid ID, just load app
+    # Pass track_id to template for auto-loading
+    return render_template('index.html', shared_track_id=track_id)
+
+
 @app.route('/status')
+@limiter.limit("60 per minute")  # SECURITY: Rate limit to prevent DoS via repeated status checks
 def status():
     """Return model loading status, GPU info, and queue status."""
     # Calculate queue length and estimated wait
@@ -1673,22 +1787,19 @@ def status():
     gpu_info['loaded_models'] = get_loaded_models()
     gpu_info['loaded_models_memory_gb'] = round(get_loaded_models_memory(), 2)
 
+    # SECURITY: Don't expose internal scheduler state to public
+    # Internal values like batch_count and starvation timeouts are implementation details
     return jsonify({
         'models': loading_status,
         'gpu': gpu_info,
         'queue_length': queue_length,
         'queue_by_model': jobs_by_model,
-        'estimated_wait': estimated_wait,
-        'scheduler': {
-            'last_model_used': _last_model_used,
-            'batch_count': _current_batch_count,
-            'max_batch_size': _MAX_BATCH_SIZE,
-            'starvation_timeouts': _STARVATION_TIMEOUT_BY_TIER
-        }
+        'estimated_wait': estimated_wait
     })
 
 
 @app.route('/queue-status')
+@limiter.limit("60 per minute")  # SECURITY: Rate limit to prevent DoS
 def queue_status():
     """Return current queue status (public, no sensitive data)."""
     with queue_lock:
@@ -1808,6 +1919,9 @@ def api_skip_queue(job_id):
     - Long SFX (31-60s): 5 Aura
     - Song (61-120s): 10 Aura
     - Long song (121s+): 15 Aura
+
+    SECURITY: Uses skip_pending flag to prevent TOCTOU race conditions where
+    concurrent requests could cause double-charging or race past validation.
     """
     user_id = request.user_id
     token = get_auth_token()
@@ -1826,13 +1940,17 @@ def api_skip_queue(job_id):
         if job['status'] != 'queued':
             return jsonify({'error': 'Job is not in queue (may already be processing)'}), 400
 
-        # Already skipped?
-        if job.get('skipped'):
+        # Already skipped or skip in progress?
+        # SECURITY: Check skip_pending to prevent TOCTOU race condition
+        if job.get('skipped') or job.get('skip_pending'):
             return jsonify({'error': 'Job has already been skipped'}), 400
 
         # Calculate cost
         duration = job.get('duration', 30)
         skip_cost = get_skip_cost(duration)
+
+        # SECURITY: Set pending flag BEFORE releasing lock to prevent concurrent skip attempts
+        job['skip_pending'] = True
 
     # Charge Aura (outside lock to avoid holding it during network call)
     payment = spend_aura(
@@ -1843,6 +1961,10 @@ def api_skip_queue(job_id):
     )
 
     if not payment['success']:
+        # Payment failed - clear the pending flag
+        with queue_lock:
+            if job_id in jobs:
+                jobs[job_id].pop('skip_pending', None)
         return jsonify({
             'error': payment.get('error', 'Payment failed'),
             'cost': skip_cost
@@ -1852,10 +1974,20 @@ def api_skip_queue(job_id):
     with queue_lock:
         if job_id not in jobs:
             # Job disappeared while we were charging - this shouldn't happen
-            # TODO: Refund the Aura
+            # Log for manual review/refund
+            print(f"[CRITICAL] Job {job_id} disappeared after Aura payment of {skip_cost}. Manual refund may be needed.")
             return jsonify({'error': 'Job no longer exists'}), 404
 
         job = jobs[job_id]
+
+        # SECURITY: Verify job is still in valid state (wasn't processed during payment)
+        if job['status'] != 'queued':
+            # Job started processing during payment - log for refund review
+            print(f"[WARN] Job {job_id} started processing during skip payment of {skip_cost}. May need refund.")
+            job.pop('skip_pending', None)
+            return jsonify({'error': 'Job started processing during payment'}), 409  # Conflict
+
+        job.pop('skip_pending', None)
         job['skipped'] = True
         job['skip_cost'] = skip_cost
         job['priority'] = 'skipped'
@@ -1968,6 +2100,11 @@ def generate():
     - Supporter ($5/mo): 15/hour, max 5 pending jobs, up to 60s duration
     - Free (verified): 3/hour, max 2 pending jobs, up to 30s duration
     """
+    # SECURITY: Validate Content-Type to prevent CSRF and content-type confusion
+    is_valid, error_response = require_json_content_type()
+    if not is_valid:
+        return error_response
+
     data = request.json or {}
     user_id = request.user_id
     user = request.user
@@ -2060,6 +2197,7 @@ def generate():
         'model': model_type,
         'loop': make_loop,
         'priority': priority,
+        'priority_num': priority_num,  # Store numeric priority for smart scheduler
         'tier': tier,
         'status': 'queued',
         'created': datetime.now().isoformat(),
@@ -2070,9 +2208,29 @@ def generate():
     }
 
     with queue_lock:
+        # SECURITY: Final atomic check for pending job limit (prevents race condition)
+        pending_count = sum(1 for j in jobs.values()
+                           if j.get('user_id') == user_id and j['status'] in ['queued', 'processing'])
+        if pending_count >= max_pending:
+            return jsonify({
+                'success': False,
+                'error': f'You have {pending_count} pending jobs. Please wait for them to complete.',
+                'pending_count': pending_count,
+                'max_pending': max_pending
+            }), 429
+
+        # SECURITY: Final atomic check for global queue size
+        total_queued = sum(1 for j in jobs.values() if j['status'] in ['queued', 'processing'])
+        if total_queued >= MAX_QUEUE_SIZE:
+            return jsonify({
+                'success': False,
+                'error': 'The generation queue is full. Please try again in a few minutes.',
+                'queue_size': total_queued
+            }), 503
+
         jobs[job_id] = job
-        # Priority queue: (priority, timestamp, job_id)
-        job_queue.put((priority_num, time.time(), job_id))
+        # NOTE: We don't add to job_queue here - get_next_job_smart() reads from jobs dict
+        # The legacy job_queue is only used for backwards compatibility and is drained automatically
 
         # Calculate position (premium jobs count as ahead of free jobs)
         position = sum(1 for j in jobs.values() if j['status'] in ['queued', 'processing'])
@@ -2168,11 +2326,20 @@ def generate_spectrogram_for_file(audio_filename):
 
 
 @app.route('/history')
+@limiter.limit("60 per minute")  # SECURITY: Rate limit directory scan operations
 @optional_auth
 def history():
+    """
+    Get recent generations from the output directory.
+
+    PERFORMANCE NOTE: This endpoint scans the filesystem and should be used sparingly.
+    For paginated access to generations, prefer /api/library which uses the database.
+    """
     # Optional filters
     model_filter = request.args.get('model')  # 'music' or 'audio'
     requested_user_id = request.args.get('user_id')  # User ID from widget
+    # SECURITY: Limit results to prevent DoS via large directory scans
+    limit = safe_int(request.args.get('limit'), default=100, min_val=1, max_val=500)
 
     # Security: Only allow filtering by own user_id or admin access
     # If user_id filter is requested, verify it's the authenticated user's ID
@@ -2184,15 +2351,26 @@ def history():
             effective_user_id = requested_user_id  # Admin can view any user
         # If not authenticated or not matching, ignore user_id filter (show public only)
 
+    # PERFORMANCE: Only get modification times for files we need to sort
+    # Limit the scan to avoid DoS with large directories
+    try:
+        all_files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith('.wav')]
+    except OSError:
+        return jsonify([])
+
+    # Sort by modification time (most recent first)
     files = sorted(
-        [f for f in os.listdir(OUTPUT_DIR) if f.endswith('.wav')],
+        all_files,
         key=lambda x: os.path.getmtime(os.path.join(OUTPUT_DIR, x)),
         reverse=True
-    )
+    )[:limit * 2]  # Get more than limit to account for filtering
 
     metadata = load_metadata()
     result = []
     for f in files:
+        if len(result) >= limit:
+            break
+
         info = metadata.get(f, {})
 
         # Filter by model type if specified
@@ -2223,7 +2401,7 @@ def history():
 
 @app.route('/rate', methods=['POST'])
 @limiter.limit("100 per hour")  # Rate limit rating actions
-@optional_auth
+@require_auth  # SECURITY: Require authentication to prevent anonymous rating manipulation
 def rate():
     data = request.json
     if not data:
@@ -2287,6 +2465,29 @@ def api_library():
 
     search = request.args.get('search')
 
+    # Check if search looks like a generation ID (32 hex chars or with dashes)
+    if search and is_valid_gen_id(search.strip()):
+        generation = db.get_generation(search.strip())
+        if generation:
+            # Return single item as a library result
+            return jsonify({
+                'items': [generation],
+                'total': 1,
+                'page': 1,
+                'per_page': 1,
+                'pages': 1,
+                'id_search': True  # Flag to indicate this was an ID lookup
+            })
+        # ID not found, return empty results
+        return jsonify({
+            'items': [],
+            'total': 0,
+            'page': 1,
+            'per_page': per_page,
+            'pages': 0,
+            'id_search': True
+        })
+
     # Validate sort parameter (whitelist)
     sort = request.args.get('sort', 'recent')
     if sort not in ('recent', 'popular', 'rating'):
@@ -2324,6 +2525,8 @@ def api_library():
 @app.route('/api/library/<gen_id>')
 def api_library_item(gen_id):
     """Get a single generation by ID."""
+    if not is_valid_gen_id(gen_id):
+        return jsonify({'error': 'Invalid generation ID format'}), 400
     generation = db.get_generation(gen_id)
     if not generation:
         return jsonify({'error': 'Not found'}), 404
@@ -2331,6 +2534,7 @@ def api_library_item(gen_id):
 
 
 @app.route('/api/library/counts')
+@limiter.limit("120 per minute")  # SECURITY: Rate limit to prevent DoS
 def api_library_counts():
     """Get counts for each content type."""
     counts = db.get_library_counts()
@@ -2435,8 +2639,12 @@ def api_cleanup_generations():
     # Validate keep_count if provided
     keep_count = data.get('keep_count')
     if keep_count is not None:
-        max_limit = db.USER_STORAGE_LIMITS.get(tier, 20)
-        keep_count = min(int(keep_count), max_limit)
+        try:
+            keep_count = int(keep_count)
+            max_limit = db.USER_STORAGE_LIMITS.get(tier, 20)
+            keep_count = min(keep_count, max_limit)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'keep_count must be an integer'}), 400
 
     deleted = db.cleanup_old_generations(user_id, tier, keep_count)
 
@@ -2485,6 +2693,11 @@ def api_moderate(gen_id):
         action: 'approve', 'reject', or 'delete'
         reason: Optional reason for rejection
     """
+    # SECURITY: Validate Content-Type for admin endpoint
+    is_valid, error_response = require_json_content_type()
+    if not is_valid:
+        return error_response
+
     if not request.user.get('is_admin'):
         return jsonify({'error': 'Admin access required'}), 403
 
@@ -2517,6 +2730,11 @@ def api_bulk_moderate():
         gen_ids: List of generation IDs (max 50)
         action: 'approve', 'reject', or 'delete'
     """
+    # SECURITY: Validate Content-Type for admin endpoint
+    is_valid, error_response = require_json_content_type()
+    if not is_valid:
+        return error_response
+
     if not request.user.get('is_admin'):
         return jsonify({'error': 'Admin access required'}), 403
 
@@ -2526,6 +2744,9 @@ def api_bulk_moderate():
 
     if not isinstance(gen_ids, list) or len(gen_ids) > 50:
         return jsonify({'error': 'gen_ids must be a list with max 50 items'}), 400
+
+    if not all(isinstance(gid, str) for gid in gen_ids):
+        return jsonify({'error': 'Each gen_id must be a string'}), 400
 
     if action not in ('approve', 'reject', 'delete'):
         return jsonify({'error': 'action must be approve, reject, or delete'}), 400
@@ -2640,6 +2861,8 @@ def api_vote(gen_id):
         notes: Optional private notes (not displayed publicly)
         suggested_model: Optional reclassification suggestion ('music' or 'audio')
     """
+    if not is_valid_gen_id(gen_id):
+        return jsonify({'error': 'Invalid generation ID format'}), 400
     data = request.json or {}
     vote_value = data.get('vote', 0)
     user_id = request.user_id  # From verified auth token
@@ -2735,9 +2958,20 @@ def api_suggest_tag(gen_id):
     Body:
         category: The category to suggest
         action: 'add' (default) or 'remove'
+
+    SECURITY NOTE: Anonymous users are tracked by IP address (request.remote_addr).
+    This means:
+    - Users behind shared IPs (corporate, VPN) count as one vote
+    - IP changes allow re-voting (acceptable for low-stakes tagging)
+    - Rate limiting (50/hour) prevents mass manipulation
+    - Requires 3+ unique voters for consensus, limiting single-actor impact
     """
+    if not is_valid_gen_id(gen_id):
+        return jsonify({'error': 'Invalid generation ID format'}), 400
     data = request.get_json()
-    # Use verified user_id from auth, fallback to IP for anonymous users
+    # SECURITY: Use verified user_id from auth token when available.
+    # Fallback to IP for anonymous users - see docstring for implications.
+    # We use request.remote_addr (not X-Forwarded-For) to prevent header spoofing.
     user_id = request.user_id or request.remote_addr
 
     if not data or 'category' not in data:
@@ -2767,6 +3001,7 @@ def api_cancel_tag(gen_id):
         action: 'add' (default) or 'remove' - which type of suggestion to cancel
     """
     data = request.get_json()
+    # SECURITY: Same user identification as suggest-tag (see that endpoint for details)
     user_id = request.user_id or request.remote_addr
 
     if not data or 'category' not in data:
@@ -2809,7 +3044,10 @@ def api_get_tag_suggestions(gen_id):
     if not gen:
         return jsonify({'error': 'Generation not found'}), 404
 
-    current_categories = json.loads(gen['category'] or '[]')
+    try:
+        current_categories = json.loads(gen['category'] or '[]')
+    except (json.JSONDecodeError, TypeError):
+        current_categories = []
 
     return jsonify({
         'suggestions': suggestions,
@@ -2820,6 +3058,7 @@ def api_get_tag_suggestions(gen_id):
 
 
 @app.route('/api/categories/<model>')
+@limiter.limit("60 per minute")  # SECURITY: Rate limit to prevent DoS
 def api_get_categories(model):
     """
     Get all available categories for a model type (music, audio, or voice).
@@ -3048,6 +3287,8 @@ def api_radio_next():
 @require_auth
 def api_add_favorite(gen_id):
     """Add a generation to user's favorites. Requires authentication."""
+    if not is_valid_gen_id(gen_id):
+        return jsonify({'error': 'Invalid generation ID format'}), 400
     user_id = request.user_id  # From verified auth token
 
     # Verify generation exists
@@ -3068,6 +3309,8 @@ def api_add_favorite(gen_id):
 @require_auth
 def api_remove_favorite(gen_id):
     """Remove a generation from user's favorites. Requires authentication."""
+    if not is_valid_gen_id(gen_id):
+        return jsonify({'error': 'Invalid generation ID format'}), 400
     user_id = request.user_id  # From verified auth token
 
     removed = db.remove_favorite(user_id, gen_id)
@@ -3374,6 +3617,7 @@ def api_radio_playlist(playlist_id):
 # =============================================================================
 
 @app.route('/api/stats')
+@limiter.limit("30 per minute")  # SECURITY: Rate limit to prevent DoS on aggregation queries
 def api_stats():
     """Get database statistics."""
     return jsonify(db.get_stats())
@@ -3403,6 +3647,28 @@ def api_record_play(gen_id):
     session_id = data.get('session_id')
     play_duration = data.get('duration')
     source = data.get('source', 'radio')
+
+    # SECURITY: Validate session_id to prevent abuse
+    # Session IDs should be reasonable length (UUID-like) and alphanumeric
+    if session_id:
+        if not isinstance(session_id, str) or len(session_id) > 64:
+            session_id = None  # Reject oversized session IDs silently
+        elif not all(c.isalnum() or c == '-' for c in session_id):
+            session_id = None  # Reject non-alphanumeric session IDs
+
+    # SECURITY: Validate play_duration to prevent unreasonable values
+    if play_duration is not None:
+        try:
+            play_duration = float(play_duration)
+            if play_duration < 0 or play_duration > 3600:  # Max 1 hour
+                play_duration = None
+        except (TypeError, ValueError):
+            play_duration = None
+
+    # SECURITY: Validate source to prevent injection
+    allowed_sources = ('radio', 'library', 'embed', 'widget', 'direct', 'playlist')
+    if source not in allowed_sources:
+        source = 'unknown'
 
     result = db.record_play(gen_id, user_id, session_id, play_duration, source)
     response = jsonify(result)
@@ -3456,11 +3722,23 @@ def api_log_error():
     """Log frontend errors to backend."""
     data = request.get_json() or {}
 
-    # Truncate all inputs to prevent log flooding attacks
-    message = str(data.get('message', 'Unknown error'))[:500]
-    url = str(data.get('url', ''))[:200]
-    user_agent = str(data.get('userAgent', ''))[:100]
-    timestamp = str(data.get('timestamp', ''))[:50]
+    def sanitize_log_input(text, max_length):
+        """Sanitize user input for safe logging.
+
+        SECURITY: Removes control characters that could:
+        - Inject ANSI escape codes to manipulate terminal output
+        - Add fake log entries via newlines
+        - Corrupt log parsing via special characters
+        """
+        text = str(text)[:max_length]
+        # Replace control chars (except space) with '?', keep printable ASCII and common Unicode
+        return ''.join(c if c.isprintable() or c == ' ' else '?' for c in text)
+
+    # Truncate and sanitize all inputs to prevent log injection attacks
+    message = sanitize_log_input(data.get('message', 'Unknown error'), 500)
+    url = sanitize_log_input(data.get('url', ''), 200)
+    user_agent = sanitize_log_input(data.get('userAgent', ''), 100)
+    timestamp = sanitize_log_input(data.get('timestamp', ''), 50)
 
     # Log to console with formatting
     print(f"\n{'='*60}")
@@ -3477,10 +3755,23 @@ def api_log_error():
 # TTS / Voice Endpoints
 # =============================================================================
 
+# Voice list cache to avoid repeated filesystem scans
+_voices_cache = {'voices': None, 'time': 0}
+_VOICES_CACHE_TTL = 300  # 5 minutes
+
+
 def get_available_voices():
-    """Scan voices directory and return available voice models."""
+    """Scan voices directory and return available voice models (cached)."""
+    global _voices_cache
+
+    # Return cached value if fresh
+    now = time.time()
+    if _voices_cache['voices'] is not None and now - _voices_cache['time'] < _VOICES_CACHE_TTL:
+        return _voices_cache['voices']
+
     voices = []
     if not os.path.exists(VOICES_DIR):
+        _voices_cache = {'voices': voices, 'time': now}
         return voices
 
     for filename in os.listdir(VOICES_DIR):
@@ -3499,16 +3790,17 @@ def get_available_voices():
             sample_rate = 22050
             if os.path.exists(json_path):
                 try:
-                    with open(json_path, 'r') as f:
+                    with open(json_path, 'r', encoding='utf-8') as f:
                         config = json.load(f)
-                        sample_rate = config.get('audio', {}).get('sample_rate', 22050)
+                        # Handle explicit null values with (x or {}) pattern
+                        sample_rate = (config.get('audio') or {}).get('sample_rate', 22050)
                         description = config.get('description', '')
                 except (json.JSONDecodeError, OSError):
                     pass  # Use defaults if config is invalid
 
             # Get license information
             license_info = voice_licenses.get_voice_license_info(voice_id)
-            license_data = license_info.get('license', {})
+            license_data = (license_info.get('license') or {})
 
             voices.append({
                 'id': voice_id,
@@ -3530,6 +3822,11 @@ def get_available_voices():
 
     # Sort by locale, then name
     voices.sort(key=lambda v: (v['locale'], v['name']))
+
+    # Cache the result
+    _voices_cache['voices'] = voices
+    _voices_cache['time'] = now
+
     return voices
 
 
@@ -3636,7 +3933,7 @@ def api_tts_generate():
 
     data = request.get_json() or {}
     text = data.get('text', '').strip()
-    voice_id = data.get('voice', 'en_US-lessac-medium')
+    voice_id = data.get('voice') or 'en_US-lessac-medium'  # Handle empty string
     save_to_library = data.get('save_to_library', False)
     tags = data.get('tags', [])  # Optional category tags
 
@@ -3669,7 +3966,7 @@ def api_tts_generate():
             # Get duration from file
             import scipy.io.wavfile as wav_reader
             sample_rate, audio_data = wav_reader.read(filepath)
-            duration = len(audio_data) / sample_rate
+            duration = len(audio_data) / max(sample_rate, 1)  # Guard against zero
 
             # Save to database - clean up file on failure
             # Localhost/admin TTS generations are public by default
@@ -3721,7 +4018,7 @@ def api_tts_generate():
                 # Get duration
                 import scipy.io.wavfile as wav_reader
                 sample_rate, audio_data = wav_reader.read(tmp_path)
-                duration = len(audio_data) / sample_rate
+                duration = len(audio_data) / max(sample_rate, 1)  # Guard against zero
             finally:
                 # Clean up temp file
                 if os.path.exists(tmp_path):
@@ -3796,6 +4093,7 @@ def slugify_prompt(prompt, max_length=30):
 
 
 @app.route('/download/<filename>')
+@optional_auth
 def download(filename):
     # Security: Validate filename to prevent path traversal
     if not is_safe_filename(filename) or not filename.endswith('.wav'):
@@ -3824,10 +4122,10 @@ def download(filename):
         else:
             clean_name = filename
 
-        # Track the download
+        # Track the download - SECURITY: Use authenticated user_id only
+        # Don't accept user_id from query params to prevent spoofing analytics
         gen_id = filename.replace('.wav', '')
-        user_id = request.args.get('user_id')
-        db.record_download(gen_id, user_id, 'wav')
+        db.record_download(gen_id, request.user_id, 'wav')
 
         return send_file(filepath, as_attachment=True, download_name=clean_name)
     return jsonify({'error': 'Not found'}), 404
@@ -4302,6 +4600,7 @@ def widget_css():
 
 
 @app.route('/api/radio')
+@optional_auth
 def api_radio():
     """Universal radio API endpoint for widget and internal use."""
     station = request.args.get('station', 'shuffle')
@@ -4320,11 +4619,12 @@ def api_radio():
 
     # Get tracks based on station type
     if station == 'favorites':
-        user_id = request.args.get('user_id')
-        if user_id:
-            tracks = db.get_random_favorites(user_id, count=limit, model=model)
+        # SECURITY: Only allow authenticated users to access their own favorites
+        # Prevents enumeration of other users' favorites via user_id parameter
+        if request.user_id:
+            tracks = db.get_random_favorites(request.user_id, count=limit, model=model)
         else:
-            tracks = []
+            tracks = []  # Not authenticated - return empty
     elif station == 'trending':
         tracks = db.get_trending_tracks(limit=limit, model=model)
     elif station == 'top-rated':

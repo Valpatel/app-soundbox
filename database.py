@@ -465,6 +465,7 @@ CREATE INDEX IF NOT EXISTS idx_generations_created ON generations(created_at DES
 CREATE INDEX IF NOT EXISTS idx_generations_user_id ON generations(user_id);
 -- idx_generations_public created after is_public column migration in init_db()
 CREATE INDEX IF NOT EXISTS idx_votes_generation ON votes(generation_id);
+CREATE INDEX IF NOT EXISTS idx_votes_created_at ON votes(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_generation ON favorites(generation_id);
 CREATE INDEX IF NOT EXISTS idx_tag_suggestions_generation ON tag_suggestions(generation_id);
@@ -647,6 +648,9 @@ def init_db():
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_play_events_generation ON play_events(generation_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_play_events_user ON play_events(user_id)")
+        # Index for trending calculations (played_at) and composite for efficient join+filter
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_play_events_played_at ON play_events(played_at DESC)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_play_events_gen_played ON play_events(generation_id, played_at DESC)")
 
         # Create downloads tracking table
         conn.execute("""
@@ -1160,20 +1164,30 @@ def cleanup_old_generations(user_id, tier='free', keep_count=None):
             spectrogram = row['spectrogram']
 
             # Delete files from disk
-            audio_path = os.path.join('generated', filename)
-            if os.path.exists(audio_path):
-                try:
-                    os.remove(audio_path)
-                except OSError as e:
-                    print(f"[Storage] Warning: Failed to remove audio file {audio_path}: {e}")
+            # SECURITY: Use basename to prevent path traversal attacks
+            # Even though filenames come from DB, defense in depth is important
+            safe_filename = os.path.basename(filename) if filename else None
+            if safe_filename and safe_filename == filename:  # Ensure no path components
+                audio_path = os.path.join('generated', safe_filename)
+                if os.path.exists(audio_path):
+                    try:
+                        os.remove(audio_path)
+                    except OSError as e:
+                        print(f"[Storage] Warning: Failed to remove audio file {audio_path}: {e}")
+            elif filename:
+                print(f"[SECURITY] Blocked potential path traversal in cleanup: {filename}")
 
             if spectrogram:
-                spec_path = os.path.join('spectrograms', spectrogram)
-                if os.path.exists(spec_path):
-                    try:
-                        os.remove(spec_path)
-                    except OSError as e:
-                        print(f"[Storage] Warning: Failed to remove spectrogram {spec_path}: {e}")
+                safe_spectrogram = os.path.basename(spectrogram)
+                if safe_spectrogram and safe_spectrogram == spectrogram:  # Ensure no path components
+                    spec_path = os.path.join('spectrograms', safe_spectrogram)
+                    if os.path.exists(spec_path):
+                        try:
+                            os.remove(spec_path)
+                        except OSError as e:
+                            print(f"[Storage] Warning: Failed to remove spectrogram {spec_path}: {e}")
+                else:
+                    print(f"[SECURITY] Blocked potential path traversal in spectrogram cleanup: {spectrogram}")
 
             # Delete from database
             conn.execute("DELETE FROM generations WHERE id = ?", (gen_id,))
@@ -1371,6 +1385,10 @@ def vote(generation_id, user_id, vote_value, feedback_reasons=None, notes=None, 
         counts = conn.execute("""
             SELECT upvotes, downvotes FROM generations WHERE id = ?
         """, (generation_id,)).fetchone()
+
+        # Handle case where generation doesn't exist
+        if not counts:
+            return {'success': False, 'error': 'Generation not found'}
 
         # Get user's current vote
         user_vote_row = conn.execute(
@@ -1654,24 +1672,41 @@ def get_category_counts(model=None):
     Returns:
         Dict mapping category names to counts
     """
-    all_categories = {
-        'music': list(MUSIC_CATEGORIES.keys()),
-        'audio': list(SFX_CATEGORIES.keys()),
-        'voice': list(SPEECH_CATEGORIES.keys())
-    }
+    # Build set of valid categories for the requested model(s)
+    valid_categories = set()
+    if not model or model == 'music':
+        valid_categories.update(MUSIC_CATEGORIES.keys())
+    if not model or model == 'audio':
+        valid_categories.update(SFX_CATEGORIES.keys())
+    if not model or model == 'voice':
+        valid_categories.update(SPEECH_CATEGORIES.keys())
 
-    counts = {}
+    counts = {cat: 0 for cat in valid_categories}
+
     with get_db() as conn:
-        for cat_type, cats in all_categories.items():
-            if model and model != cat_type:
+        # Single query instead of N separate queries
+        if model:
+            rows = conn.execute(
+                "SELECT category FROM generations WHERE model = ?",
+                (model,)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT category FROM generations"
+            ).fetchall()
+
+        # Count in Python - O(M) instead of O(N*M)
+        for (category_json,) in rows:
+            if not category_json:
                 continue
-            for cat in cats:
-                # Category is stored as JSON array, use LIKE to match
-                count = conn.execute(
-                    "SELECT COUNT(*) FROM generations WHERE category LIKE ? AND model = ?",
-                    (f'%"{cat}"%', cat_type)
-                ).fetchone()[0]
-                counts[cat] = count
+            try:
+                categories = json.loads(category_json)
+                if isinstance(categories, list):
+                    for cat in categories:
+                        if cat in counts:
+                            counts[cat] += 1
+            except (json.JSONDecodeError, TypeError):
+                continue
 
     return counts
 
@@ -1826,30 +1861,32 @@ def record_play(generation_id, user_id=None, session_id=None, play_duration=None
         dict with updated play counts
     """
     with get_db() as conn:
+        # SECURITY: Check for existing play BEFORE inserting to prevent race condition
+        # where two concurrent plays both see count=1 and both increment unique_plays
+        identifier = user_id or session_id
+        is_first_play = False
+        if identifier:
+            existing_before = conn.execute("""
+                SELECT COUNT(*) FROM play_events
+                WHERE generation_id = ? AND (user_id = ? OR session_id = ?)
+            """, (generation_id, identifier, identifier)).fetchone()[0]
+            is_first_play = (existing_before == 0)
+
         # Record the play event
         conn.execute("""
             INSERT INTO play_events (generation_id, user_id, session_id, play_duration, source)
             VALUES (?, ?, ?, ?, ?)
         """, (generation_id, user_id, session_id, play_duration, source))
 
-        # Update total play count
-        conn.execute("""
-            UPDATE generations SET play_count = play_count + 1 WHERE id = ?
-        """, (generation_id,))
-
-        # Check if this is a unique play (by user_id or session_id)
-        identifier = user_id or session_id
-        if identifier:
-            existing = conn.execute("""
-                SELECT COUNT(*) FROM play_events
-                WHERE generation_id = ? AND (user_id = ? OR session_id = ?)
-            """, (generation_id, identifier, identifier)).fetchone()[0]
-
-            # If this is their first play, increment unique_plays
-            if existing == 1:
-                conn.execute("""
-                    UPDATE generations SET unique_plays = unique_plays + 1 WHERE id = ?
-                """, (generation_id,))
+        # Update total play count, and unique_plays if this is their first play
+        if is_first_play:
+            conn.execute("""
+                UPDATE generations SET play_count = play_count + 1, unique_plays = unique_plays + 1 WHERE id = ?
+            """, (generation_id,))
+        else:
+            conn.execute("""
+                UPDATE generations SET play_count = play_count + 1 WHERE id = ?
+            """, (generation_id,))
 
         conn.commit()
 
@@ -2306,8 +2343,11 @@ def submit_tag_suggestion(generation_id, user_id, suggested_category, action='ad
         if not gen:
             return {'success': False, 'message': 'Generation not found'}
 
-        # Get current categories
-        current_categories = json.loads(gen['category'] or '[]')
+        # Get current categories (handle corrupted JSON gracefully)
+        try:
+            current_categories = json.loads(gen['category'] or '[]')
+        except (json.JSONDecodeError, TypeError):
+            current_categories = []
 
         # Validate action makes sense
         if action == 'add':
