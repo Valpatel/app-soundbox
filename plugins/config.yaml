@@ -1,0 +1,75 @@
+# SoundBox Plugin System Configuration
+# Customize model behavior without code changes
+
+# Default models for each capability
+defaults:
+  music: musicgen-small
+  sfx: audiogen-medium
+  tts: piper-tts
+
+# Model-specific configuration
+models:
+  musicgen-small:
+    enabled: true
+    preload: false
+    idle_timeout: 300  # seconds
+    config:
+      model_name: facebook/musicgen-small
+
+  musicgen-medium:
+    enabled: true
+    preload: false
+    idle_timeout: 300
+    config:
+      model_name: facebook/musicgen-medium
+
+  musicgen-large:
+    enabled: false  # Disabled by default (high VRAM)
+    preload: false
+    idle_timeout: 300
+    config:
+      model_name: facebook/musicgen-large
+
+  audiogen-medium:
+    enabled: true
+    preload: true  # Preload most-used model
+    idle_timeout: 600
+    config:
+      model_name: facebook/audiogen-medium
+
+  magnet-music-small:
+    enabled: true
+    preload: false
+    idle_timeout: 300
+    config:
+      model_name: facebook/magnet-small-10secs
+
+  magnet-audio-small:
+    enabled: true
+    preload: false
+    idle_timeout: 300
+    config:
+      model_name: facebook/audio-magnet-small
+
+  piper-tts:
+    enabled: true
+    preload: true  # TTS is lightweight, preload it
+    idle_timeout: 120
+    config:
+      voices_dir: models/voices
+
+# Manager settings
+manager:
+  min_free_memory_gb: 2.0
+  max_loaded_models: 2
+  cleanup_interval_seconds: 30
+  default_timeout_seconds: 300
+
+# Future: external API models
+# external:
+#   elevenlabs:
+#     enabled: false
+#     api_key: ${ELEVENLABS_API_KEY}
+#   replicate:
+#     enabled: false
+#     api_token: ${REPLICATE_API_TOKEN}
