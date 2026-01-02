@@ -103,7 +103,7 @@ def tag_sound(cursor, gen_id: str, new_tag: str, dry_run: bool = False):
 
     try:
         current = json.loads(row[0]) if row[0] else []
-    except:
+    except (json.JSONDecodeError, TypeError, ValueError):
         current = []
 
     if new_tag in current:
