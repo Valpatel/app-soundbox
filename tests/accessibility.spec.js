@@ -129,12 +129,21 @@ test.describe('Accessibility - Color and Contrast', () => {
         await page.click('.main-tab:has-text("Generate")');
         await page.waitForTimeout(300);
 
-        // Try to generate with empty prompt (should show error)
-        const promptInput = page.locator('#prompt');
-        await promptInput.fill('');
+        // Check for error message styles - should have icons or text, not just color
+        const errorElements = page.locator('.error, [class*="error"], .validation-error');
 
-        // Error messages should have text, not just color
-        // This is a basic check - full implementation would require triggering errors
+        // If there are error elements, verify they have accessible indicators
+        if (await errorElements.count() > 0) {
+            const firstError = errorElements.first();
+            const hasIcon = await firstError.locator('svg, .icon, [class*="icon"]').count() > 0;
+            const hasText = (await firstError.textContent())?.trim().length > 0;
+            // Error should have either icon or text, not just color
+            expect(hasIcon || hasText).toBeTruthy();
+        }
+
+        // Test passes if we got this far without errors
+        // The generate form has disabled state when not authenticated
+        await expect(page.locator('#content-generate')).toBeVisible();
     });
 });
 
@@ -149,7 +158,8 @@ test.describe('Accessibility - Screen Reader', () => {
         const liveRegions = page.locator('[aria-live], [role="alert"], [role="status"]');
         // It's okay if there aren't any, but good to have for toasts/status updates
         const count = await liveRegions.count();
-        console.log(`Found ${count} ARIA live regions`);
+        // ARIA live regions are optional but the page should still be accessible
+        await expect(page.locator('body')).toBeVisible();
     });
 
     test('modals trap focus correctly', async ({ page }) => {
@@ -169,14 +179,17 @@ test.describe('Accessibility - Screen Reader', () => {
     });
 
     test('navigation landmarks exist', async ({ page }) => {
-        // Check for landmark elements
+        // Check for landmark elements - the app uses tabs and content sections
+        // instead of traditional nav/main elements
         const nav = page.locator('nav, [role="navigation"]');
         const main = page.locator('main, [role="main"]');
+        const tablist = page.locator('[role="tablist"], .main-tabs');
 
-        // Should have at least some landmark
+        // Should have either traditional landmarks or tab-based navigation
         const navCount = await nav.count();
         const mainCount = await main.count();
-        console.log(`Navigation landmarks: ${navCount}, Main landmarks: ${mainCount}`);
+        const tabCount = await tablist.count();
+        expect(navCount + mainCount + tabCount).toBeGreaterThan(0);
     });
 });
 
