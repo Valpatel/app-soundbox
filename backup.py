@@ -65,11 +65,17 @@ def run_backup():
         db_backup_path = today_dir / "soundbox.db"
         logger.info(f"Backing up database to {db_backup_path}")
 
-        conn = sqlite3.connect(str(DB_PATH))
-        backup_conn = sqlite3.connect(str(db_backup_path))
-        conn.backup(backup_conn)
-        backup_conn.close()
-        conn.close()
+        conn = None
+        backup_conn = None
+        try:
+            conn = sqlite3.connect(str(DB_PATH))
+            backup_conn = sqlite3.connect(str(db_backup_path))
+            conn.backup(backup_conn)
+        finally:
+            if backup_conn:
+                backup_conn.close()
+            if conn:
+                conn.close()
         logger.info("Database backup complete")
 
         # 2. Find previous backup for hardlinking
