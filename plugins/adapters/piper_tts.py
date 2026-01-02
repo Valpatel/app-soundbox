@@ -172,7 +172,7 @@ class PiperTTSAdapter(AudioModelBase):
                 output_path = output_path + '.wav'
 
             with wave.open(output_path, 'wb') as wav_file:
-                voice.synthesize(prompt, wav_file)
+                voice.synthesize_wav(prompt, wav_file)
 
             # Get actual duration from generated file
             with wave.open(output_path, 'rb') as wav_file:
