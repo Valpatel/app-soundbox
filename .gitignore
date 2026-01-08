@@ -42,3 +42,6 @@ test-results/
 Thumbs.db
 Desktop.ini
 .stignore
+
+# SFX generation progress files
+scripts/*_progress.json
