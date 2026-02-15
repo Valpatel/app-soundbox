@@ -1326,16 +1326,19 @@ def get_free_gpu_memory():
 
     try:
         # Use nvidia-smi to get actual free memory (accounts for other processes like Ollama)
+        # Note: GB10 (unified memory) reports memory.free as [N/A] — fall through to torch
         import subprocess
         result = subprocess.run(
             ['nvidia-smi', '--query-gpu=memory.free', '--format=csv,noheader,nounits'],
             capture_output=True, text=True, timeout=5
         )
         if result.returncode == 0:
-            free_mb = float(result.stdout.strip().split('\n')[0])
-            free_gb = free_mb / 1024.0
-            _gpu_memory_cache = {'value': free_gb, 'time': now}
-            return free_gb
+            raw = result.stdout.strip().split('\n')[0]
+            if raw and raw.replace('.', '', 1).isdigit():
+                free_mb = float(raw)
+                free_gb = free_mb / 1024.0
+                _gpu_memory_cache = {'value': free_gb, 'time': now}
+                return free_gb
     except Exception as e:
         print(f"[GPU] nvidia-smi failed, using torch estimate: {e}")
 
