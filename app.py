@@ -1632,10 +1632,15 @@ def process_queue():
                 job['progress_pct'] = 0
 
                 # Run generation with progress tracking
+                # Progress 0-90% = GPU generation (time-based estimate)
+                # Progress 91-100% = post-processing (save, quality, spectrogram)
                 def update_progress():
-                    while job.get('status') == 'processing' and job.get('progress_pct', 0) < 95:
+                    while job.get('status') == 'processing' and job.get('progress_pct', 0) < 90:
                         elapsed = time.time() - job['gen_start']
-                        pct = min(95, int((elapsed / estimated_time) * 100))
+                        # Use asymptotic curve: approaches 90% but never overshoots
+                        # even if estimate is wrong. ratio=1.0 → 63%, 2.0 → 86%, 3.0 → 90%
+                        ratio = elapsed / estimated_time
+                        pct = min(90, int(90 * (1 - 2.718 ** (-1.2 * ratio))))
                         job['progress_pct'] = pct
                         job['progress'] = f'Generating {gen_label}... {pct}%'
                         time.sleep(0.3)
@@ -1646,29 +1651,33 @@ def process_queue():
                 m.set_generation_params(duration=job['duration'])
                 wav = m.generate([job['prompt']])
 
-                job['progress_pct'] = 100
+                job['progress_pct'] = 92
+                job['progress'] = 'Saving file...'
 
                 audio_out = wav[0]
                 if job.get('loop'):
                     job['progress'] = 'Applying loop crossfade...'
                     audio_out = make_loopable(audio_out, m.sample_rate)
 
-                job['progress'] = 'Saving file...'
                 # Note: audio_write automatically adds the extension
                 filepath_base = os.path.join(OUTPUT_DIR, job_id)
                 audio_write(filepath_base, audio_out.cpu(), m.sample_rate, strategy="loudness")
                 filename = f"{job_id}.wav"  # This is the actual filename created
                 filepath = os.path.join(OUTPUT_DIR, filename)
 
-                # Analyze quality
+                job['progress_pct'] = 95
                 job['progress'] = 'Analyzing quality...'
                 quality = analyze_audio_quality(filepath, m.sample_rate)
 
                 # Generate spectrogram
+                job['progress_pct'] = 98
                 job['progress'] = 'Generating spectrogram...'
                 spec_filename = f"{job_id}.png"
                 spec_path = os.path.join(SPECTROGRAMS_DIR, spec_filename)
                 generate_spectrogram(filepath, spec_path)
+
+                job['progress_pct'] = 100
+                job['progress'] = 'Saving metadata...'
 
                 # Save metadata (JSON for backwards compatibility)
                 metadata = load_metadata()
