@@ -172,6 +172,9 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ## Credits
 
+Created by Matthew Valancy / Valpatel Software LLC
+
 - [AudioCraft](https://github.com/facebookresearch/audiocraft) by Meta AI
 - [Piper](https://github.com/rhasspy/piper) by Rhasspy
-- [Graphlings.net](https://graphlings.net) platform integration
+
+© 2026 Valpatel Software LLC
