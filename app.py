@@ -9,6 +9,7 @@ visualization.
 See docs/ARCHITECTURE.md for system overview.
 """
 import os
+import hashlib
 from dotenv import load_dotenv
 load_dotenv()  # Load .env file
 import uuid
@@ -20,6 +21,22 @@ from datetime import datetime
 from functools import wraps
 from collections import OrderedDict
 import torch
+
+# =============================================================================
+# Open Access Mode - Allow unauthenticated usage
+# =============================================================================
+# When enabled, auth decorators create anonymous users from IP addresses.
+# Rate limits still apply per-IP. Localhost/whitelisted IPs get creator tier.
+OPEN_ACCESS_MODE = os.environ.get('OPEN_ACCESS_MODE', '').lower() in ('1', 'true', 'yes')
+
+# IP whitelist for elevated privileges (creator-tier limits)
+_ip_whitelist_raw = os.environ.get('IP_WHITELIST', '')
+IP_WHITELIST = set(ip.strip() for ip in _ip_whitelist_raw.split(',') if ip.strip())
+
+if OPEN_ACCESS_MODE:
+    print("[Config] OPEN ACCESS MODE enabled - no login required")
+    if IP_WHITELIST:
+        print(f"[Config] IP whitelist: {', '.join(IP_WHITELIST)}")
 import numpy as np
 import librosa
 import matplotlib
@@ -184,20 +201,20 @@ PRIORITY_LEVELS = {
 # Queue and rate limits by user tier
 MAX_QUEUE_SIZE = 100  # Total jobs in queue
 MAX_PENDING_PER_USER = {
-    'creator': 20,    # Creator ($20/mo) - most pending jobs
-    'premium': 10,    # Premium ($10/mo)
-    'supporter': 5,   # Supporter ($5/mo)
-    'free': 2         # Free users limited to 2 pending jobs
+    'creator': 20,    # Whitelisted IPs / admin
+    'premium': 10,    # Premium tier
+    'supporter': 5,   # Supporter tier
+    'free': 3         # Free / anonymous users
 }
 
 # Generation limits by tier
 # per_hour: max generations per hour
 # max_duration: max audio duration in seconds
 GENERATION_LIMITS = {
-    'creator': {'per_hour': 60, 'max_duration': 180},   # $20/mo - AI features tier
-    'premium': {'per_hour': 30, 'max_duration': 120},   # $10/mo
-    'supporter': {'per_hour': 15, 'max_duration': 60},  # $5/mo
-    'free': {'per_hour': 3, 'max_duration': 30}         # Free tier
+    'creator': {'per_hour': 60, 'max_duration': 180},   # Whitelisted IPs / admin
+    'premium': {'per_hour': 30, 'max_duration': 120},   # Premium tier
+    'supporter': {'per_hour': 15, 'max_duration': 60},  # Supporter tier
+    'free': {'per_hour': 10, 'max_duration': 60}        # Free / anonymous users
 }
 
 # =============================================================================
@@ -623,6 +640,37 @@ def get_auth_token():
         return auth_header[7:]
     return None
 
+def _get_anonymous_user():
+    """Create an anonymous user based on IP address for open access mode.
+
+    Returns a synthetic user dict with stable user_id derived from IP hash.
+    Whitelisted IPs and localhost get creator-tier privileges.
+    """
+    ip = get_secure_remote_address()
+    user_id = 'anon_' + hashlib.sha256(ip.encode()).hexdigest()[:12]
+    is_whitelisted = ip in IP_WHITELIST or is_localhost_request()
+
+    return {
+        'id': user_id,
+        'username': f'user_{user_id[-6:]}',
+        'is_admin': is_localhost_request(),
+        'subscription_tier': 'creator' if is_whitelisted else 'free',
+        'account_type': 'adult',
+        'email_verified': True,
+        'open_access': True
+    }
+
+
+def _apply_user_to_request(user):
+    """Set request.user, request.user_id, and request.is_adult from user dict."""
+    request.user = user
+    request.user_id = user.get('id')
+    request.is_adult = (
+        user.get('account_type') == 'adult' or
+        (user.get('account_type') != 'child' and not user.get('is_child'))
+    )
+
+
 def require_auth(f):
     """
     Decorator to require authentication for an endpoint.
@@ -630,20 +678,23 @@ def require_auth(f):
 
     Authentication is done via Bearer token verified with the Graphlings accounts server.
     The token must be valid and not expired.
+
+    In OPEN_ACCESS_MODE: creates anonymous user from IP if no valid token.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # Try real auth first (works in any mode)
         token = get_auth_token()
         user = verify_auth_token(token)
 
         if user:
-            # Token auth succeeded - use verified user info
-            request.user = user
-            request.user_id = user.get('id')
-            request.is_adult = (
-                user.get('account_type') == 'adult' or
-                (user.get('account_type') != 'child' and not user.get('is_child'))
-            )
+            _apply_user_to_request(user)
+            return f(*args, **kwargs)
+
+        # Open access mode: create anonymous user from IP
+        if OPEN_ACCESS_MODE:
+            user = _get_anonymous_user()
+            _apply_user_to_request(user)
             return f(*args, **kwargs)
 
         # No valid token - reject request
@@ -658,6 +709,8 @@ def require_auth_or_localhost(f):
     Localhost requests (batch generation, admin scripts) use a synthetic
     "system" user with full privileges. This enables server-side batch
     generation without needing auth tokens.
+
+    In OPEN_ACCESS_MODE: creates anonymous user from IP if no valid token.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -674,17 +727,18 @@ def require_auth_or_localhost(f):
             request.is_adult = True
             return f(*args, **kwargs)
 
-        # For remote requests, require normal auth
+        # Try real auth
         token = get_auth_token()
         user = verify_auth_token(token)
 
         if user:
-            request.user = user
-            request.user_id = user.get('id')
-            request.is_adult = (
-                user.get('account_type') == 'adult' or
-                (user.get('account_type') != 'child' and not user.get('is_child'))
-            )
+            _apply_user_to_request(user)
+            return f(*args, **kwargs)
+
+        # Open access mode: create anonymous user from IP
+        if OPEN_ACCESS_MODE:
+            user = _get_anonymous_user()
+            _apply_user_to_request(user)
             return f(*args, **kwargs)
 
         return jsonify({'error': 'Authentication required'}), 401
@@ -696,6 +750,8 @@ def optional_auth(f):
     Sets request.user_id and request.user if token provided and valid.
     Does not fail if no token or invalid token.
     Localhost requests get the 'system' user for consistency with batch operations.
+
+    In OPEN_ACCESS_MODE: always creates anonymous user when no valid token.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -715,12 +771,16 @@ def optional_auth(f):
         token = get_auth_token()
         user = verify_auth_token(token) if token else None
 
-        request.user = user
-        request.user_id = user.get('id') if user else None
-        request.is_adult = (
-            user.get('account_type') == 'adult' or
-            (user.get('account_type') != 'child' and not user.get('is_child'))
-        ) if user else False
+        if user:
+            _apply_user_to_request(user)
+        elif OPEN_ACCESS_MODE:
+            # Open access: give anonymous user identity
+            user = _get_anonymous_user()
+            _apply_user_to_request(user)
+        else:
+            request.user = None
+            request.user_id = None
+            request.is_adult = False
 
         return f(*args, **kwargs)
     return decorated_function
@@ -1751,16 +1811,16 @@ def get_model(model_type):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', open_access_mode=OPEN_ACCESS_MODE)
 
 
 @app.route('/track/<track_id>')
 def track_page(track_id):
     """Shareable track page - loads app with specific track."""
     if not is_valid_gen_id(track_id):
-        return render_template('index.html')  # Invalid ID, just load app
+        return render_template('index.html', open_access_mode=OPEN_ACCESS_MODE)
     # Pass track_id to template for auto-loading
-    return render_template('index.html', shared_track_id=track_id)
+    return render_template('index.html', shared_track_id=track_id, open_access_mode=OPEN_ACCESS_MODE)
 
 
 @app.route('/status')
@@ -2115,7 +2175,8 @@ def generate():
 
     # Free users must have verified email to generate
     # Paying subscribers (supporter, premium, creator) can generate without verification
-    if tier == 'free' and not is_email_verified(user):
+    # In OPEN_ACCESS_MODE, skip email verification entirely
+    if not OPEN_ACCESS_MODE and tier == 'free' and not is_email_verified(user):
         return jsonify({
             'success': False,
             'error': 'Please verify your email address to generate audio. Check your inbox for the verification link, or upgrade to a subscription plan.',
@@ -2174,10 +2235,11 @@ def generate():
     # Set priority based on tier
     priority = 'premium' if tier == 'premium' else 'free'
 
-    if loading_status.get(model_type) != 'ready':
+    model_status = loading_status.get(model_type, 'unknown')
+    if model_status not in ('ready', 'available'):
         return jsonify({
             'success': False,
-            'error': f'Model still loading: {loading_status.get(model_type, "unknown")}'
+            'error': f'Model still loading: {model_status}'
         }), 503
 
     # Create job
@@ -3912,8 +3974,8 @@ def api_tts_generate():
     # Check user tier for rate limiting info
     tier = get_user_tier(request.user)
 
-    # Free users must have verified email to use TTS
-    if tier == 'free' and not is_email_verified(request.user):
+    # Free users must have verified email to use TTS (skip in open access mode)
+    if not OPEN_ACCESS_MODE and tier == 'free' and not is_email_verified(request.user):
         return jsonify({
             'error': 'Please verify your email address to use text-to-speech. Check your inbox for the verification link, or upgrade to a subscription plan.',
             'requires_verification': True

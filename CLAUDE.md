@@ -10,9 +10,11 @@
 ## Quick Start
 
 ```bash
+./setup.sh          # Initial setup (requires sudo) - multi-platform
 ./start.sh          # Start server (uses venv)
-./setup.sh          # Initial setup (requires sudo)
-npx playwright test # Run tests
+./service.sh install # Systemd service (auto-start on boot)
+./service.sh uninstall # Remove service
+npm test            # Run Playwright tests
 ```
 
 ## App Overview
@@ -23,12 +25,22 @@ Sound Box is an AI audio generation app powered by Meta's MusicGen and AudioGen 
 - Vote, favorite, and review tracks
 - Create playlists (in progress)
 
-### Authentication
+### Authentication / Open Access Mode
 
-- Integrates with Graphlings accounts (graphlings.net)
-- Uses `@anthropic/claude-accounts-sdk` for auth
-- Anonymous users get limited functionality (can listen, but not vote/generate)
+- **Default: OPEN_ACCESS_MODE=true** - no login required, anyone can generate/vote/favorite
+- Anonymous users get IP-based identity (`anon_` + SHA256(IP)[:12])
+- Rate limits enforced per-IP; localhost always exempt
+- `IP_WHITELIST` env var for elevated (creator-tier) limits
+- Original Graphlings auth code preserved but disabled (set OPEN_ACCESS_MODE=false to re-enable)
+- `var OPEN_ACCESS_MODE` in frontend (not const!) for cross-script-block access
 - Auth state managed via `currentUserId` and `isUserAuthenticated()`
+
+### Supported Platforms
+
+- **x86_64 Desktop** (RTX 3000/4000/5000) - full support
+- **ARM64 Jetson Orin AGX** - GPU CUDA wheels, xformers stub
+- **ARM64 DGX Grace / GB10** (Blackwell sm_121) - requires NVRTC 13.0 fix (automated in setup.sh)
+- CPU fallback for systems without GPU (much slower)
 
 ## App Tabs
 
@@ -127,14 +139,17 @@ Persistent player shown at bottom when on non-Radio tabs while audio is playing.
 
 ```
 app-soundbox/
-├── app.py                    # Flask server, AI generation endpoints
+├── app.py                    # Flask server, AI generation endpoints (~4700 lines)
 ├── database.py               # SQLite operations, FTS5 search
-├── start.sh                  # Server startup script
-├── setup.sh                  # Initial setup
+├── start.sh                  # Server startup script (uses venv)
+├── setup.sh                  # Multi-platform setup (x86_64/ARM64/Jetson/DGX)
+├── service.sh                # Systemd service management (install/uninstall/etc)
+├── .env                      # Configuration (OPEN_ACCESS_MODE, IP_WHITELIST, etc)
+├── .env.example              # Template for .env
 ├── venv/                     # Python virtualenv (torch, audiocraft, flask)
 ├── soundbox.db               # SQLite database
 ├── templates/
-│   └── index.html            # Main SPA template (12k+ lines)
+│   └── index.html            # Main SPA template (~15k lines)
 ├── static/
 │   ├── js/
 │   │   ├── radio-widget.js           # Widget factory & UI rendering
@@ -150,7 +165,9 @@ app-soundbox/
 │   ├── graphlings/           # Branding assets (favicon, logo)
 │   └── output/               # Generated audio files
 └── tests/
-    └── *.spec.js             # Playwright tests
+    ├── open-access.spec.js   # Open access mode + API tests
+    ├── *.spec.js             # 19 Playwright test suites (250+ tests)
+    └── utils/test-helpers.js  # Shared test utilities
 ```
 
 ## API Endpoints
@@ -217,6 +234,16 @@ Saved to localStorage:
 - `soundbox_anon_id` - Anonymous user ID for non-auth users
 
 ## Recent Changes
+
+### Feb 14, 2026
+- **Open Access Mode**: Disabled all login requirements, anonymous users from IP hash
+- **Multi-platform setup.sh**: Auto-detects x86_64/ARM64, GPU type, installs correct PyTorch
+- **NVRTC Blackwell fix**: Replaces PyTorch's bundled NVRTC 12.8 with system CUDA 13.0 for GB10 sm_121
+- **xformers stub**: Provides torch fallbacks for `ops.unbind` and `ops.memory_efficient_attention`
+- **Systemd service**: `service.sh` for install/uninstall/enable/disable/start/stop/restart
+- **Node.js + Playwright**: Auto-installed in setup.sh, `npm test` works
+- **Open access tests**: 14 new tests including end-to-end generation flow
+- **Rate limits**: Free tier bumped to 10/hr, 60s max; creator tier for whitelisted IPs
 
 ### Dec 27, 2025
 - **Responsive UI overhaul:**

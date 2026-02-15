@@ -7024,7 +7024,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
     <script>
         // Shared track ID passed from /track/<id> route (for shareable links)
-        const sharedTrackId = {{ shared_track_id|tojson|default('null') }};
+        const sharedTrackId = {{ shared_track_id|default(None)|tojson }};
 
         const promptEl = document.getElementById('prompt');
         const durationEl = document.getElementById('duration');
@@ -7218,12 +7218,16 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         let userPlaylists = []; // Loaded from API (requires Graphlings auth)
 
         function isUserAuthenticated() {
+            // In open access mode, everyone is "authenticated" with device ID
+            if (OPEN_ACCESS_MODE) return true;
             // User is authenticated if we have their ID from Graphlings SDK
             // Token check removed - SDK doesn't expose token but does provide user ID
             return currentUserId !== null;
         }
 
         function showLoginPrompt(action) {
+            // In open access mode, no login needed - just proceed
+            if (OPEN_ACCESS_MODE) return;
             // Use SDK's built-in sign-in prompt
             if (window.graphlings && window.graphlings.promptSignIn) {
                 window.graphlings.promptSignIn({
@@ -7267,8 +7271,13 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
         // Initialize auth UI on page load (will be called again when SDK is ready)
         document.addEventListener('DOMContentLoaded', function() {
-            // Start with controls disabled until we know auth state
-            updateAuthUI(false);
+            if (OPEN_ACCESS_MODE) {
+                // Open access: enable everything immediately
+                updateAuthUI(true);
+            } else {
+                // Start with controls disabled until we know auth state
+                updateAuthUI(false);
+            }
         });
 
         async function loadPlaylists() {
@@ -8361,8 +8370,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         };
 
         // User ID - use Graphlings login OR generate anonymous device ID
+        // In open access mode, everyone gets a device-based identity automatically
+        var OPEN_ACCESS_MODE = {{ 'true' if open_access_mode else 'false' }};  // var for cross-script-block access
         let currentUserId = null;
-        let isAdultAccount = false;  // Only true for verified adult Graphlings accounts
+        let isAdultAccount = OPEN_ACCESS_MODE;  // In open access, treat as adult (no content restrictions on UI)
 
         // Generate anonymous device ID for voting without login
         function getDeviceId() {
@@ -8374,13 +8385,19 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             return deviceId;
         }
 
+        // In open access mode, set currentUserId immediately from device ID
+        if (OPEN_ACCESS_MODE) {
+            currentUserId = getDeviceId();
+        }
+
         // Get effective user ID (logged in user OR device ID)
         function getEffectiveUserId() {
             return currentUserId || getDeviceId();
         }
 
-        // Get auth token from Graphlings SDK
+        // Get auth token from Graphlings SDK (returns null in open access mode)
         function getAuthToken() {
+            if (OPEN_ACCESS_MODE) return null;  // No tokens needed
             // Try multiple sources for the token
             // 1. Check if SDK has a getToken method
             if (window.graphlings && typeof window.graphlings.getToken === 'function') {
@@ -8420,15 +8437,15 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 // Preferred: Use verified token
                 options.headers['Authorization'] = `Bearer ${token}`;
             } else if (currentUserId) {
-                // Fallback: Send user ID from Graphlings SDK
-                // Backend accepts this for SDK contexts where token isn't exposed
+                // Fallback: Send user ID header (backend creates anonymous user from IP in open access mode)
                 options.headers['X-User-ID'] = currentUserId;
             }
             return fetch(url, options);
         }
 
-        // Check if user is authenticated with Graphlings
+        // Check if user is authenticated with Graphlings (or always true in open access)
         function isAuthenticated() {
+            if (OPEN_ACCESS_MODE) return true;
             return !!getAuthToken() && !!currentUserId;
         }
 
@@ -8861,7 +8878,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 return;
             }
 
-            // Require authentication to generate
+            // Require authentication to generate (skipped in open access mode)
             if (!isUserAuthenticated()) {
                 showLoginPrompt('generate audio');
                 return;
@@ -12221,10 +12238,15 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
     </script>
 
-    <!-- Graphlings Widget Integration -->
+    <!-- Graphlings Widget Integration (disabled in open access mode) -->
     <script>
         // Auto-detect environment for Graphlings SDK
         (function() {
+            // Skip Graphlings SDK entirely in open access mode
+            if (typeof OPEN_ACCESS_MODE !== 'undefined' && OPEN_ACCESS_MODE) {
+                console.log('[SoundBox] Open access mode - Graphlings SDK disabled');
+                return;
+            }
             const hostname = window.location.hostname;
             const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
             const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
