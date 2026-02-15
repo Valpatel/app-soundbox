@@ -84,6 +84,13 @@ HOST=127.0.0.1          # Listen on localhost only (nginx proxies)
 PORT=5309
 FLASK_DEBUG=false
 
+# Open Access Mode (default: true - no login required)
+OPEN_ACCESS_MODE=true
+IP_WHITELIST=            # Comma-separated IPs for creator-tier limits
+
+# MCP server (AI agent integration)
+MCP_PORT=5310
+
 # Backup (recommended)
 BACKUP_DIR=/var/backups/soundbox
 BACKUP_TIME=03:00
@@ -97,9 +104,29 @@ python -c "import database; database.init_db()"
 
 ---
 
-## Systemd Service
+## Service Management
 
-Create `/etc/systemd/system/soundbox.service`:
+Use the built-in service manager which sets up all three services:
+
+```bash
+./service.sh install    # Installs and starts everything
+```
+
+This creates:
+1. **soundbox** - Main Flask server on :5309
+2. **soundbox-mcp** - MCP server on :5310 (AI agent tools)
+3. **Avahi mDNS** - LAN auto-discovery broadcast
+
+```bash
+./service.sh status     # Check all services
+./service.sh restart    # Restart all services
+./service.sh logs       # Follow logs (all services)
+./service.sh uninstall  # Remove everything
+```
+
+### Manual Systemd (Alternative)
+
+If you prefer manual configuration, create `/etc/systemd/system/soundbox.service`:
 
 ```ini
 [Unit]
@@ -124,15 +151,10 @@ SupplementaryGroups=video render
 WantedBy=multi-user.target
 ```
 
-Enable and start:
-
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable soundbox
 sudo systemctl start soundbox
-
-# Check status
-sudo systemctl status soundbox
 ```
 
 ---
@@ -229,6 +251,12 @@ Auto-renewal is configured by default.
 # Allow HTTP and HTTPS
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
+
+# Allow MCP server (for AI agents on LAN)
+sudo ufw allow 5310/tcp
+
+# Allow mDNS (for LAN discovery)
+sudo ufw allow 5353/udp
 
 # Enable firewall
 sudo ufw enable

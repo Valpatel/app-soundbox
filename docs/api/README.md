@@ -26,6 +26,12 @@ graph LR
         T1[GET /api/voices]
         T2[POST /api/tts/generate]
     end
+
+    subgraph Discovery
+        D1[GET /api/manifest]
+        D2[GET /.well-known/agent-card.json]
+        D3[GET /openapi.json]
+    end
 ```
 
 ## Base URL
@@ -38,7 +44,18 @@ Production deployments should use HTTPS via reverse proxy.
 
 ## Authentication
 
-Most endpoints require authentication via Bearer token from Valnet/Graphlings.
+### Open Access Mode (Default)
+
+When `OPEN_ACCESS_MODE=true` (the default), no authentication is needed. Users are identified by IP address hash. All endpoints work without a token.
+
+```bash
+# No token needed in Open Access Mode
+curl http://localhost:5309/api/library
+```
+
+### Bearer Token Mode
+
+When `OPEN_ACCESS_MODE=false`, most endpoints require a Bearer token from Valnet/Graphlings.
 
 ```bash
 # Include token in Authorization header
@@ -139,6 +156,26 @@ List endpoints support pagination:
 | [Library](library.md) | Browse, search, vote, favorites |
 | [Playlists](playlists.md) | Create and manage playlists |
 | [TTS](tts.md) | Text-to-speech synthesis |
+| [Service Discovery](../systems/service-discovery.md) | Manifest, agent card, MCP, OpenAPI |
+
+## Discovery Endpoints
+
+Endpoints for service discovery and integration. No authentication required.
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/manifest` | Service manifest with capabilities, endpoints, stats |
+| `GET /.well-known/agent-card.json` | A2A agent discovery card with skill list |
+| `GET /openapi.json` | OpenAPI 3.1 specification (13 endpoints) |
+| `GET /status` | System status, GPU info, queue length |
+
+```bash
+# Discover everything about this Sound Box instance
+curl http://localhost:5309/api/manifest | jq
+
+# AI agent discovery (A2A protocol)
+curl http://localhost:5309/.well-known/agent-card.json | jq '.skills[].name'
+```
 
 ---
 
@@ -225,6 +262,7 @@ curl -X POST http://localhost:5309/api/tts/generate \
 ## See Also
 
 - [Architecture](../ARCHITECTURE.md) - System design overview
+- [Service Discovery](../systems/service-discovery.md) - mDNS, MCP, agent card, OpenAPI
 - [Getting Started](../GETTING-STARTED.md) - Installation guide
 
 ---

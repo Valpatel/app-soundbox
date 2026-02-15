@@ -445,10 +445,32 @@ def get_secure_remote_address():
     return request.remote_addr
 
 
+def _is_mcp_proxy_request():
+    """Check if this request was proxied through the MCP server.
+
+    The MCP server sets X-MCP-Proxy: true on all requests it forwards to Flask.
+    These requests arrive from localhost (127.0.0.1) but should NOT receive
+    localhost privileges (system user, admin, rate limit exemption).
+
+    SECURITY: This header can only reduce privileges, never escalate them.
+    A non-localhost attacker sending this header changes nothing (they already
+    lack localhost privileges). A localhost process sending it intentionally
+    would only downgrade themselves from system to anonymous/free tier.
+    """
+    return request.headers.get('X-MCP-Proxy') == 'true'
+
+
 def get_remote_address_or_exempt():
-    """Get remote address, but exempt localhost from rate limiting."""
+    """Get remote address, but exempt localhost from rate limiting.
+
+    MCP-proxied requests are NOT exempt — they get rate limited under
+    a shared 'mcp-proxy' identity to prevent GPU queue flooding.
+    """
     addr = get_secure_remote_address()
-    # Exempt localhost/127.0.0.1 from rate limiting for batch generation
+    # MCP-proxied requests come from localhost but must be rate limited
+    if addr in ('127.0.0.1', 'localhost', '::1') and _is_mcp_proxy_request():
+        return 'mcp-proxy'
+    # Exempt actual localhost (batch generation, admin scripts)
     if addr in ('127.0.0.1', 'localhost', '::1'):
         return None  # Returning None exempts from rate limiting
     return addr
@@ -461,10 +483,16 @@ def is_localhost_request():
     are trusted and can bypass certain restrictions like content moderation.
 
     SECURITY: Uses request.remote_addr directly, NOT X-Forwarded-For.
-    This prevents attackers from spoofing localhost via header injection.
+    MCP-proxied requests are excluded — they come from localhost but should
+    not receive system/admin privileges.
     """
     addr = get_secure_remote_address()
-    return addr in ('127.0.0.1', 'localhost', '::1')
+    if addr not in ('127.0.0.1', 'localhost', '::1'):
+        return False
+    # MCP proxy runs on localhost but should not get localhost privileges
+    if _is_mcp_proxy_request():
+        return False
+    return True
 
 limiter = Limiter(
     get_remote_address_or_exempt,
@@ -4635,6 +4663,131 @@ def random_prompt():
         prompt = random.choice(patterns)()
 
     return jsonify({'success': True, 'prompt': prompt})
+
+
+# ========================================
+# SERVICE DISCOVERY ENDPOINTS
+# ========================================
+
+@app.route('/api/manifest')
+def api_manifest():
+    """Universal service discovery manifest. This is the hub that all
+    discovery mechanisms (mDNS, agent cards, etc.) point to."""
+    import socket
+    host = request.host  # includes port
+    base = request.url_root.rstrip('/')
+
+    gpu_info = get_gpu_info()
+    stats = db.get_stats()
+
+    return jsonify({
+        'name': 'Sound Box',
+        'description': 'AI audio generation server - music, sound effects, and speech from text prompts',
+        'version': '1.0.0',
+        'base_url': base,
+        'capabilities': ['music_generation', 'sfx_generation', 'speech_synthesis',
+                         'audio_library', 'radio_streaming', 'playlists'],
+        'models': {
+            'music': loading_status.get('music', 'unknown'),
+            'audio': loading_status.get('audio', 'unknown'),
+            'magnet-music': loading_status.get('magnet-music', 'unknown'),
+            'magnet-audio': loading_status.get('magnet-audio', 'unknown'),
+        },
+        'gpu': {
+            'available': gpu_info.get('available', False),
+        },
+        'library': {
+            'total_tracks': stats.get('total_generations', 0),
+            'total_music': stats.get('total_music', 0),
+            'total_sfx': stats.get('total_audio', 0),
+        },
+        'auth': {
+            'open_access': OPEN_ACCESS_MODE,
+            'method': 'anonymous_ip' if OPEN_ACCESS_MODE else 'bearer_token',
+        },
+        'rate_limits': {
+            'free_tier': '10 generations/hour, 60s max duration',
+            'creator_tier': '60 generations/hour, 180s max duration (whitelisted IPs)',
+        },
+        'endpoints': {
+            'generate': {'method': 'POST', 'path': '/generate'},
+            'job_status': {'method': 'GET', 'path': '/job/{job_id}'},
+            'system_status': {'method': 'GET', 'path': '/status'},
+            'library': {'method': 'GET', 'path': '/api/library'},
+            'track': {'method': 'GET', 'path': '/api/library/{gen_id}'},
+            'radio_shuffle': {'method': 'GET', 'path': '/api/radio/shuffle'},
+            'audio_stream': {'method': 'GET', 'path': '/audio/{filename}'},
+            'audio_download': {'method': 'GET', 'path': '/download/{filename}'},
+            'stats': {'method': 'GET', 'path': '/api/stats'},
+            'random_prompt': {'method': 'POST', 'path': '/random-prompt'},
+            'vote': {'method': 'POST', 'path': '/api/library/{gen_id}/vote'},
+            'favorite': {'method': 'POST', 'path': '/api/favorites/{gen_id}'},
+        },
+        'discovery': {
+            'manifest': '/api/manifest',
+            'agent_card': '/.well-known/agent-card.json',
+            'openapi': '/openapi.json',
+        },
+    })
+
+
+@app.route('/.well-known/agent-card.json')
+def agent_card():
+    """A2A agent discovery card (Google Agent-to-Agent protocol)."""
+    base = request.url_root.rstrip('/')
+    return jsonify({
+        'name': 'Sound Box',
+        'description': 'AI audio generation server. Generate music, sound effects, and speech from text prompts using Meta AudioCraft models.',
+        'url': base,
+        'version': '1.0.0',
+        'capabilities': {
+            'streaming': False,
+            'pushNotifications': False,
+        },
+        'skills': [
+            {
+                'id': 'generate-music',
+                'name': 'Generate Music',
+                'description': 'Generate music from a text prompt using MusicGen',
+                'examples': ['upbeat electronic music with synth pads', 'calm piano melody in C major'],
+                'endpoint': {'method': 'POST', 'path': '/generate'},
+            },
+            {
+                'id': 'generate-sfx',
+                'name': 'Generate Sound Effects',
+                'description': 'Generate sound effects from a text prompt using AudioGen',
+                'examples': ['thunder rolling across a mountain valley', 'spaceship engine humming'],
+                'endpoint': {'method': 'POST', 'path': '/generate'},
+            },
+            {
+                'id': 'search-library',
+                'name': 'Search Audio Library',
+                'description': 'Search and browse the library of generated audio tracks',
+                'examples': ['search for ambient music', 'find rain sound effects'],
+                'endpoint': {'method': 'GET', 'path': '/api/library'},
+            },
+            {
+                'id': 'check-status',
+                'name': 'Check System Status',
+                'description': 'Get GPU status, model loading state, and queue length',
+                'endpoint': {'method': 'GET', 'path': '/status'},
+            },
+            {
+                'id': 'get-radio-track',
+                'name': 'Get Radio Track',
+                'description': 'Get random or curated tracks for listening',
+                'endpoint': {'method': 'GET', 'path': '/api/radio/shuffle'},
+            },
+        ],
+        'openapi': f'{base}/openapi.json',
+        'manifest': f'{base}/api/manifest',
+    })
+
+
+@app.route('/openapi.json')
+def openapi_spec():
+    """Serve the OpenAPI 3.1 specification."""
+    return send_file('static/openapi.json', mimetype='application/json')
 
 
 # ========================================

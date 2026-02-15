@@ -4,16 +4,29 @@ How Sound Box works internally. Use this guide to understand the system before d
 
 ```mermaid
 graph TB
+    subgraph "Discovery Layer"
+        mDNS["Avahi mDNS<br/><i>LAN broadcast</i>"]
+        AgentCard["Agent Card<br/><i>A2A protocol</i>"]
+        OpenAPISpec["OpenAPI Spec<br/><i>/openapi.json</i>"]
+    end
+
     subgraph Clients
         UI[Web UI]
         API[API Client]
         Widget[Radio Widget]
+        AIAgent[AI Agent / MCP]
+        LAN[LAN Device]
     end
 
-    subgraph "Flask Server"
+    subgraph "Flask Server :5309"
         Routes[Route Handlers]
-        Auth[Auth Middleware]
+        Auth[Auth / Open Access]
         Limiter[Rate Limiter]
+        Manifest["/api/manifest"]
+    end
+
+    subgraph "MCP Server :5310"
+        MCPTools["6 MCP Tools<br/><i>generate, search, status...</i>"]
     end
 
     subgraph "Background Threads"
@@ -34,6 +47,11 @@ graph TB
         Audio[generated/]
         Voices[models/voices/]
     end
+
+    LAN -->|"_soundbox._tcp"| mDNS
+    mDNS --> Manifest
+    AIAgent -->|stdio/SSE| MCPTools
+    MCPTools -->|HTTP| Routes
 
     UI --> Routes
     API --> Routes
@@ -59,13 +77,23 @@ graph TB
 
 ### Flask Application (`app.py`)
 
-The main entry point (~4,400 lines). Handles:
+The main entry point (~4,800 lines). Handles:
 
 - **HTTP Routes** - REST API endpoints for all operations
-- **Authentication** - Token validation against external auth service (Valnet)
-- **Rate Limiting** - Per-endpoint limits using Flask-Limiter
+- **Authentication** - Open Access Mode (anonymous IP) or Bearer token via Valnet
+- **Rate Limiting** - Per-endpoint and per-tier limits using Flask-Limiter
 - **Job Submission** - Validates requests, adds to priority queue
 - **Static Serving** - Audio files, spectrograms, widget assets
+- **Service Discovery** - `/api/manifest`, `/.well-known/agent-card.json`, `/openapi.json`
+
+### MCP Server (`mcp_server.py`)
+
+Separate process exposing Sound Box as MCP tools for AI agents:
+
+- **6 Tools** - generate_audio, check_job, search_library, get_status, get_radio_track, download_audio
+- **Transports** - stdio (local agents via `.mcp.json`) or SSE (network agents on `:5310`)
+- **Proxies to Flask** - All tool invocations translate to HTTP calls to the main server
+- **Security** - X-MCP-Proxy header, MCP_API_KEY for SSE, input validation, SSE localhost binding
 
 ### Database Layer (`database.py`)
 
@@ -366,36 +394,74 @@ Auto-categorization based on prompt keywords:
 
 ```
 app-soundbox/
-├── app.py              # Flask server, routes, queue worker
+├── app.py              # Flask server (~4,800 lines)
+├── mcp_server.py       # MCP server for AI agent tool use
 ├── database.py         # SQLite layer, FTS5, categories
 ├── backup.py           # Automated backup system
 ├── voice_licenses.py   # TTS voice attribution data
-├── requirements.txt    # Python dependencies
 ├── .env                # Configuration (not in repo)
+├── .mcp.json           # Claude Code MCP auto-discovery
+│
+├── start.sh            # Start server (uses venv)
+├── setup.sh            # Multi-platform setup (x86_64/ARM64)
+├── service.sh          # Systemd service management
+│
+├── avahi/
+│   └── soundbox.service  # mDNS LAN discovery (XML)
 │
 ├── templates/
-│   └── index.html      # Main SPA (4,000+ lines)
+│   └── index.html      # Main SPA (~15,000 lines)
 │
-├── static/js/
-│   ├── radio-widget.js       # Embeddable player entry
-│   ├── radio-widget-core.js  # Player logic
-│   ├── radio-widget-visualizer.js
-│   └── visualizations/       # Canvas visualizers
-│       ├── bars.js
-│       ├── wave.js
-│       ├── circle.js
-│       └── ...
-│
-├── models/voices/      # Piper TTS voice models (~2GB)
-│   ├── en_US-lessac-medium.onnx
+├── static/
+│   ├── js/             # Radio widget modules
+│   ├── openapi.json    # OpenAPI 3.1 spec
 │   └── ...
 │
+├── models/voices/      # Piper TTS voice models (~2GB)
 ├── generated/          # Output audio files (WAV)
 ├── spectrograms/       # Waveform images (PNG)
 ├── soundbox.db         # SQLite database
 │
+├── tests/              # Playwright E2E tests (19 suites)
 └── docs/               # This documentation
 ```
+
+---
+
+## Service Discovery
+
+Five discovery layers allow different client types to find and interact with Sound Box.
+
+```mermaid
+flowchart LR
+    subgraph "How Clients Find Sound Box"
+        A["LAN Device"] -->|"mDNS browse"| B["Avahi\n_soundbox._tcp"]
+        B --> C["/api/manifest"]
+        D["AI Agent\n(local)"] -->|"stdio"| E["MCP Server\nmcp_server.py"]
+        F["AI Agent\n(network)"] -->|"GET"| G["/.well-known/\nagent-card.json"]
+        G --> C
+        H["Developer"] -->|"GET"| I["/openapi.json"]
+    end
+```
+
+| Layer | Endpoint / Protocol | Purpose |
+|-------|---------------------|---------|
+| Avahi mDNS | `_soundbox._tcp` broadcast | Zero-config LAN discovery |
+| Manifest | `GET /api/manifest` | Universal capabilities hub |
+| Agent Card | `GET /.well-known/agent-card.json` | A2A agent protocol |
+| MCP Server | stdio or SSE `:5310` | Direct AI tool invocation |
+| OpenAPI | `GET /openapi.json` | Machine-readable API spec |
+
+See [Service Discovery](systems/service-discovery.md) for detailed documentation.
+
+---
+
+## Authentication & Open Access
+
+Sound Box supports two auth modes:
+
+- **Open Access Mode** (`OPEN_ACCESS_MODE=true`, default) - No login required. Anonymous users get IP-based identity. Rate limits enforced per-IP. `IP_WHITELIST` for elevated limits. Localhost exempt except MCP-proxied requests.
+- **Valnet Auth** (`OPEN_ACCESS_MODE=false`) - Bearer token validation against external auth service. Tier-based limits (Creator, Premium, Supporter, Free).
 
 ---
 
@@ -411,12 +477,12 @@ app-soundbox/
 
 Per-tier limits enforced by Flask-Limiter:
 
-| Tier | Generations/Hour | Max Duration |
-|------|------------------|--------------|
-| Creator | 60 | 180s |
-| Premium | 30 | 120s |
-| Supporter | 15 | 60s |
-| Free | 3 | 30s |
+| Tier | Generations/Hour | Max Duration | Context |
+|------|------------------|--------------|---------|
+| Creator | 60 | 180s | Whitelisted IPs or paid tier |
+| Premium | 30 | 120s | Paid tier |
+| Supporter | 15 | 60s | Paid tier |
+| Free | 10 | 60s | Open Access default |
 
 ### Headers
 
@@ -430,13 +496,25 @@ Referrer-Policy: strict-origin-when-cross-origin
 Content-Security-Policy: [configured for app needs]
 ```
 
+### MCP Security
+
+The MCP server has dedicated security hardening:
+
+- **X-MCP-Proxy header** - MCP server tags all forwarded requests; Flask denies localhost privileges to these
+- **SSE localhost binding** - SSE transport binds to `127.0.0.1` only (not `0.0.0.0`)
+- **MCP_API_KEY** - Required Bearer token for SSE connections; stdio always trusted
+- **Input validation** - Hex regex for IDs, parameter clamping for durations/pagination
+- **Manifest redaction** - `/api/manifest` omits hostname, GPU name, MCP port
+
 ---
 
 ## External Dependencies
 
-### Authentication (Valnet)
+### Authentication (Valnet / Open Access)
 
-Token validation against external auth service:
+In Open Access Mode (default), no external auth is needed - users are identified by IP hash.
+
+When Open Access is disabled, tokens are validated against Valnet:
 
 ```mermaid
 sequenceDiagram
@@ -444,15 +522,20 @@ sequenceDiagram
     participant S as Sound Box
     participant V as Valnet Auth
 
-    C->>S: Request with Bearer token
-    S->>V: GET /api/user/me
-    V-->>S: {user_id, tier, permissions}
-    S->>S: Cache user for request
+    alt Open Access Mode
+        C->>S: Request (no token needed)
+        S->>S: Create anon user from IP hash
+    else Valnet Auth Mode
+        C->>S: Request with Bearer token
+        S->>V: GET /api/user/me
+        V-->>S: {user_id, tier, permissions}
+        S->>S: Cache user for request
+    end
 ```
 
 ### Graphlings Integration
 
-Optional integration for platform-specific features:
+Optional integration for platform-specific features (disabled in Open Access Mode):
 
 - **User Profiles** - Link generations to Graphlings accounts
 - **Aura Payments** - Virtual currency for queue skipping
@@ -493,6 +576,9 @@ Optional integration for platform-specific features:
 | **Crowdsourced Categorization** | Community improves metadata, consensus required |
 | **Private Feedback** | No public comments, maintains quality discussion |
 | **On-Demand Model Loading** | Conserves GPU memory when not actively generating |
+| **Open Access by Default** | Zero-friction usage, auth still available if needed |
+| **5-Layer Discovery** | Different clients need different protocols (mDNS, MCP, A2A, OpenAPI) |
+| **MCP as Separate Process** | Isolate AI agent tooling from main server, independent scaling |
 
 ---
 
@@ -501,6 +587,8 @@ Optional integration for platform-specific features:
 - [Queue System](systems/queue-system.md) - Priority scheduling deep dive
 - [Audio Generation](systems/audio-generation.md) - Model details, quality analysis
 - [Database](systems/database.md) - Schema, categories, migrations
+- [Service Discovery](systems/service-discovery.md) - mDNS, manifest, MCP, OpenAPI, A2A
+- [Authentication](systems/authentication.md) - Auth flow, tiers, Open Access Mode
 - [API Reference](api/README.md) - Complete endpoint documentation
 
 ---

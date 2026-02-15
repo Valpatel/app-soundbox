@@ -1,0 +1,496 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sound Box API",
+    "description": "AI audio generation server powered by Meta's MusicGen and AudioGen. Generate music, sound effects, and speech from text prompts.",
+    "version": "1.0.0",
+    "license": {
+      "name": "CC0 1.0",
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5309",
+      "description": "Local Sound Box instance"
+    }
+  ],
+  "paths": {
+    "/generate": {
+      "post": {
+        "operationId": "generateAudio",
+        "summary": "Submit an audio generation job",
+        "description": "Creates a new generation job and returns a job ID for polling. The audio is generated asynchronously.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prompt": {
+                    "type": "string",
+                    "description": "Text description of the audio to generate",
+                    "example": "upbeat electronic music with synth pads"
+                  },
+                  "model": {
+                    "type": "string",
+                    "enum": ["music", "audio", "magnet-music", "magnet-audio"],
+                    "default": "music",
+                    "description": "Model type: 'music' for MusicGen, 'audio' for AudioGen (sound effects)"
+                  },
+                  "duration": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 60,
+                    "default": 8,
+                    "description": "Duration in seconds (max depends on user tier)"
+                  },
+                  "loop": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to create a seamless loop"
+                  }
+                },
+                "required": ["prompt"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "job_id": { "type": "string", "example": "a1b2c3d4e5f6" }
+                  }
+                }
+              }
+            }
+          },
+          "429": { "description": "Rate limit exceeded or too many pending jobs" },
+          "503": { "description": "Model not loaded or queue full" }
+        }
+      }
+    },
+    "/job/{job_id}": {
+      "get": {
+        "operationId": "getJobStatus",
+        "summary": "Check generation job status",
+        "description": "Poll this endpoint to track progress. When status is 'complete', the filename field contains the audio file.",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string" },
+                    "status": {
+                      "type": "string",
+                      "enum": ["queued", "processing", "complete", "failed"]
+                    },
+                    "progress": { "type": "string" },
+                    "progress_pct": { "type": "integer" },
+                    "filename": { "type": "string", "nullable": true },
+                    "error": { "type": "string", "nullable": true }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Job not found" }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "operationId": "getSystemStatus",
+        "summary": "Get system status, GPU info, and queue length",
+        "responses": {
+          "200": {
+            "description": "System status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "models": {
+                      "type": "object",
+                      "description": "Loading status of each model"
+                    },
+                    "gpu": {
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string" },
+                        "free_memory_gb": { "type": "number" },
+                        "loaded_models": { "type": "array", "items": { "type": "string" } }
+                      }
+                    },
+                    "queue_length": { "type": "integer" },
+                    "estimated_wait": { "type": "number", "description": "Estimated wait in seconds" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library": {
+      "get": {
+        "operationId": "searchLibrary",
+        "summary": "Browse and search the audio library",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "maximum": 100 }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["music", "audio", "voice"] },
+            "description": "Filter by content type"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Full-text search in prompts"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["recent", "popular", "rating"], "default": "recent" }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by genre/category"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated library results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Track" }
+                    },
+                    "total": { "type": "integer" },
+                    "page": { "type": "integer" },
+                    "per_page": { "type": "integer" },
+                    "pages": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library/{gen_id}": {
+      "get": {
+        "operationId": "getTrack",
+        "summary": "Get a single track by ID",
+        "parameters": [
+          {
+            "name": "gen_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Track details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Track" }
+              }
+            }
+          },
+          "404": { "description": "Track not found" }
+        }
+      }
+    },
+    "/api/library/{gen_id}/vote": {
+      "post": {
+        "operationId": "voteOnTrack",
+        "summary": "Upvote or downvote a track",
+        "parameters": [
+          {
+            "name": "gen_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vote": {
+                    "type": "integer",
+                    "enum": [-1, 0, 1],
+                    "description": "1 for upvote, -1 for downvote, 0 to clear"
+                  }
+                },
+                "required": ["vote"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Vote recorded" }
+        }
+      }
+    },
+    "/api/radio/shuffle": {
+      "get": {
+        "operationId": "getRandomTracks",
+        "summary": "Get random tracks for radio playback",
+        "parameters": [
+          {
+            "name": "model",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["music", "audio"] }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10, "maximum": 50 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Random tracks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tracks": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Track" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/audio/{filename}": {
+      "get": {
+        "operationId": "streamAudio",
+        "summary": "Stream an audio file",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Audio filename (e.g. abc123.wav)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audio file",
+            "content": {
+              "audio/wav": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "404": { "description": "File not found" }
+        }
+      }
+    },
+    "/download/{filename}": {
+      "get": {
+        "operationId": "downloadAudio",
+        "summary": "Download an audio file with a clean filename",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audio file download",
+            "content": {
+              "audio/wav": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "404": { "description": "File not found" }
+        }
+      }
+    },
+    "/api/stats": {
+      "get": {
+        "operationId": "getDatabaseStats",
+        "summary": "Get database statistics (total tracks, plays, etc.)",
+        "responses": {
+          "200": {
+            "description": "Database statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total_generations": { "type": "integer" },
+                    "total_music": { "type": "integer" },
+                    "total_audio": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/favorites/{gen_id}": {
+      "post": {
+        "operationId": "addFavorite",
+        "summary": "Add a track to favorites",
+        "parameters": [
+          {
+            "name": "gen_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Added to favorites" }
+        }
+      },
+      "delete": {
+        "operationId": "removeFavorite",
+        "summary": "Remove a track from favorites",
+        "parameters": [
+          {
+            "name": "gen_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Removed from favorites" }
+        }
+      }
+    },
+    "/random-prompt": {
+      "post": {
+        "operationId": "getRandomPrompt",
+        "summary": "Generate a random creative prompt",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "enum": ["music", "audio"],
+                    "default": "music"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Random prompt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "prompt": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/manifest": {
+      "get": {
+        "operationId": "getManifest",
+        "summary": "Service discovery manifest with all capabilities and endpoints",
+        "responses": {
+          "200": {
+            "description": "Service manifest",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Track": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Generation ID (hex)" },
+          "prompt": { "type": "string", "description": "Text prompt used to generate" },
+          "model": { "type": "string", "enum": ["music", "audio", "voice"] },
+          "duration": { "type": "number", "description": "Duration in seconds" },
+          "filename": { "type": "string", "description": "Audio filename (use with /audio/{filename})" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "upvotes": { "type": "integer" },
+          "downvotes": { "type": "integer" },
+          "play_count": { "type": "integer" },
+          "tags": { "type": "string", "nullable": true },
+          "category": { "type": "string", "nullable": true }
+        }
+      }
+    }
+  }
+}

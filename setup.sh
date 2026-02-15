@@ -99,7 +99,9 @@ sudo apt-get install -y -qq \
     curl \
     wget \
     git \
-    build-essential 2>&1 | tail -1
+    build-essential \
+    avahi-daemon \
+    avahi-utils 2>&1 | tail -1
 
 # Install ffmpeg dev libs if available (some systems have them separately)
 sudo apt-get install -y -qq \
@@ -211,6 +213,9 @@ pip install flask flask-limiter python-dotenv 2>&1 | tail -3
 
 # HTTP requests
 pip install requests 2>&1 | tail -1
+
+# MCP server for AI agent integration
+pip install "mcp[cli]" httpx 2>&1 | tail -1
 
 # Audio analysis and visualization
 pip install numpy librosa matplotlib soundfile scipy 2>&1 | tail -3

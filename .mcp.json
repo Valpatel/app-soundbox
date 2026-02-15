@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "soundbox": {
+      "command": "./venv/bin/python",
+      "args": ["mcp_server.py"],
+      "env": {
+        "SOUNDBOX_URL": "http://localhost:5309"
+      }
+    }
+  }
+}

@@ -29,11 +29,20 @@ Sound Box is an AI audio generation app powered by Meta's MusicGen and AudioGen 
 
 - **Default: OPEN_ACCESS_MODE=true** - no login required, anyone can generate/vote/favorite
 - Anonymous users get IP-based identity (`anon_` + SHA256(IP)[:12])
-- Rate limits enforced per-IP; localhost always exempt
+- Rate limits enforced per-IP; localhost exempt except MCP-proxied requests
 - `IP_WHITELIST` env var for elevated (creator-tier) limits
 - Original Graphlings auth code preserved but disabled (set OPEN_ACCESS_MODE=false to re-enable)
 - `var OPEN_ACCESS_MODE` in frontend (not const!) for cross-script-block access
 - Auth state managed via `currentUserId` and `isUserAuthenticated()`
+
+### MCP Security Model
+
+- **X-MCP-Proxy detection** - MCP server sets `X-MCP-Proxy: true` header on all forwarded requests; Flask uses this to deny localhost privileges to MCP-proxied requests
+- **Rate limiting** - MCP-proxied requests rate limited under shared `mcp-proxy` identity (not exempt like direct localhost)
+- **SSE localhost binding** - SSE transport binds to `127.0.0.1` only; requires reverse proxy for network access
+- **MCP_API_KEY** - Required for SSE transport authentication (Bearer token); stdio transport always trusted
+- **Input validation** - All IDs validated against hex regex (`^[a-fA-F0-9]{8,64}$`), parameters clamped to safe ranges (duration 1-60, page 1-1000, etc.)
+- **Manifest info redaction** - `/api/manifest` hides hostname, GPU model name, and MCP port; `/status` exposes full details
 
 ### Supported Platforms
 
@@ -139,15 +148,19 @@ Persistent player shown at bottom when on non-Radio tabs while audio is playing.
 
 ```
 app-soundbox/
-├── app.py                    # Flask server, AI generation endpoints (~4700 lines)
+├── app.py                    # Flask server, AI generation endpoints (~4800 lines)
+├── mcp_server.py             # MCP server for AI agent tool use (6 tools)
 ├── database.py               # SQLite operations, FTS5 search
 ├── start.sh                  # Server startup script (uses venv)
 ├── setup.sh                  # Multi-platform setup (x86_64/ARM64/Jetson/DGX)
-├── service.sh                # Systemd service management (install/uninstall/etc)
-├── .env                      # Configuration (OPEN_ACCESS_MODE, IP_WHITELIST, etc)
+├── service.sh                # Systemd service management (soundbox + MCP + mDNS)
+├── .env                      # Configuration (OPEN_ACCESS_MODE, IP_WHITELIST, MCP_PORT, MCP_API_KEY, etc)
 ├── .env.example              # Template for .env
-├── venv/                     # Python virtualenv (torch, audiocraft, flask)
+├── .mcp.json                 # Claude Code MCP auto-discovery (stdio transport)
+├── venv/                     # Python virtualenv (torch, audiocraft, flask, mcp)
 ├── soundbox.db               # SQLite database
+├── avahi/
+│   └── soundbox.service      # mDNS LAN discovery (XML, installed by service.sh)
 ├── templates/
 │   └── index.html            # Main SPA template (~15k lines)
 ├── static/
@@ -162,30 +175,50 @@ app-soundbox/
 │   │   ├── radio-widget-sizes.css    # Size-specific layouts
 │   │   ├── radio-widget-templates.css # Theme templates
 │   │   └── radio-widget-fullscreen.css # Fullscreen mode styles
+│   ├── openapi.json          # OpenAPI 3.1 spec (13 endpoints)
 │   ├── graphlings/           # Branding assets (favicon, logo)
 │   └── output/               # Generated audio files
-└── tests/
-    ├── open-access.spec.js   # Open access mode + API tests
-    ├── *.spec.js             # 19 Playwright test suites (250+ tests)
-    └── utils/test-helpers.js  # Shared test utilities
+├── tests/
+│   ├── discovery.spec.js     # Service discovery tests (18 tests)
+│   ├── open-access.spec.js   # Open access mode + API tests
+│   ├── *.spec.js             # 19 Playwright test suites (250+ tests)
+│   └── utils/test-helpers.js  # Shared test utilities
+└── docs/                     # Full documentation (see docs/ hierarchy)
 ```
 
 ## API Endpoints
 
+### Discovery
+- `GET /api/manifest` - Service discovery hub (capabilities, endpoints, stats)
+- `GET /.well-known/agent-card.json` - A2A agent discovery card
+- `GET /openapi.json` - OpenAPI 3.1 specification
+
 ### Audio
-- `GET /api/radio/tracks` - Get tracks for radio (with search/filter)
-- `GET /api/generation/<id>` - Get single track metadata
-- `GET /stream/<filename>` - Stream audio file
+- `GET /api/radio/shuffle` - Random tracks for radio
+- `GET /api/library` - Search/browse audio library
+- `GET /api/library/<id>` - Get single track metadata
+- `GET /audio/<filename>` - Stream audio file
 - `GET /download/<filename>` - Download audio file
 
 ### Generation
-- `POST /api/generate` - Generate new audio (requires auth)
-- `GET /api/status/<task_id>` - Check generation status
+- `POST /generate` - Generate new audio
+- `GET /job/<job_id>` - Check generation status
+- `GET /status` - System status, GPU info, queue
 
 ### User Actions
-- `POST /api/vote` - Vote on track
-- `POST /api/favorite` - Toggle favorite
+- `POST /api/library/<id>/vote` - Vote on track
+- `POST /api/favorites/<id>` - Toggle favorite
 - `GET /api/favorites` - Get user's favorites
+
+### MCP Tools (via mcp_server.py)
+- `generate_audio` - Submit generation (optionally wait for completion)
+- `check_job` - Poll job status
+- `search_library` - Search/browse audio library
+- `get_status` - System status, GPU info, queue
+- `get_radio_track` - Random/curated tracks
+- `download_audio` - Get download URL for a track
+
+**Security:** MCP requests are proxied with `X-MCP-Proxy: true` header, so they don't receive localhost privileges. SSE transport requires `MCP_API_KEY`. All inputs validated and clamped.
 
 ### Playlists (in progress)
 - See plan file: `~/.claude/plans/immutable-soaring-hollerith.md`
@@ -235,7 +268,27 @@ Saved to localStorage:
 
 ## Recent Changes
 
-### Feb 14, 2026
+### Feb 14, 2026 (Security Audit)
+- **MCP proxy detection**: `X-MCP-Proxy: true` header prevents MCP-proxied requests from gaining localhost privileges
+- **Rate limit fix**: MCP-proxied requests rate limited under `mcp-proxy` identity instead of being exempt
+- **SSE localhost binding**: MCP SSE server binds to `127.0.0.1` only, not `0.0.0.0`
+- **MCP_API_KEY**: Required for SSE transport authentication; SSE rejects all connections when unset
+- **Input validation**: All MCP tool inputs validated — hex ID regex, parameter clamping (duration, pagination, counts)
+- **Manifest redaction**: `/api/manifest` no longer exposes hostname, GPU model name, or MCP port
+
+### Feb 14, 2026 (Service Discovery)
+- **Service Discovery**: 5 complementary layers for different client types
+  - `/api/manifest` - Universal discovery hub (capabilities, endpoints, stats)
+  - `/.well-known/agent-card.json` - A2A agent protocol with 5 skills
+  - `mcp_server.py` - MCP server with 6 tools (generate, search, status, etc.)
+  - `/openapi.json` - OpenAPI 3.1 spec for 13 key endpoints
+  - `avahi/soundbox.service` - mDNS LAN broadcast (`_soundbox._tcp`)
+- **`.mcp.json`**: Claude Code auto-discovers MCP server via stdio
+- **`service.sh`**: Now manages 3 services (soundbox + soundbox-mcp + Avahi mDNS)
+- **Discovery tests**: 18 Playwright tests covering all discovery endpoints
+- **Docs overhaul**: New `docs/systems/service-discovery.md`, updated all docs
+
+### Feb 14, 2026 (Open Access)
 - **Open Access Mode**: Disabled all login requirements, anonymous users from IP hash
 - **Multi-platform setup.sh**: Auto-detects x86_64/ARM64, GPU type, installs correct PyTorch
 - **NVRTC Blackwell fix**: Replaces PyTorch's bundled NVRTC 12.8 with system CUDA 13.0 for GB10 sm_121

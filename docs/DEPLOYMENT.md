@@ -146,7 +146,18 @@ gunicorn -w 1 -b 0.0.0.0:5309 --timeout 300 app:app
 
 **Note:** Use `-w 1` (single worker) because GPU operations require sequential access.
 
-### Using Systemd
+### Using service.sh (Recommended)
+
+The built-in service manager installs all three services (main server, MCP, mDNS):
+
+```bash
+./service.sh install    # Install and start everything
+./service.sh status     # Check all services
+./service.sh logs       # Follow combined logs
+./service.sh uninstall  # Remove everything
+```
+
+### Manual Systemd (Alternative)
 
 Create `/etc/systemd/system/soundbox.service`:
 
@@ -204,16 +215,11 @@ server {
 ## Health Check
 
 ```bash
+# System status
 curl http://localhost:5309/status
-```
 
-Expected response (models loading):
-```json
-{
-  "models": {"music": "loading", "audio": "pending"},
-  "gpu": {"available": true, "memory_used_gb": 2.1},
-  "queue_length": 0
-}
+# Service manifest (full discovery info)
+curl http://localhost:5309/api/manifest
 ```
 
 Expected response (ready):

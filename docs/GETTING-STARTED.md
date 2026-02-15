@@ -43,12 +43,13 @@ chmod +x setup.sh
 ```
 
 The setup script will:
-1. Install system dependencies (ffmpeg, etc.)
-2. Create Python virtual environment
-3. Install PyTorch with CUDA support (if GPU detected)
-4. Install AudioCraft and Piper TTS
-5. Download voice models (~2GB)
-6. Initialize the database
+1. Detect platform (x86_64, ARM64 Jetson, ARM64 DGX/Blackwell)
+2. Install system dependencies (ffmpeg, avahi, etc.)
+3. Create Python virtual environment
+4. Install PyTorch with CUDA support (platform-specific wheels)
+5. Install AudioCraft, Piper TTS, and MCP SDK
+6. Download voice models (~2GB)
+7. Initialize the database
 
 ### Option 2: Manual Setup
 
@@ -100,6 +101,9 @@ BACKUP_TIME=03:00             # Backup time (24h format)
 |----------|---------|-------------|
 | `HOST` | `0.0.0.0` | Network interface to bind |
 | `PORT` | `5309` | HTTP port |
+| `OPEN_ACCESS_MODE` | `true` | No login required (anonymous IP identity) |
+| `IP_WHITELIST` | *(empty)* | Comma-separated IPs for creator-tier limits |
+| `MCP_PORT` | `5310` | MCP server port for AI agent integration |
 | `FLASK_DEBUG` | `false` | Auto-reload on code changes |
 | `BACKUP_DIR` | *(none)* | Directory for nightly backups |
 | `BACKUP_TIME` | `03:00` | When to run backups |
@@ -182,23 +186,21 @@ Check system status:
 curl http://localhost:5309/status
 ```
 
-Expected response:
+Check service discovery:
 
-```json
-{
-  "models": {
-    "music": "ready",
-    "audio": "ready",
-    "tts": "ready"
-  },
-  "gpu": {
-    "available": true,
-    "name": "NVIDIA GeForce RTX 4090",
-    "memory_used_gb": 4.2,
-    "memory_total_gb": 24.0
-  },
-  "queue_length": 0
-}
+```bash
+# Service manifest (all capabilities in one JSON)
+curl http://localhost:5309/api/manifest | python3 -m json.tool
+
+# AI agent card
+curl http://localhost:5309/.well-known/agent-card.json | python3 -m json.tool
+```
+
+### Optional: Auto-Start on Boot
+
+```bash
+./service.sh install    # Installs soundbox + MCP + mDNS services
+./service.sh status     # Verify both services running
 ```
 
 ## Troubleshooting
@@ -267,6 +269,7 @@ PORT=5310 python app.py
 
 - [Architecture Overview](ARCHITECTURE.md) - Understand how Sound Box works
 - [API Reference](api/README.md) - Complete API documentation
+- [Service Discovery](systems/service-discovery.md) - mDNS, MCP tools, A2A, OpenAPI
 - [Audio Generation](systems/audio-generation.md) - Deep dive into models
 
 ---

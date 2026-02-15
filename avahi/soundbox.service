@@ -1,0 +1,34 @@
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+
+<!--
+  Sound Box - Avahi mDNS Service Discovery
+
+  Broadcasts Sound Box on the local network so other devices can find it
+  automatically via mDNS (Bonjour/Zeroconf).
+
+  Install: sudo cp avahi/soundbox.service /etc/avahi/services/
+  Test:    avahi-browse _soundbox._tcp -t
+-->
+
+<service-group>
+  <name replace-wildcards="yes">Sound Box on %h</name>
+
+  <!-- Standard HTTP service - generic clients find this -->
+  <service>
+    <type>_http._tcp</type>
+    <port>5309</port>
+    <txt-record>path=/api/manifest</txt-record>
+    <txt-record>app=soundbox</txt-record>
+  </service>
+
+  <!-- Sound Box-specific service type - targeted discovery -->
+  <service>
+    <type>_soundbox._tcp</type>
+    <port>5309</port>
+    <txt-record>path=/api/manifest</txt-record>
+    <txt-record>version=1</txt-record>
+    <txt-record>api=rest</txt-record>
+    <txt-record>mcp=5310</txt-record>
+  </service>
+</service-group>

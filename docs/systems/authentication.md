@@ -1,6 +1,6 @@
 # Authentication System
 
-User authentication and subscription tier management.
+User authentication, Open Access Mode, and subscription tier management.
 
 ```mermaid
 sequenceDiagram
@@ -8,16 +8,37 @@ sequenceDiagram
     participant S as Sound Box
     participant V as Valnet Auth
 
-    U->>S: Request with Bearer token
-    S->>V: GET /api/user/me
-    V-->>S: {user_id, tier, permissions}
-    S->>S: Cache for request
-    S-->>U: Response
+    alt Open Access Mode (default)
+        U->>S: Request (no token needed)
+        S->>S: Create anon user<br/>from IP hash
+        S-->>U: Response
+    else Valnet Auth Mode
+        U->>S: Request with Bearer token
+        S->>V: GET /api/user/me
+        V-->>S: {user_id, tier, permissions}
+        S->>S: Cache for request
+        S-->>U: Response
+    end
 ```
 
 ## Overview
 
-Sound Box uses Valnet/Graphlings for authentication:
+Sound Box supports two authentication modes:
+
+### Open Access Mode (Default)
+
+When `OPEN_ACCESS_MODE=true` (the default), no login is required:
+
+- **Anonymous identity** - Users identified by SHA256 hash of IP address (`anon_` prefix)
+- **No token needed** - All endpoints work without authentication
+- **Rate limits per-IP** - Prevents abuse without requiring accounts
+- **Localhost exempt** - `127.0.0.1` and `::1` bypass rate limits (except MCP-proxied requests)
+- **IP whitelist** - `IP_WHITELIST` env var for creator-tier limits on trusted IPs
+- **Graphlings SDK skipped** - Frontend doesn't load external auth scripts
+
+### Valnet Auth Mode
+
+When `OPEN_ACCESS_MODE=false`, Sound Box uses Valnet/Graphlings for authentication:
 - **No local accounts** - All users from external auth
 - **Token-based** - Bearer tokens in Authorization header
 - **Tier-aware** - Subscription tier affects limits
@@ -189,6 +210,26 @@ X-RateLimit-Reset: 1609459200
 
 ---
 
+## MCP Proxy Detection
+
+The MCP server runs on localhost and forwards requests to Flask. Without special handling, these requests would receive localhost privileges (system user, admin tier, rate limit exemption). The `X-MCP-Proxy` header prevents this.
+
+### How It Works
+
+| Function | Direct Localhost | MCP-Proxied Localhost | Remote Client |
+|----------|-----------------|----------------------|---------------|
+| `is_localhost_request()` | `True` | `False` | `False` |
+| `get_remote_address_or_exempt()` | `None` (exempt) | `"mcp-proxy"` (limited) | IP address (limited) |
+| User identity | System user (admin) | Anonymous IP hash | Token or anonymous |
+| Rate limits | Exempt | Shared `mcp-proxy` pool | Per-IP |
+
+### Security Properties
+
+- **Privilege reduction only** - The `X-MCP-Proxy` header can only reduce privileges, never escalate them. A remote attacker sending it changes nothing (they already lack localhost privileges). A localhost process sending it intentionally only downgrades itself.
+- **Shared identity** - All MCP-proxied requests share the `mcp-proxy` rate limit pool, preventing GPU queue flooding from AI agents.
+
+---
+
 ## Email Verification
 
 Free users must verify email before generating.
@@ -326,6 +367,7 @@ curl -I http://localhost:5309/generate \
 ## See Also
 
 - [API Reference](../api/README.md) - Authentication in API docs
+- [Service Discovery](service-discovery.md) - Discovery endpoints (all public, no auth)
 - [Queue System](queue-system.md) - Priority by tier
 - [Architecture](../ARCHITECTURE.md) - System overview
 

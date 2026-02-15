@@ -4,10 +4,16 @@ Health checks, metrics, and alerting for Sound Box.
 
 ```mermaid
 graph TD
-    subgraph Endpoints
+    subgraph "Health Endpoints"
         A[GET /status]
         B[GET /queue-status]
         C[GET /api/backup/status]
+    end
+
+    subgraph "Discovery Endpoints"
+        D1[GET /api/manifest]
+        D2[GET /.well-known/agent-card.json]
+        D3[GET /openapi.json]
     end
 
     subgraph Metrics
@@ -15,12 +21,16 @@ graph TD
         E[GPU Utilization]
         F[Queue Length]
         G[Backup Status]
+        H[Library Stats]
     end
 
     A --> D
     A --> E
     A --> F
     C --> G
+    D1 --> H
+    D1 --> D
+    D1 --> E
 ```
 
 ## Health Endpoints
@@ -79,6 +89,33 @@ Current job queue:
     {"id": "abc123", "status": "processing", "model": "music"}
   ]
 }
+```
+
+### Service Manifest
+
+`GET /api/manifest`
+
+Comprehensive service status including models, GPU, library stats, and all discovery links. Good for monitoring dashboards that need a single endpoint.
+
+```bash
+curl -s http://localhost:5309/api/manifest | jq '{models, gpu, library}'
+```
+
+### MCP Server Status
+
+If running the MCP server via systemd:
+
+```bash
+systemctl status soundbox-mcp --no-pager
+
+# Check if MCP_API_KEY is set (required for SSE transport)
+grep -q '^MCP_API_KEY=.\+' .env && echo "MCP_API_KEY: configured" || echo "WARNING: MCP_API_KEY not set - SSE will reject all connections"
+```
+
+### Avahi mDNS
+
+```bash
+avahi-browse _soundbox._tcp -t
 ```
 
 ### Backup Status
@@ -215,8 +252,11 @@ exit 0
 ### Application Logs
 
 ```bash
-# Follow logs
-sudo journalctl -u soundbox -f
+# Follow all Sound Box logs (main + MCP)
+sudo journalctl -u soundbox -u soundbox-mcp -f
+
+# Or use the service manager
+./service.sh logs
 
 # Last hour
 sudo journalctl -u soundbox --since "1 hour ago"
