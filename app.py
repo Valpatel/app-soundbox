@@ -1475,7 +1475,11 @@ def process_queue():
                 progress_thread = threading.Thread(target=update_progress, daemon=True)
                 progress_thread.start()
 
-                m.set_generation_params(duration=job['duration'])
+                if model_type.startswith('magnet'):
+                    # MAGNeT doesn't accept duration - it's fixed by model
+                    m.set_generation_params()
+                else:
+                    m.set_generation_params(duration=job['duration'])
                 wav = m.generate([job['prompt']])
 
                 job['progress_pct'] = 92
