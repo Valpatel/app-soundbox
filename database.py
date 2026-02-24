@@ -362,13 +362,12 @@ GRAPHLINGS_SOURCES = {
         'icon': 'gamepad',
         'type': 'game'
     },
-    # Future games/apps can be added here:
-    # 'creature-lab': {
-    #     'name': 'Creature Lab',
-    #     'description': 'Graphlings creature builder',
-    #     'icon': 'flask',
-    #     'type': 'app'
-    # },
+    'graphlings': {
+        'name': 'Graphlings',
+        'description': 'AI crystal creature companions - offline Godot game',
+        'icon': 'sparkles',
+        'type': 'game'
+    },
 }
 
 SCHEMA = """
