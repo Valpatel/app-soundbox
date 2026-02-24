@@ -530,9 +530,9 @@ else
 fi
 
 if [[ $INSTALL_SERVICE =~ ^[Yy]$ ]]; then
-    bash "$SCRIPT_DIR/service.sh" install
+    bash "$SCRIPT_DIR/scripts/service.sh" install
 else
-    echo "Skipping systemd service - use './service.sh install' later"
+    echo "Skipping systemd service - use './scripts/service.sh install' later"
 fi
 
 echo ""
@@ -574,10 +574,10 @@ echo "To start Sound Box:"
 echo "  ./start.sh"
 echo ""
 echo "Service management (if installed):"
-echo "  ./service.sh status    # Check service status"
-echo "  ./service.sh stop      # Stop the service"
-echo "  ./service.sh disable   # Disable auto-start"
-echo "  ./service.sh uninstall # Remove service completely"
+echo "  ./scripts/service.sh status    # Check service status"
+echo "  ./scripts/service.sh stop      # Stop the service"
+echo "  ./scripts/service.sh disable   # Disable auto-start"
+echo "  ./scripts/service.sh uninstall # Remove service completely"
 echo ""
 echo "Then open: http://localhost:5309"
 echo ""
