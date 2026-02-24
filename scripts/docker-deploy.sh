@@ -135,8 +135,8 @@ case "${1:-help}" in
         ssh "$HOST" "sudo systemctl stop soundbox 2>/dev/null || true"
         ssh "$HOST" "sudo systemctl stop soundbox-mcp 2>/dev/null || true"
         ssh "$HOST" "sudo docker compose -f ~/Code/app-soundbox/docker-compose.yml down 2>/dev/null || true"
-        # Kill any remaining app.py processes
-        ssh "$HOST" "pkill -f 'python.*app.py' 2>/dev/null || true"
+        # Kill any remaining app.py processes (use kill via pgrep to avoid pkill matching the SSH session)
+        ssh "$HOST" "pgrep -f 'python.*app.py' | xargs -r kill 2>/dev/null || true"
         sleep 2
 
         # Pull latest image

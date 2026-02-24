@@ -329,8 +329,12 @@ fix_nvrtc_for_blackwell() {
     local SYS_NVRTC_DIR=""
 
     # Only needed if we have a GPU with compute capability > what PyTorch supports
+    # FORCE_NVRTC_FIX=1 bypasses GPU check (e.g., Docker builds where GPU isn't available)
     local needs_fix
-    needs_fix=$(python3 -c "
+    if [ "${FORCE_NVRTC_FIX}" = "1" ]; then
+        needs_fix="yes"
+    else
+        needs_fix=$(python3 -c "
 import torch
 if not torch.cuda.is_available():
     print('no')
@@ -341,6 +345,7 @@ else:
     device_sm = cap[0] * 10 + cap[1]
     print('yes' if device_sm > max_sm else 'no')
 " 2>/dev/null) || needs_fix="no"
+    fi
 
     if [ "$needs_fix" != "yes" ]; then
         return

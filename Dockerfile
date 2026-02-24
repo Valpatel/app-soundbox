@@ -1,4 +1,6 @@
-FROM nvidia/cuda:12.8.0-runtime-ubuntu24.04
+# CUDA 13.0 provides NVRTC that supports Blackwell sm_121 (GB10/GB20)
+# Available for both linux/amd64 and linux/arm64
+FROM nvidia/cuda:13.0.0-runtime-ubuntu24.04
 
 # Avoid interactive prompts during apt-get
 ENV DEBIAN_FRONTEND=noninteractive
@@ -32,9 +34,11 @@ COPY . .
 # - Initializes the database
 #
 # FORCE_CUDA: install CUDA-enabled PyTorch even without GPU at build time
+# FORCE_NVRTC_FIX: replace PyTorch's bundled NVRTC 12.8 with system NVRTC 13.0
+#                  (required for Blackwell sm_121 which NVRTC 12.8 doesn't support)
 # SKIP_SERVICES: no systemd in Docker
 # SKIP_TESTS: no need for Playwright in production image
-RUN FORCE_CUDA=1 SKIP_SERVICES=1 SKIP_TESTS=1 bash setup.sh --auto
+RUN FORCE_CUDA=1 FORCE_NVRTC_FIX=1 SKIP_SERVICES=1 SKIP_TESTS=1 bash setup.sh --auto
 
 # Create directories for volume mounts
 RUN mkdir -p generated spectrograms data
