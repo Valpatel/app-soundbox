@@ -1,5 +1,15 @@
 # Sound Box
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/Platform-x86__64_|_ARM64_|_Jetson_|_Blackwell-green.svg)]()
+[![Generated Audio: CC0](https://img.shields.io/badge/Generated_Audio-CC0_Public_Domain-EF9421.svg?logo=creativecommons&logoColor=white)](https://creativecommons.org/publicdomain/zero/1.0/)
+
+[![MusicGen](https://img.shields.io/badge/MusicGen-Music_Generation-a855f7.svg?logo=meta&logoColor=white)](https://github.com/facebookresearch/audiocraft)
+[![AudioGen](https://img.shields.io/badge/AudioGen-SFX_Generation-00d4ff.svg?logo=meta&logoColor=white)](https://github.com/facebookresearch/audiocraft)
+[![MAGNeT](https://img.shields.io/badge/MAGNeT-Fast_Generation-10b981.svg?logo=meta&logoColor=white)](https://github.com/facebookresearch/audiocraft)
+[![Piper TTS](https://img.shields.io/badge/Piper_TTS-Text_to_Speech-ef4444.svg)](https://github.com/rhasspy/piper)
+
 AI audio generation server with multiple engines, a community library, and a game asset review workflow.
 
 ![Sound Box Radio](docs/screenshots/radio.png)
@@ -125,7 +135,16 @@ AGPL v3 — See [LICENSE](LICENSE) for details.
 
 Created by Matthew Valancy
 
-- [AudioCraft](https://github.com/facebookresearch/audiocraft) by Meta AI
-- [Piper](https://github.com/rhasspy/piper) by Rhasspy
+### Generation Engines
+
+| Engine | Model | Type | By |
+|--------|-------|------|----|
+| [MusicGen](https://github.com/facebookresearch/audiocraft) | `facebook/musicgen-small` | Music | Meta AI |
+| [AudioGen](https://github.com/facebookresearch/audiocraft) | `facebook/audiogen-medium` | Sound Effects | Meta AI |
+| [MAGNeT](https://github.com/facebookresearch/audiocraft) | `facebook/magnet-small-10secs` | Fast Music | Meta AI |
+| [MAGNeT](https://github.com/facebookresearch/audiocraft) | `facebook/audio-magnet-small` | Fast SFX | Meta AI |
+| [Piper TTS](https://github.com/rhasspy/piper) | 20+ downloadable voices | Text-to-Speech | Rhasspy |
+
+All engines are part of [AudioCraft](https://github.com/facebookresearch/audiocraft) (Meta AI) except Piper TTS ([Rhasspy](https://github.com/rhasspy/piper)). Generated audio is [CC0 public domain](https://creativecommons.org/publicdomain/zero/1.0/).
 
 (c) 2026 Valpatel Software LLC

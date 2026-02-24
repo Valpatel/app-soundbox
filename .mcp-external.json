@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "soundbox": {
-      "command": "/home/scubasonar/Code/app-soundbox/venv/bin/python",
-      "args": ["/home/scubasonar/Code/app-soundbox/mcp_server.py"],
-      "env": {"SOUNDBOX_URL": "http://localhost:5309"}
-    }
-  }
-}
