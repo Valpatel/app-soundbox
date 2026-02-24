@@ -1,0 +1,26 @@
+services:
+  soundbox:
+    image: ghcr.io/valpatel/soundbox:latest
+    build: .
+    ports:
+      - "5309:5309"
+    volumes:
+      - soundbox-data:/app/generated
+      - soundbox-db:/app/data
+      - soundbox-spectrograms:/app/spectrograms
+    environment:
+      - DB_PATH=data/soundbox.db
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    env_file: .env
+    restart: unless-stopped
+
+volumes:
+  soundbox-data:
+  soundbox-db:
+  soundbox-spectrograms:

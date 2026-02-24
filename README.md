@@ -28,7 +28,7 @@ AI audio generation server with multiple engines, a community library, and a gam
 - **Library & Search** — Full-text search, filtering by type, sorting, voting, favorites, playlists
 
 ### Tagging & Review
-- **Game Asset Tagging** — Tag generated audio for specific games or apps via API or MCP tools
+- **Project Asset Tagging** — Tag generated audio for specific projects via API or MCP tools
 - **Review Workflow** — Thumbs-up/down voting with structured feedback: reviewers select rejection reasons and leave notes so sounds can be regenerated to spec
 
 ### Infrastructure
@@ -65,6 +65,18 @@ Optional: auto-start on boot with systemd:
 ./scripts/service.sh install   # Installs soundbox + MCP + mDNS services
 ```
 
+### Docker
+
+Requires [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) for GPU access.
+
+```bash
+cp .env.example .env        # Configure settings
+docker compose up --build    # Build image + start (first run ~15 min)
+docker compose up -d         # Start in background (subsequent runs)
+```
+
+Supports x86_64 (RTX), ARM64 Jetson Orin, and ARM64 DGX/Blackwell. Audio files and the database persist across restarts via Docker volumes.
+
 ## Requirements
 
 - Python 3.10+
@@ -99,6 +111,7 @@ cp .env.example .env
 | `OPEN_ACCESS_MODE` | `true` | Disable login requirements |
 | `IP_WHITELIST` | *(empty)* | Comma-separated IPs for creator-tier limits |
 | `MCP_PORT` | `5310` | MCP server port (SSE transport) |
+| `DB_PATH` | `soundbox.db` | SQLite database path (useful for Docker volumes) |
 | `BACKUP_DIR` | *(disabled)* | Enable nightly backups |
 
 ## API Quick Reference

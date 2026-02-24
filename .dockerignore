@@ -1,0 +1,51 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
+node_modules/
+
+# Generated files (mounted as volumes)
+generated/
+spectrograms/
+soundbox.db
+soundbox.db-shm
+soundbox.db-wal
+generations.json
+generation_progress.json
+*.log
+
+# Models (downloaded during build)
+models/
+
+# Environment (passed via env_file)
+.env
+
+# Test artifacts
+playwright-report/
+test-results/
+.last-run.json
+tests/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Docs / screenshots
+docs/screenshots/

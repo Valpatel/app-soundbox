@@ -35,6 +35,23 @@ print_info() {
 }
 
 # ==============================================================================
+# Check Python version (3.10+ required)
+# ==============================================================================
+if ! command -v python3 &> /dev/null; then
+    print_error "Python 3 not found. Install python3 3.10+ and try again."
+    exit 1
+fi
+
+PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+PYTHON_MINOR=$(python3 -c 'import sys; print(sys.version_info.minor)')
+
+if [ "$PYTHON_MINOR" -lt 10 ]; then
+    print_error "Python 3.10+ required, found Python $PYTHON_VERSION"
+    exit 1
+fi
+print_info "Python: $PYTHON_VERSION"
+
+# ==============================================================================
 # Detect system architecture and GPU
 # ==============================================================================
 ARCH=$(uname -m)
@@ -79,6 +96,13 @@ detect_gpu() {
 }
 
 detect_gpu
+
+# Allow forcing CUDA installation (e.g., Docker builds where nvidia-smi is unavailable)
+if [ "${FORCE_CUDA}" = "1" ] && [ "$HAS_GPU" = false ]; then
+    print_info "FORCE_CUDA=1: Installing CUDA-enabled PyTorch (GPU not detected at build time)"
+    HAS_GPU=true
+    GPU_TYPE="${GPU_TYPE:-nvidia-desktop}"
+fi
 
 echo ""
 
@@ -519,20 +543,25 @@ echo ""
 # ==============================================================================
 # STEP 10: Install systemd service (optional)
 # ==============================================================================
-print_step "Setting up systemd service..."
-
-if [ "${1}" = "--auto" ] || [ "${NONINTERACTIVE}" = "1" ]; then
-    INSTALL_SERVICE="y"
+# Skip in Docker (no systemd) or when SKIP_SERVICES=1
+if [ -f "/.dockerenv" ] || [ "${SKIP_SERVICES}" = "1" ]; then
+    print_info "Skipping systemd service (Docker or SKIP_SERVICES=1)"
 else
-    read -p "Install systemd service (auto-start on boot)? [Y/n] " -n 1 -r
-    echo
-    INSTALL_SERVICE="${REPLY:-Y}"
-fi
+    print_step "Setting up systemd service..."
 
-if [[ $INSTALL_SERVICE =~ ^[Yy]$ ]]; then
-    bash "$SCRIPT_DIR/scripts/service.sh" install
-else
-    echo "Skipping systemd service - use './scripts/service.sh install' later"
+    if [ "${1}" = "--auto" ] || [ "${NONINTERACTIVE}" = "1" ]; then
+        INSTALL_SERVICE="y"
+    else
+        read -p "Install systemd service (auto-start on boot)? [Y/n] " -n 1 -r
+        echo
+        INSTALL_SERVICE="${REPLY:-Y}"
+    fi
+
+    if [[ $INSTALL_SERVICE =~ ^[Yy]$ ]]; then
+        bash "$SCRIPT_DIR/scripts/service.sh" install
+    else
+        echo "Skipping systemd service - use './scripts/service.sh install' later"
+    fi
 fi
 
 echo ""
@@ -540,23 +569,28 @@ echo ""
 # ==============================================================================
 # STEP 11: Install Node.js and Playwright tests (optional)
 # ==============================================================================
-print_step "Setting up test environment..."
-
-# Install Node.js if not present
-if ! command -v node &> /dev/null; then
-    print_info "Installing Node.js 20 LTS..."
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 2>&1 | tail -1
-    sudo apt-get install -y -qq nodejs 2>&1 | tail -1
-fi
-
-if command -v npm &> /dev/null; then
-    print_info "Node.js $(node --version), npm $(npm --version)"
-    npm install 2>&1 | tail -3
-    npx playwright install chromium 2>&1 | tail -3 || true
-    npx playwright install-deps chromium 2>&1 | tail -3 || true
-    echo "  Tests ready: npm test"
+# Skip in Docker (not needed for production) or when SKIP_TESTS=1
+if [ -f "/.dockerenv" ] || [ "${SKIP_TESTS}" = "1" ]; then
+    print_info "Skipping test environment (Docker or SKIP_TESTS=1)"
 else
-    print_warn "npm not available - skipping Playwright test setup"
+    print_step "Setting up test environment..."
+
+    # Install Node.js if not present
+    if ! command -v node &> /dev/null; then
+        print_info "Installing Node.js 20 LTS..."
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 2>&1 | tail -1
+        sudo apt-get install -y -qq nodejs 2>&1 | tail -1
+    fi
+
+    if command -v npm &> /dev/null; then
+        print_info "Node.js $(node --version), npm $(npm --version)"
+        npm install 2>&1 | tail -3
+        npx playwright install chromium 2>&1 | tail -3 || true
+        npx playwright install-deps chromium 2>&1 | tail -3 || true
+        echo "  Tests ready: npm test"
+    else
+        print_warn "npm not available - skipping Playwright test setup"
+    fi
 fi
 
 echo ""

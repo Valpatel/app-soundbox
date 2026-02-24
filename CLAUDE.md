@@ -15,6 +15,7 @@
 ./test.sh                     # Run Playwright E2E tests
 ./scripts/service.sh install  # Systemd service (auto-start on boot)
 ./scripts/service.sh uninstall # Remove service
+docker compose up --build     # Docker alternative (GPU requires NVIDIA Container Toolkit)
 ```
 
 ## App Overview
@@ -149,7 +150,7 @@ Persistent player shown at bottom when on non-Radio tabs while audio is playing.
 ```
 app-soundbox/
 ├── app.py                    # Flask server, AI generation endpoints (~4800 lines)
-├── mcp_server.py             # MCP server for AI agent tool use (6 tools)
+├── mcp_server.py             # MCP server for AI agent tool use (11 tools)
 ├── database.py               # SQLite operations, FTS5 search
 ├── backup.py                 # Database backup utilities
 ├── voice_licenses.py         # Voice license metadata
@@ -182,7 +183,7 @@ app-soundbox/
 │   │   ├── radio-widget-templates.css # Theme templates
 │   │   └── radio-widget-fullscreen.css # Fullscreen mode styles
 │   ├── openapi.json          # OpenAPI 3.1 spec (13 endpoints)
-│   ├── graphlings/           # Branding assets (Valpatel favicon, logo)
+│   ├── branding/             # Branding assets (Valpatel favicon, logo)
 │   └── output/               # Generated audio files
 ├── tests/
 │   ├── discovery.spec.js     # Service discovery tests (18 tests)
@@ -226,6 +227,11 @@ app-soundbox/
 - `get_status` - System status, GPU info, queue
 - `get_radio_track` - Random/curated tracks
 - `download_audio` - Get download URL for a track
+- `generate_for_project` - Generate and tag audio for a project
+- `tag_for_project` - Tag existing audio for a project
+- `get_project_assets` - Get all audio tagged for a project
+- `get_rejected_assets` - Get rejected assets with feedback
+- `list_project_sources` - List all registered project sources
 
 **Security:** MCP requests are proxied with `X-MCP-Proxy: true` header, so they don't receive localhost privileges. SSE transport requires `MCP_API_KEY`. All inputs validated and clamped.
 
@@ -289,7 +295,7 @@ Saved to localStorage:
 - **Service Discovery**: 5 complementary layers for different client types
   - `/api/manifest` - Universal discovery hub (capabilities, endpoints, stats)
   - `/.well-known/agent-card.json` - A2A agent protocol with 5 skills
-  - `mcp_server.py` - MCP server with 6 tools (generate, search, status, etc.)
+  - `mcp_server.py` - MCP server with 11 tools (generate, search, status, project assets, etc.)
   - `/openapi.json` - OpenAPI 3.1 spec for 13 key endpoints
   - `avahi/soundbox.service` - mDNS LAN broadcast (`_soundbox._tcp`)
 - **`.mcp.json`**: Claude Code auto-discovers MCP server via stdio

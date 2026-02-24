@@ -51,7 +51,7 @@ def sanitize_fts5_query(search):
 
     return ' OR '.join(quoted_words)
 
-DB_PATH = 'soundbox.db'
+DB_PATH = os.environ.get('DB_PATH', 'soundbox.db')
 METADATA_FILE = 'generations.json'
 
 # =============================================================================
@@ -349,13 +349,13 @@ SPEECH_CATEGORIES = {
 }
 
 # =============================================================================
-# Graphlings Game/App Sources
+# Project Sources
 # =============================================================================
-# Assets can be tagged with a source to indicate which game or app uses them.
-# This enables a unified "Graphlings" tab showing all game audio in one place.
+# Assets can be tagged with a source to indicate which project uses them.
+# This enables a unified assets tab showing all project audio in one place.
 # Format: 'source_id': {'name': 'Display Name', 'icon': 'icon-name', 'type': 'game'|'app'}
 
-GRAPHLINGS_SOURCES = {
+PROJECT_SOURCES = {
     'byk3s': {
         'name': 'Byk3s',
         'description': 'Cyberpunk bike combat game',
@@ -564,7 +564,7 @@ def init_db():
         except sqlite3.OperationalError:
             pass  # Column already exists
 
-        # Migration: Add creator tracking for user uploads from Graphlings widget
+        # Migration: Add creator tracking for user uploads from widget
         try:
             conn.execute("ALTER TABLE generations ADD COLUMN creator_id TEXT")
             print("[DB] Added creator_id column to generations table")
@@ -674,15 +674,15 @@ def init_db():
         # Create index for voice_id lookups
         conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_voice ON generations(voice_id)")
 
-        # Migration: Add source column for Graphlings game/app tagging
-        # Allows assets to be tagged with which game/app uses them (e.g., 'byk3s')
+        # Migration: Add source column for project tagging
+        # Allows assets to be tagged with which project uses them (e.g., 'byk3s')
         try:
             conn.execute("ALTER TABLE generations ADD COLUMN source TEXT")
-            print("[DB] Added source column to generations table for Graphlings tagging")
+            print("[DB] Added source column to generations table for project tagging")
         except sqlite3.OperationalError:
             pass  # Column already exists
 
-        # Create index for source lookups (fast filtering by game/app)
+        # Create index for source lookups (fast filtering by project)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_source ON generations(source)")
 
         # Migration: Add action column to tag_suggestions if missing
@@ -795,7 +795,7 @@ def create_generation(gen_id, filename, prompt, model, duration, is_loop=False,
         is_loop: Whether audio is loopable
         quality_score: Quality analysis score (0-100)
         spectrogram: Path to spectrogram image
-        user_id: Creator's user ID (from Graphlings auth)
+        user_id: Creator's user ID (from auth)
         is_public: Whether to add to public library (default False for moderation)
         voice_id: For voice model, the TTS voice ID used (e.g., 'en_GB-vctk-medium')
         tags: Optional list of category tags to merge with auto-categorization
@@ -850,7 +850,7 @@ def get_library(page=1, per_page=20, model=None, search=None, sort='recent', use
         sort: 'recent', 'popular', or 'rating'
         user_id: Deprecated - use get_user_generations() for private content
         category: Filter by category/genre (e.g., 'ambient', 'nature')
-        source: Filter by Graphlings source (e.g., 'byk3s')
+        source: Filter by project source (e.g., 'byk3s')
 
     Returns:
         dict with items, total, page, per_page, pages
@@ -876,7 +876,7 @@ def get_library(page=1, per_page=20, model=None, search=None, sort='recent', use
         conditions.append("g.category LIKE ?")
         params.append(f'%"{category}"%')
 
-    # Source filter for Graphlings games/apps
+    # Source filter for projects
     if source:
         conditions.append("g.source = ?")
         params.append(source)
@@ -1851,7 +1851,7 @@ def record_play(generation_id, user_id=None, session_id=None, play_duration=None
 
     Args:
         generation_id: The generation ID
-        user_id: Optional user ID (from Graphlings widget or anonymous)
+        user_id: Optional user ID (from widget or anonymous)
         session_id: Browser session ID for unique counting
         play_duration: How long they listened (seconds)
         source: Where it was played from ('radio', 'library', 'embed', etc.)
@@ -2560,22 +2560,22 @@ def get_available_categories(model):
 
 
 # =============================================================================
-# Graphlings Game/App Source Functions
+# Project Source Functions
 # =============================================================================
 
-def get_graphlings_sources():
+def get_project_sources():
     """
-    Get all available Graphlings sources (games/apps).
+    Get all available project sources.
 
     Returns:
         dict of source_id -> source info
     """
-    return GRAPHLINGS_SOURCES
+    return PROJECT_SOURCES
 
 
-def get_graphlings_source_counts():
+def get_project_source_counts():
     """
-    Get counts of assets per Graphlings source, broken down by model type.
+    Get counts of assets per project source, broken down by model type.
 
     Returns:
         dict of source_id -> {music: count, audio: count, voice: count, total: count}
@@ -2617,7 +2617,7 @@ def set_generation_source(generation_id, source):
         True on success, False on error
     """
     # Validate source if provided
-    if source and source not in GRAPHLINGS_SOURCES:
+    if source and source not in PROJECT_SOURCES:
         return False
 
     with get_db() as conn:
@@ -2642,7 +2642,7 @@ def bulk_set_source(generation_ids, source):
     Returns:
         Number of rows updated
     """
-    if source and source not in GRAPHLINGS_SOURCES:
+    if source and source not in PROJECT_SOURCES:
         return 0
 
     if not generation_ids:
@@ -2663,7 +2663,7 @@ def bulk_set_source(generation_ids, source):
 
 
 # =============================================================================
-# Playlists - Requires authenticated user_id from Graphlings widget
+# Playlists - Requires authenticated user_id
 # =============================================================================
 
 def create_playlist(playlist_id, user_id, name, description=None):
@@ -2672,7 +2672,7 @@ def create_playlist(playlist_id, user_id, name, description=None):
 
     Args:
         playlist_id: Unique playlist ID (e.g., 'pl_abc123')
-        user_id: Authenticated user ID from Graphlings widget
+        user_id: Authenticated user ID
         name: Playlist name
         description: Optional description
 
@@ -2728,7 +2728,7 @@ def get_user_playlists(user_id, page=1, per_page=50):
     Get all playlists for a user.
 
     Args:
-        user_id: Authenticated user ID from Graphlings widget
+        user_id: Authenticated user ID
         page: Page number
         per_page: Items per page
 
