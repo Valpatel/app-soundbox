@@ -1298,8 +1298,14 @@ def load_model_on_demand(model_type):
                 models['audio'] = AudioGen.get_pretrained('facebook/audiogen-medium')
             elif model_type == 'magnet-music':
                 models['magnet-music'] = MAGNeT.get_pretrained('facebook/magnet-small-10secs')
+                # MAGNeT loader forces xformers backend, but it may not have CUDA ops
+                # (ARM64 builds xformers without CUDA kernels). Reset to torch SDPA.
+                from audiocraft.modules.transformer import set_efficient_attention_backend
+                set_efficient_attention_backend('torch')
             elif model_type == 'magnet-audio':
                 models['magnet-audio'] = MAGNeT.get_pretrained('facebook/audio-magnet-small')
+                from audiocraft.modules.transformer import set_efficient_attention_backend
+                set_efficient_attention_backend('torch')
             else:
                 print(f"[GPU] Unknown model type: {model_type}")
                 return False
