@@ -160,7 +160,7 @@
             width: fit-content;
         }
 
-        /* Sign-in prompt styles are now handled by Graphlings SDK */
+        /* Sign-in prompt styles */
 
         /* Dark themed audio player using filter inversion */
         audio {
@@ -6180,7 +6180,7 @@
                             <svg class="icon" width="18" height="18"><use href="#icon-close"/></svg>
                         </button>
                     </div>
-                    <!-- Type Tabs: Music, SFX, Speech, Graphlings -->
+                    <!-- Type Tabs: Music, SFX, Speech, Games -->
                     <div class="category-type-tabs">
                         <button class="type-tab active" data-type="music" onclick="selectTypeTab('music')" title="Browse generated music">
                             <svg class="icon"><use href="#icon-music"/></svg>
@@ -6197,9 +6197,9 @@
                             Speech
                             <span class="tab-count" id="voice-count">0</span>
                         </button>
-                        <button class="type-tab" data-type="graphlings" onclick="selectTypeTab('graphlings')" title="Browse Graphlings game audio">
+                        <button class="type-tab" data-type="graphlings" onclick="selectTypeTab('graphlings')" title="Browse game/app audio">
                             <svg class="icon"><use href="#icon-game"/></svg>
-                            Graphlings
+                            Games
                             <span class="tab-count" id="graphlings-count">0</span>
                         </button>
                     </div>
@@ -6547,10 +6547,10 @@
                         </div>
                     </div>
 
-                    <!-- Graphlings Games/Apps - Dynamic from API -->
+                    <!-- Games/Apps - Dynamic from API -->
                     <div class="genre-section graphlings-genres" id="graphlings-genres">
                         <div class="graphlings-loading">Loading games...</div>
-                        <!-- Dynamically populated by loadGraphlingsSources() -->
+                        <!-- Dynamically populated by loadGraphlingsSources() (uses 'graphlings' as internal API name) -->
                     </div>
 
                     <!-- Clear Filter Button -->
@@ -6795,7 +6795,7 @@
                     <div class="auth-gate-content">
                         <svg class="icon icon-xl"><use href="#icon-lock"/></svg>
                         <h3>Sign in to view your history</h3>
-                        <p>Your play history and votes are saved when you're logged in via Graphlings.</p>
+                        <p>Your play history and votes are saved when you're logged in.</p>
                     </div>
                 </div>
 
@@ -6882,10 +6882,10 @@
                         </div>
                         <pre id="widget-embed"><code>&lt;!-- Sound Box Radio Widget --&gt;
 &lt;!-- Load the widget scripts --&gt;
-&lt;script src="https://soundbox.graphlings.net/static/js/radio-widget-core.js"&gt;&lt;/script&gt;
-&lt;script src="https://soundbox.graphlings.net/static/js/radio-widget.js"&gt;&lt;/script&gt;
-&lt;link rel="stylesheet" href="https://soundbox.graphlings.net/static/css/radio-widget.css"&gt;
-&lt;link rel="stylesheet" href="https://soundbox.graphlings.net/static/css/radio-widget-sizes.css"&gt;
+&lt;script src="https://localhost:5309/static/js/radio-widget-core.js"&gt;&lt;/script&gt;
+&lt;script src="https://localhost:5309/static/js/radio-widget.js"&gt;&lt;/script&gt;
+&lt;link rel="stylesheet" href="https://localhost:5309/static/css/radio-widget.css"&gt;
+&lt;link rel="stylesheet" href="https://localhost:5309/static/css/radio-widget-sizes.css"&gt;
 
 &lt;!-- Container for the widget --&gt;
 &lt;div id="my-radio"&gt;&lt;/div&gt;
@@ -6927,13 +6927,13 @@
                                 <button class="copy-btn" title="Copy to clipboard" onclick="copyApiCode('api-radio-example')">Copy</button>
                             </div>
                             <pre id="api-radio-example"><code># Get random tracks (shuffle station)
-curl "https://soundbox.graphlings.net/api/radio?station=shuffle&amp;limit=5"
+curl "https://localhost:5309/api/radio?station=shuffle&amp;limit=5"
 
 # Get trending tracks
-curl "https://soundbox.graphlings.net/api/radio?station=trending&amp;model=music"
+curl "https://localhost:5309/api/radio?station=trending&amp;model=music"
 
 # Search for specific tracks
-curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=10"</code></pre>
+curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code></pre>
                         </div>
                     </div>
 
@@ -7006,7 +7006,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                             <span>Suggested Credit</span>
                             <button class="copy-btn" title="Copy to clipboard" onclick="copyApiCode('attribution-text')">Copy</button>
                         </div>
-                        <pre id="attribution-text"><code>Music from Sound Box (soundbox.graphlings.net) - CC0 Public Domain</code></pre>
+                        <pre id="attribution-text"><code>Music from Sound Box (localhost:5309) - CC0 Public Domain</code></pre>
                     </div>
                 </div>
 
@@ -7218,29 +7218,20 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         // PLAYLISTS TAB & MODAL
         // ========================================
         let currentPlaylistModalTrackId = null;
-        let userPlaylists = []; // Loaded from API (requires Graphlings auth)
+        let userPlaylists = []; // Loaded from API (requires auth)
 
         function isUserAuthenticated() {
             // In open access mode, everyone is "authenticated" with device ID
             if (OPEN_ACCESS_MODE) return true;
-            // User is authenticated if we have their ID from Graphlings SDK
+            // User is authenticated if we have their ID (or always true in open access)
             // Token check removed - SDK doesn't expose token but does provide user ID
             return currentUserId !== null;
         }
 
         function showLoginPrompt(action) {
-            // In open access mode, no login needed - just proceed
+            // AUTH STUB: Show your login UI here when auth is required
             if (OPEN_ACCESS_MODE) return;
-            // Use SDK's built-in sign-in prompt
-            if (window.graphlings && window.graphlings.promptSignIn) {
-                window.graphlings.promptSignIn({
-                    message: 'Sign in to unlock everything!',
-                    description: 'Create playlists, save favorites, generate custom sounds, and more. All audio is free to download and use!'
-                });
-            } else {
-                // Fallback: scroll to top where widget is
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+            console.log('[Auth] Login required for:', action);
         }
 
         // Update UI elements based on authentication state
@@ -7293,7 +7284,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     <div class="playlist-empty-state">
                         <svg class="icon icon-xl"><use href="#icon-user"/></svg>
                         <h3>Sign in to use Playlists</h3>
-                        <p>Log in with your Graphlings account to create and manage playlists.</p>
+                        <p>Sign in to create and manage playlists.</p>
                     </div>
                 `;
                 userPlaylists = [];
@@ -7348,7 +7339,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                     <div class="playlist-empty-state">
                         <svg class="icon icon-xl"><use href="#icon-user"/></svg>
                         <h3>Sign in to see Favorites</h3>
-                        <p>Log in with your Graphlings account to view your favorites.</p>
+                        <p>Sign in to view your favorites.</p>
                     </div>
                 `;
                 return;
@@ -7726,7 +7717,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
             // Check auth
             if (!isUserAuthenticated()) {
-                listEl.innerHTML = '<div class="playlist-empty">Sign in with Graphlings to use playlists.</div>';
+                listEl.innerHTML = '<div class="playlist-empty">Sign in to use playlists.</div>';
                 return;
             }
 
@@ -8372,7 +8363,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             audio: ''
         };
 
-        // User ID - use Graphlings login OR generate anonymous device ID
+        // User ID - use auth login OR generate anonymous device ID
         // In open access mode, everyone gets a device-based identity automatically
         var OPEN_ACCESS_MODE = {{ 'true' if open_access_mode else 'false' }};  // var for cross-script-block access
         let currentUserId = null;
@@ -8398,36 +8389,12 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             return currentUserId || getDeviceId();
         }
 
-        // Get auth token from Graphlings SDK (returns null in open access mode)
+        // AUTH STUB: Get auth token. Returns null in open access mode.
+        // Connect your auth provider here to return a Bearer token.
         function getAuthToken() {
-            if (OPEN_ACCESS_MODE) return null;  // No tokens needed
-            // Try multiple sources for the token
-            // 1. Check if SDK has a getToken method
-            if (window.graphlings && typeof window.graphlings.getToken === 'function') {
-                const sdkToken = window.graphlings.getToken();
-                if (sdkToken) return sdkToken;
-            }
-            // 2. Check SDK's token property
-            if (window.graphlings && window.graphlings.token) {
-                return window.graphlings.token;
-            }
-            // 3. Try localStorage with app-specific key
-            const stored = localStorage.getItem('graphlings_sfx-music_token');
-            if (stored) return stored;
-            // 4. Try generic graphlings token key
-            const generic = localStorage.getItem('graphlings_token');
-            if (generic) return generic;
-            // 5. Search localStorage for any graphlings-related token
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.toLowerCase().includes('token')) {
-                    const value = localStorage.getItem(key);
-                    // JWT tokens start with 'eyJ'
-                    if (value && value.startsWith('eyJ')) {
-                        return value;
-                    }
-                }
-            }
+            if (OPEN_ACCESS_MODE) return null;
+            // TODO: Return token from your auth provider
+            // Example: return localStorage.getItem('auth_token');
             return null;
         }
 
@@ -8446,7 +8413,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             return fetch(url, options);
         }
 
-        // Check if user is authenticated with Graphlings (or always true in open access)
+        // Check if user is authenticated (always true in open access mode)
         function isAuthenticated() {
             if (OPEN_ACCESS_MODE) return true;
             return !!getAuthToken() && !!currentUserId;
@@ -10742,7 +10709,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
                 // Render Graphlings sources in sidebar
                 renderGraphlingsSources();
             } catch (error) {
-                console.error('Error loading Graphlings sources:', error);
+                console.error('Error loading game sources:', error);
             }
         }
 
@@ -11261,7 +11228,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             } else if (currentTypeTab === 'audio') {
                 searchInput.placeholder = 'Search sound effects...';
             } else if (currentTypeTab === 'graphlings') {
-                searchInput.placeholder = 'Search Graphlings game audio...';
+                searchInput.placeholder = 'Search game audio...';
             } else {
                 searchInput.placeholder = 'Search music, sound effects, prompts...';
             }
@@ -12241,260 +12208,30 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
         }
     </script>
 
-    <!-- Graphlings Widget Integration (disabled in open access mode) -->
+    <!-- AUTH STUB: External auth widget integration (disabled in open access mode) -->
+    <!-- To add your own auth provider:
+         1. Load your auth SDK/script here
+         2. On login: set currentUserId, call updateAuthUI(true)
+         3. On logout: set currentUserId=null, call updateAuthUI(false)
+         4. Implement getAuthToken() above to return Bearer tokens -->
     <script>
-        // Auto-detect environment for Graphlings SDK
         (function() {
-            // Skip Graphlings SDK entirely in open access mode
             if (typeof OPEN_ACCESS_MODE !== 'undefined' && OPEN_ACCESS_MODE) {
-                console.log('[SoundBox] Open access mode - Graphlings SDK disabled');
+                console.log('[SoundBox] Open access mode - external auth disabled');
                 return;
             }
-            const hostname = window.location.hostname;
-            const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
-            const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-
-            // Check if hostname is a Tailscale IP (100.64.0.0/10 CGNAT range)
-            function isTailscaleIP(host) {
-                const ipMatch = host.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
-                if (!ipMatch) return false;
-                const [, a, b] = ipMatch.map(Number);
-                return a === 100 && b >= 64 && b <= 127;
-            }
-            const isTailscale = hostname.endsWith('.ts.net') || isTailscaleIP(hostname);
-
-            const SDK_CONFIG = {
-                appId: 'sfx-music',
-                // Auto-detect: localhost, Tailscale, or production
-                accountsUrl: isLocalhost
-                    ? 'http://localhost:8002'
-                    : isTailscale
-                        ? `http://${hostname}:8002`
-                        : 'https://accounts.graphlings.net',
-                debug: false
-            };
-
-            // Set favicon from accounts server
-            const faviconLink = document.getElementById('favicon-link');
-            if (faviconLink) {
-                faviconLink.href = SDK_CONFIG.accountsUrl + '/static/graphlings/logo-104.png';
-            }
-
-            // Dynamically load SDK from accounts server
-            const sdkScript = document.createElement('script');
-            sdkScript.src = SDK_CONFIG.accountsUrl + '/sdk/graphlings.js';
-            document.head.appendChild(sdkScript);
-
-            // Wait for SDK to load and initialize (with timeout)
-            function waitForSDK(callback, startTime = Date.now()) {
-                const timeout = 10000;  // 10 second timeout
-                if (typeof Graphlings !== 'undefined') {
-                    callback();
-                } else if (Date.now() - startTime > timeout) {
-                    console.error('SDK failed to load within timeout');
-                    // Continue without SDK - user can still use the app
-                } else {
-                    setTimeout(() => waitForSDK(callback, startTime), 50);
-                }
-            }
-
-            // Theme definitions - 'default' is the original Sound Box purple/cyan theme
-            const THEMES = {
-                default: {
-                    accent: '#a855f7',
-                    accentGlow: 'rgba(168, 85, 247, 0.4)',
-                    secondary: '#c084fc',
-                    secondaryGlow: 'rgba(192, 132, 252, 0.3)',
-                    gradientAccent: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-                    gradientSecondary: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)',
-                    success: '#10b981',
-                    cardBorder: 'rgba(168, 85, 247, 0.2)',
-                    chipBg: 'rgba(168, 85, 247, 0.1)',
-                    chipBorder: 'rgba(168, 85, 247, 0.3)'
-                },
-                graphlings: {
-                    accent: '#a855f7',
-                    accentGlow: 'rgba(168, 85, 247, 0.4)',
-                    secondary: '#c084fc',
-                    secondaryGlow: 'rgba(192, 132, 252, 0.3)',
-                    gradientAccent: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-                    gradientSecondary: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)',
-                    success: '#10b981',
-                    cardBorder: 'rgba(168, 85, 247, 0.2)',
-                    chipBg: 'rgba(168, 85, 247, 0.1)',
-                    chipBorder: 'rgba(168, 85, 247, 0.3)'
-                },
-                professional: {
-                    accent: '#3b82f6',
-                    accentGlow: 'rgba(59, 130, 246, 0.4)',
-                    secondary: '#60a5fa',
-                    secondaryGlow: 'rgba(96, 165, 250, 0.3)',
-                    gradientAccent: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
-                    gradientSecondary: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
-                    success: '#3b82f6',
-                    cardBorder: 'rgba(59, 130, 246, 0.2)',
-                    chipBg: 'rgba(59, 130, 246, 0.1)',
-                    chipBorder: 'rgba(59, 130, 246, 0.3)'
-                },
-                ocean: {
-                    accent: '#06b6d4',
-                    accentGlow: 'rgba(6, 182, 212, 0.4)',
-                    secondary: '#22d3ee',
-                    secondaryGlow: 'rgba(34, 211, 238, 0.3)',
-                    gradientAccent: 'linear-gradient(135deg, #06b6d4 0%, #0284c7 100%)',
-                    gradientSecondary: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)',
-                    success: '#06b6d4',
-                    cardBorder: 'rgba(6, 182, 212, 0.2)',
-                    chipBg: 'rgba(6, 182, 212, 0.1)',
-                    chipBorder: 'rgba(6, 182, 212, 0.3)'
-                },
-                forest: {
-                    accent: '#22c55e',
-                    accentGlow: 'rgba(34, 197, 94, 0.4)',
-                    secondary: '#4ade80',
-                    secondaryGlow: 'rgba(74, 222, 128, 0.3)',
-                    gradientAccent: 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)',
-                    gradientSecondary: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
-                    success: '#22c55e',
-                    cardBorder: 'rgba(34, 197, 94, 0.2)',
-                    chipBg: 'rgba(34, 197, 94, 0.1)',
-                    chipBorder: 'rgba(34, 197, 94, 0.3)'
-                },
-                princess: {
-                    accent: '#ec4899',
-                    accentGlow: 'rgba(236, 72, 153, 0.4)',
-                    secondary: '#f472b6',
-                    secondaryGlow: 'rgba(244, 114, 182, 0.3)',
-                    gradientAccent: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
-                    gradientSecondary: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)',
-                    success: '#ec4899',
-                    cardBorder: 'rgba(236, 72, 153, 0.2)',
-                    chipBg: 'rgba(236, 72, 153, 0.1)',
-                    chipBorder: 'rgba(236, 72, 153, 0.3)'
-                }
-            };
-
-            // Apply theme colors to CSS variables
-            function applyTheme(themeName) {
-                const theme = THEMES[themeName] || THEMES.default;
-                const root = document.documentElement;
-
-                // Core accent colors
-                root.style.setProperty('--accent', theme.accent);
-                root.style.setProperty('--accent-glow', theme.accentGlow);
-                root.style.setProperty('--cyan', theme.secondary);
-                root.style.setProperty('--cyan-glow', theme.secondaryGlow);
-                root.style.setProperty('--gradient-accent', theme.gradientAccent);
-                root.style.setProperty('--gradient-cyan', theme.gradientSecondary);
-                root.style.setProperty('--success', theme.success);
-
-                // Card and UI element colors
-                root.style.setProperty('--card-border-accent', theme.cardBorder);
-                root.style.setProperty('--chip-bg', theme.chipBg);
-                root.style.setProperty('--chip-border', theme.chipBorder);
-
-                // Save to localStorage for persistence
-                localStorage.setItem('soundbox_theme', themeName);
-            }
-
-            // Load saved theme on page load
-            function loadSavedTheme() {
-                const savedTheme = localStorage.getItem('soundbox_theme');
-                if (savedTheme && THEMES[savedTheme]) {
-                    applyTheme(savedTheme);
-                }
-            }
-
-            // Load theme immediately
-            loadSavedTheme();
-
-            waitForSDK(function() {
-                window.graphlings = new Graphlings(SDK_CONFIG);
-                window.graphlings.createWidget({
-                    container: '#wallet-widget-container'
-                });
-
-                // Listen for theme changes from the widget
-                window.graphlings.on('themeChanged', function(data) {
-                    applyTheme(data.theme);
-                });
-
-                // Listen for login to get user ID
-                window.graphlings.on('login', function(data) {
-                    if (data.user && data.user.id) {
-                        currentUserId = data.user.id;
-                        // Store token if provided in event data
-                        if (data.token) {
-                            localStorage.setItem('graphlings_sfx-music_token', data.token);
-                        }
-                        // Also check user object for token
-                        if (data.user.token) {
-                            localStorage.setItem('graphlings_sfx-music_token', data.user.token);
-                        }
-                        // Check SDK for getToken method
-                        if (typeof window.graphlings.getToken === 'function') {
-                            const sdkToken = window.graphlings.getToken();
-                            if (sdkToken) {
-                                localStorage.setItem('graphlings_sfx-music_token', sdkToken);
-                            }
-                        }
-                        // Check if user is an adult account
-                        isAdultAccount = data.user.account_type === 'adult' ||
-                                        (data.user.account_type !== 'child' && !data.user.is_child);
-                        updateAuthUI(true);
-                        loadLibrary();  // Refresh library to show/hide feedback buttons
-                        loadPlaylists(); // Load user playlists
-                        loadFavorites(); // Load user favorites
-                        // Update history if on history tab
-                        if (currentTab === 'history') updateHistoryAuthState();
-                    }
-                });
-
-                // Listen for logout to clear user ID
-                window.graphlings.on('logout', function() {
-                    currentUserId = null;
-                    isAdultAccount = false;
-                    updateAuthUI(false);
-                    loadLibrary();  // Refresh library to update feedback button visibility
-                    loadPlaylists(); // Clear playlists
-                    loadFavorites(); // Clear favorites
-                    // Update history if on history tab
-                    if (currentTab === 'history') updateHistoryAuthState();
-                });
-
-                // Check if user is already logged in and apply their theme
-                window.graphlings.on('widgetReady', function(data) {
-                    // Apply theme from widget (overrides local storage)
-                    if (data.theme && THEMES[data.theme]) {
-                        applyTheme(data.theme);
-                    }
-
-                    if (data.authenticated && data.user && data.user.id) {
-                        currentUserId = data.user.id;
-                        // Store token if provided (from ready message)
-                        if (data.token) {
-                            localStorage.setItem('graphlings_sfx-music_token', data.token);
-                        }
-                        // Check if user is an adult account
-                        isAdultAccount = data.user.account_type === 'adult' ||
-                                        (data.user.account_type !== 'child' && !data.user.is_child);
-                        updateAuthUI(true);
-                        loadLibrary();  // Refresh library to show/hide feedback buttons
-                        loadPlaylists(); // Load user playlists
-                        loadFavorites(); // Load user favorites
-                    } else {
-                        // No user logged in, ensure controls are disabled
-                        updateAuthUI(false);
-                    }
-                });
-
-                // Listen for token received (sent asynchronously after ready/login)
-                window.graphlings.on('tokenReceived', function(data) {
-                    if (data.token) {
-                        localStorage.setItem('graphlings_sfx-music_token', data.token);
-                    }
-                });
-            });
+            // TODO: Load your auth SDK here and wire up login/logout events
+            // Example:
+            //   yourAuth.onLogin((user) => {
+            //       currentUserId = user.id;
+            //       updateAuthUI(true);
+            //       loadLibrary(); loadPlaylists(); loadFavorites();
+            //   });
+            //   yourAuth.onLogout(() => {
+            //       currentUserId = null;
+            //       updateAuthUI(false);
+            //   });
+            console.log('[SoundBox] Auth not configured - set OPEN_ACCESS_MODE=false and add your auth provider');
         })();
     </script>
 
@@ -14738,7 +14475,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             const attrHint = document.querySelector('.attribution-hint');
             if (attrHint) {
                 attrHint.addEventListener('click', async () => {
-                    const attribution = 'Music from Sound Box (soundbox.graphlings.net) - CC0 Public Domain';
+                    const attribution = 'Music from Sound Box (localhost:5309) - CC0 Public Domain';
                     try {
                         await navigator.clipboard.writeText(attribution);
                         const original = attrHint.textContent;
@@ -14798,10 +14535,10 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
 
     <!-- Persistent Mini Player (shows on non-radio tabs when playing) -->
     <div class="mini-player hidden" id="mini-player">
-        <!-- Graphlings Branding -->
-        <a href="https://graphlings.net" target="_blank" class="mini-player-brand" title="Powered by Graphlings">
-            <img src="/static/graphlings/logo-104.png" alt="Graphlings" class="graphlings-logo" onerror="this.style.display='none'">
-            <span class="brand-text">Graphlings</span>
+        <!-- Valpatel Branding -->
+        <a href="https://valpatel.com" target="_blank" class="mini-player-brand" title="Powered by Valpatel Software">
+            <img src="/static/graphlings/logo-104.png" alt="Valpatel" class="graphlings-logo" onerror="this.style.display='none'">
+            <span class="brand-text">VALPATEL</span>
         </a>
 
         <!-- Track Info -->
@@ -14882,7 +14619,7 @@ curl "https://soundbox.graphlings.net/api/library?search=epic+battle&amp;limit=1
             display: none;
         }
 
-        /* Graphlings Branding - with glow for advertising */
+        /* Branding - with glow */
         .mini-player-brand {
             display: flex;
             align-items: center;

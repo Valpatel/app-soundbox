@@ -542,9 +542,9 @@ class RadioWidgetInstance {
 
             <!-- Branding watermark -->
             <div class="rw-fs-branding">
-                <a href="https://graphlings.net" target="_blank" class="rw-fs-brand-link">
-                    <img src="/static/graphlings/logo-104.png" alt="Graphlings" class="rw-fs-brand-logo">
-                    <span class="rw-fs-brand-text">Graphlings.net</span>
+                <a href="https://valpatel.com" target="_blank" class="rw-fs-brand-link">
+                    <img src="/static/graphlings/logo-104.png" alt="Valpatel" class="rw-fs-brand-logo">
+                    <span class="rw-fs-brand-text">Valpatel.com</span>
                 </a>
             </div>
         `;
@@ -731,13 +731,13 @@ class RadioWidgetInstance {
     _renderBranding() {
         // Show branding for embedded widgets (external use)
         // Can be disabled with showBranding: false option
-        const brandUrl = this.options.brandUrl || 'https://graphlings.net';
+        const brandUrl = this.options.brandUrl || 'https://valpatel.com';
 
         return `
             <div class="rw-branding">
-                <a href="${brandUrl}" target="_blank" rel="noopener noreferrer" class="rw-branding-link" title="Powered by Graphlings">
-                    <img src="/static/graphlings/logo-104.png" alt="Graphlings" class="rw-branding-logo">
-                    <span class="rw-branding-text">Graphlings.net</span>
+                <a href="${brandUrl}" target="_blank" rel="noopener noreferrer" class="rw-branding-link" title="Powered by Valpatel Software">
+                    <img src="/static/graphlings/logo-104.png" alt="Valpatel" class="rw-branding-logo">
+                    <span class="rw-branding-text">Valpatel.com</span>
                 </a>
             </div>
         `;

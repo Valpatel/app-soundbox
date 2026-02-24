@@ -1,13 +1,13 @@
 /**
- * Graphlings Sound Box - Embeddable Radio Widget
+ * Sound Box - Embeddable Radio Widget
  * Version: 1.0.0
  *
  * Include this script to add an AI-powered music player to your website.
- * Visit https://soundbox.graphlings.net for more info.
+ * Visit https://localhost:5309 for more info.
  *
  * Usage:
  *   <div id="my-radio"></div>
- *   <script src="https://soundbox.graphlings.net/widget/graphlings-radio.js"></script>
+ *   <script src="https://localhost:5309/widget/graphlings-radio.js"></script>
  *   <script>
  *     GraphlingsRadio.init('#my-radio', {
  *       size: 'medium',      // 'ultra-minimal', 'minimal', 'small', 'medium', 'large'
@@ -22,7 +22,7 @@
     'use strict';
 
     const VERSION = '1.0.0';
-    const API_BASE = 'https://soundbox.graphlings.net';
+    const API_BASE = 'https://localhost:5309';
     const WIDGET_CSS_URL = `${API_BASE}/widget/graphlings-radio.css`;
 
     // ========================================
@@ -464,9 +464,9 @@
         _renderBranding() {
             return `
                 <div class="rw-branding">
-                    <a href="https://soundbox.graphlings.net" target="_blank" rel="noopener noreferrer" class="rw-branding-link" title="Powered by Graphlings Sound Box">
-                        <img src="https://soundbox.graphlings.net/static/graphlings/logo-104.png" alt="Graphlings" class="rw-branding-logo">
-                        <span class="rw-branding-text">Powered by Graphlings</span>
+                    <a href="https://valpatel.com" target="_blank" rel="noopener noreferrer" class="rw-branding-link" title="Powered by Valpatel Software">
+                        <img src="https://localhost:5309/static/graphlings/logo-104.png" alt="Valpatel" class="rw-branding-logo">
+                        <span class="rw-branding-text">Powered by Sound Box</span>
                     </a>
                 </div>
             `;

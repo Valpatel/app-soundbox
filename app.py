@@ -183,11 +183,11 @@ def analyze_audio_quality(audio_path, sample_rate=32000):
         return {'score': None, 'issues': ['analysis_failed'], 'is_good': True, 'analysis_skipped': True}
 
 
-# Subscription tiers (matching Valnet/Graphlings):
-# - free: No subscription ($0/month)
-# - supporter: $5/month (supporter-monthly)
-# - premium: $10/month (premium-monthly)
-# - creator: $20/month (ai-graphling-monthly)
+# Subscription tiers:
+# - free: Default tier
+# - supporter: Elevated limits
+# - premium: Higher limits
+# - creator: Highest tier (whitelisted IPs in open access mode)
 
 # Priority levels (lower = higher priority)
 PRIORITY_LEVELS = {
@@ -255,106 +255,34 @@ def get_skip_pricing_info():
 
 
 def spend_aura(token, amount, item_description, job_id=None):
-    """
-    Spend Aura from user's wallet via Valnet API.
-
-    Args:
-        token: User's auth token
-        amount: Amount of Aura to spend
-        item_description: What the Aura is being spent on
-        job_id: Optional job ID for metadata
-
-    Returns:
-        dict with 'success', 'new_balance', 'error' keys
-    """
-    try:
-        response = requests.post(
-            f'{ACCOUNTS_URL}/api/wallet/spend',
-            headers={'Authorization': f'Bearer {token}'},
-            json={
-                'amount': amount,
-                'currency': 'aura',
-                'item': item_description,
-                'app_id': 'soundbox',
-                'metadata': {'job_id': job_id} if job_id else {}
-            },
-            timeout=10
-        )
-
-        if response.status_code == 200:
-            data = response.json()
-            return {
-                'success': True,
-                'new_balance': data.get('new_balance'),
-                'transaction_id': data.get('transaction_id')
-            }
-        else:
-            try:
-                error = response.json().get('detail', 'Payment failed')
-            except (ValueError, requests.exceptions.JSONDecodeError):
-                error = 'Payment failed'
-            return {'success': False, 'error': error}
-
-    except requests.RequestException as e:
-        print(f"[Aura] Spend request failed: {e}")
-        return {'success': False, 'error': 'Payment service unavailable'}
+    """AUTH STUB: Spend credits from user's wallet. Connect your billing provider here."""
+    return {'success': False, 'error': 'Billing not configured'}
 
 def get_user_tier(user):
     """
-    Determine user subscription tier from Graphlings/Valnet user data.
+    Determine user subscription tier.
 
-    Returns one of: 'creator', 'premium', 'supporter', 'free', or None (not authenticated)
+    AUTH STUB: Connect your auth/billing provider to return real tiers.
+    Currently returns tier from user dict (set by anonymous user creation
+    or by your auth provider's user data).
 
-    Tiers match Valnet subscription products:
-    - creator: ai-graphling-monthly ($20/mo)
-    - premium: premium-monthly ($10/mo)
-    - supporter: supporter-monthly ($5/mo)
-    - free: no active subscription
+    Returns one of: 'creator', 'premium', 'supporter', 'free', or None
     """
     if not user:
-        return None  # Not authenticated
+        return None
 
-    # Check for admin flag (admins get creator treatment)
     if user.get('is_admin') or user.get('role') == 'admin':
         return 'creator'
 
-    # Check subscription_tier field (set directly by Valnet)
     sub_tier = user.get('subscription_tier') or user.get('tier')
     if sub_tier:
         tier_lower = sub_tier.lower()
-        if tier_lower in ('creator', 'ai-graphling', 'ai_graphling'):
+        if tier_lower in ('creator',):
             return 'creator'
         if tier_lower in ('premium', 'pro'):
             return 'premium'
         if tier_lower in ('supporter', 'plus', 'basic'):
             return 'supporter'
-
-    # Check subscription object (from Valnet)
-    subscription = user.get('subscription') or user.get('plan') or {}
-    if isinstance(subscription, str):
-        # Simple string plan_id
-        plan = subscription.lower()
-        if 'ai-graphling' in plan or 'creator' in plan:
-            return 'creator'
-        if 'premium' in plan:
-            return 'premium'
-        if 'supporter' in plan or 'plus' in plan:
-            return 'supporter'
-    elif isinstance(subscription, dict):
-        # Subscription object with plan_id and status
-        status = subscription.get('status', '').lower()
-        plan_id = subscription.get('plan_id', '').lower()
-        tier = subscription.get('tier', '').lower()
-
-        # Only count active or trialing subscriptions
-        if status in ('active', 'trialing'):
-            # Check plan_id (e.g., 'ai-graphling-monthly', 'premium-monthly')
-            if 'ai-graphling' in plan_id or tier == 'creator':
-                return 'creator'
-            if 'premium' in plan_id or tier == 'premium':
-                return 'premium'
-            if 'supporter' in plan_id or tier == 'supporter':
-                return 'supporter'
 
     return 'free'
 
@@ -419,12 +347,12 @@ def add_security_headers(response):
         # Allow self, inline styles/scripts (needed for the app), and specific external resources
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://graphlings.com https://*.graphlings.com; "
+            "script-src 'self' 'unsafe-inline'; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data: blob:; "
             "media-src 'self' blob:; "
-            "connect-src 'self' https://graphlings.com https://*.graphlings.com; "
+            "connect-src 'self'; "
             "frame-ancestors 'self'"
         )
 
@@ -532,134 +460,36 @@ def handle_rate_limit(e):
     return jsonify({'error': 'Too many requests - please wait before trying again'}), 429
 
 # =============================================================================
-# Authentication - Verify tokens with Graphlings accounts server
+# Authentication
 # =============================================================================
-
-# Auto-detect accounts server URL based on environment
-def get_accounts_url():
-    """Get the accounts server URL based on environment."""
-    # Check environment variable first
-    env_url = os.environ.get('GRAPHLINGS_ACCOUNTS_URL')
-    if env_url:
-        return env_url.rstrip('/')
-
-    # In production, use the production server
-    # In development, assume local server
-    return 'http://localhost:8002'
-
-ACCOUNTS_URL = get_accounts_url()
+# AUTH STUB: Replace verify_auth_token() with your own auth provider.
+# The decorators below (require_auth, optional_auth, etc.) call verify_auth_token()
+# to validate Bearer tokens. In OPEN_ACCESS_MODE (default), they fall back to
+# anonymous IP-based users, so token verification is only needed when you
+# disable open access and require real logins.
 
 def send_user_notification(user_id, title, message, notification_type='info', data=None):
-    """
-    Send a notification to a user via the Graphlings/Valnet widget.
-
-    Args:
-        user_id: The user's ID
-        title: Notification title
-        message: Notification message
-        notification_type: 'info', 'success', 'warning', 'error'
-        data: Optional dict with additional data (e.g., job_id, audio_url)
-    """
-    try:
-        payload = {
-            'user_id': user_id,
-            'title': title,
-            'message': message,
-            'type': notification_type,
-            'app': 'soundbox',
-            'data': data or {}
-        }
-
-        response = requests.post(
-            f'{ACCOUNTS_URL}/api/notifications/send',
-            json=payload,
-            timeout=5
-        )
-
-        if response.status_code == 200:
-            print(f"[Notification] Sent to user {user_id}: {title}")
-            return True
-        else:
-            print(f"[Notification] Failed to send: {response.status_code}")
-            return False
-
-    except requests.RequestException as e:
-        print(f"[Notification] Error sending to user {user_id}: {e}")
-        return False
-
-# Token verification cache with LRU eviction to prevent memory exhaustion
-# Format: OrderedDict {token: {'user': user_data, 'expires': timestamp}}
-_token_cache = OrderedDict()
-_token_cache_lock = threading.Lock()
-_TOKEN_CACHE_TTL = 300  # 5 minutes
-_TOKEN_CACHE_MAX_SIZE = 1000  # Max cached tokens
-
-def _cleanup_token_cache():
-    """Remove expired entries and enforce max size (call with lock held)."""
-    now = time.time()
-    # Remove expired entries
-    expired = [k for k, v in _token_cache.items() if v['expires'] <= now]
-    for k in expired:
-        del _token_cache[k]
-    # Enforce max size (remove oldest entries)
-    while len(_token_cache) > _TOKEN_CACHE_MAX_SIZE:
-        _token_cache.popitem(last=False)
+    """AUTH STUB: Send a notification to a user. Connect your notification service here."""
+    return False
 
 def verify_auth_token(token):
     """
-    Verify a JWT token with the Graphlings accounts server.
+    AUTH STUB: Verify a Bearer token and return user data dict.
 
-    Returns user data dict if valid, None if invalid.
-    Uses a short-lived LRU cache to reduce load on accounts server.
+    Connect your auth provider here (e.g., decode a JWT, call an OAuth server,
+    check a session store, etc.).
 
-    SECURITY: Does NOT use expired cache entries on network errors.
-    If the accounts server is down, authentication will fail.
+    Returns:
+        dict with user data (must include 'id' key) if valid, None if invalid.
+        Optional keys: 'username', 'is_admin', 'subscription_tier', 'account_type',
+                       'email_verified'
     """
-    if not token:
-        return None
-
-    # Check cache first (with lock for thread safety)
-    with _token_cache_lock:
-        cached = _token_cache.get(token)
-        if cached and cached['expires'] > time.time():
-            # Move to end (most recently used)
-            _token_cache.move_to_end(token)
-            return cached['user']
-        # Remove expired entry if present
-        if cached:
-            del _token_cache[token]
-
-    # Verify with accounts server
-    try:
-        response = requests.get(
-            f'{ACCOUNTS_URL}/api/auth/me',
-            headers={'Authorization': f'Bearer {token}'},
-            timeout=5
-        )
-
-        if response.status_code == 200:
-            try:
-                user = response.json()
-            except (ValueError, requests.exceptions.JSONDecodeError):
-                return None
-            # Cache the result (with lock)
-            with _token_cache_lock:
-                _token_cache[token] = {
-                    'user': user,
-                    'expires': time.time() + _TOKEN_CACHE_TTL
-                }
-                _cleanup_token_cache()
-            return user
-        else:
-            # Invalid token - ensure not in cache
-            with _token_cache_lock:
-                _token_cache.pop(token, None)
-            return None
-
-    except requests.RequestException as e:
-        # Log error but do NOT use expired cache - that's a security risk
-        print(f"[Auth] Token verification failed (accounts server error): {e}")
-        return None
+    # TODO: Implement your auth provider here
+    # Example:
+    #   user = your_auth_provider.verify(token)
+    #   if user:
+    #       return {'id': user.id, 'username': user.name, 'is_admin': user.is_admin, ...}
+    return None
 
 def get_auth_token():
     """Extract auth token from request headers."""
@@ -703,9 +533,6 @@ def require_auth(f):
     """
     Decorator to require authentication for an endpoint.
     Sets request.user_id and request.user if authenticated.
-
-    Authentication is done via Bearer token verified with the Graphlings accounts server.
-    The token must be valid and not expired.
 
     In OPEN_ACCESS_MODE: creates anonymous user from IP if no valid token.
     """
@@ -2154,32 +1981,10 @@ def job_status(job_id):
 
 
 def is_email_verified(user):
-    """
-    Check if user has verified their email.
-
-    Valnet account tiers that indicate verification:
-    - 'verified', 'email_verified', 'oauth_verified' = verified
-    - 'access_code', 'anonymous' = not verified
-    """
+    """AUTH STUB: Check if user has verified their email. Always returns True for now."""
     if not user:
         return False
-
-    # Check explicit email_verified flag
-    if user.get('email_verified'):
-        return True
-
-    # Check account tier (Valnet uses tier for verification status)
-    account_tier = user.get('account_tier') or user.get('tier')
-    if account_tier:
-        tier_lower = account_tier.lower()
-        if tier_lower in ('verified', 'email_verified', 'oauth_verified', 'organization'):
-            return True
-
-    # Check if they have an email set (OAuth users have verified emails)
-    if user.get('email') and user.get('auth_provider') in ('google', 'oauth'):
-        return True
-
-    return False
+    return user.get('email_verified', True)
 
 
 @app.route('/generate', methods=['POST'])
@@ -2556,7 +2361,7 @@ def api_library():
         sort: 'recent', 'popular', or 'rating'
         user_id: Filter by creator
         category: Filter by genre/category (e.g., 'ambient', 'nature')
-        source: Filter by Graphlings source (e.g., 'byk3s')
+        source: Filter by game/app source (e.g., 'byk3s')
     """
     page, per_page = get_pagination_params()
 
@@ -3189,7 +2994,7 @@ def api_get_categories(model):
 
 
 # =============================================================================
-# Graphlings Game/App Sources API
+# Game/App Sources API (routes use /api/graphlings/ prefix for compatibility)
 # =============================================================================
 
 @app.route('/api/graphlings/sources')
@@ -3497,7 +3302,7 @@ def api_radio_new():
 
 
 # =============================================================================
-# User History - Requires authenticated user from Graphlings/Valnet widget
+# User History - Requires authenticated user
 # =============================================================================
 
 @app.route('/api/history/plays')

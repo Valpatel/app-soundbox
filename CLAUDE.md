@@ -31,7 +31,7 @@ Sound Box is an AI audio generation app powered by Meta's MusicGen and AudioGen 
 - Anonymous users get IP-based identity (`anon_` + SHA256(IP)[:12])
 - Rate limits enforced per-IP; localhost exempt except MCP-proxied requests
 - `IP_WHITELIST` env var for elevated (creator-tier) limits
-- Original Graphlings auth code preserved but disabled (set OPEN_ACCESS_MODE=false to re-enable)
+- Auth is stubbed out — connect your own provider by implementing `verify_auth_token()` in app.py
 - `var OPEN_ACCESS_MODE` in frontend (not const!) for cross-script-block access
 - Auth state managed via `currentUserId` and `isUserAuthenticated()`
 
@@ -176,7 +176,7 @@ app-soundbox/
 │   │   ├── radio-widget-templates.css # Theme templates
 │   │   └── radio-widget-fullscreen.css # Fullscreen mode styles
 │   ├── openapi.json          # OpenAPI 3.1 spec (13 endpoints)
-│   ├── graphlings/           # Branding assets (favicon, logo)
+│   ├── graphlings/           # Branding assets (Valpatel favicon, logo)
 │   └── output/               # Generated audio files
 ├── tests/
 │   ├── discovery.spec.js     # Service discovery tests (18 tests)
@@ -315,4 +315,4 @@ Saved to localStorage:
 - Fixed volume/mute state not reflecting in UI on page load
 - Added tooltips to all widget buttons
 - Mini-player button alignment fix
-- Graphlings favicon (local assets)
+- Valpatel favicon (local assets)

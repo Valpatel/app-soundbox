@@ -43,7 +43,7 @@
     --rw-spacing-sm: 8px;
     --rw-spacing-lg: 16px;
 
-    /* Typography - Fredoka is the official Graphlings font */
+    /* Typography */
     --rw-font: 'Fredoka', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --rw-font-size: 14px;
     --rw-font-size-sm: 12px;
@@ -767,7 +767,7 @@
 }
 
 /* ========================================
-   GRAPHLINGS BRANDING (Embedded Widgets)
+   BRANDING (Embedded Widgets)
    ======================================== */
 
 .radio-widget .rw-branding {
