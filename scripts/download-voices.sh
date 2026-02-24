@@ -21,37 +21,37 @@ PIPER_BASE="https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0"
 # Format: locale/name/quality
 VOICES=(
     # US English - High quality voices
-    "en_US/lessac/medium"
-    "en_US/lessac/high"
-    "en_US/lessac/low"
-    "en_US/amy/medium"
-    "en_US/amy/low"
-    "en_US/arctic/medium"
-    "en_US/hfc_male/medium"
-    "en_US/hfc_female/medium"
-    "en_US/joe/medium"
-    "en_US/kusal/medium"
-    "en_US/kristin/medium"
-    "en_US/l2arctic/medium"
-    "en_US/libritts/high"
-    "en_US/libritts_r/medium"
-    "en_US/ljspeech/medium"
-    "en_US/ljspeech/high"
-    "en_US/ryan/medium"
-    "en_US/ryan/high"
-    "en_US/ryan/low"
+    "en/en_US/lessac/medium"
+    "en/en_US/lessac/high"
+    "en/en_US/lessac/low"
+    "en/en_US/amy/medium"
+    "en/en_US/amy/low"
+    "en/en_US/arctic/medium"
+    "en/en_US/hfc_male/medium"
+    "en/en_US/hfc_female/medium"
+    "en/en_US/joe/medium"
+    "en/en_US/kusal/medium"
+    "en/en_US/kristin/medium"
+    "en/en_US/l2arctic/medium"
+    "en/en_US/libritts/high"
+    "en/en_US/libritts_r/medium"
+    "en/en_US/ljspeech/medium"
+    "en/en_US/ljspeech/high"
+    "en/en_US/ryan/medium"
+    "en/en_US/ryan/high"
+    "en/en_US/ryan/low"
 
     # UK English
-    "en_GB/alan/medium"
-    "en_GB/alba/medium"
-    "en_GB/aru/medium"
-    "en_GB/cori/medium"
-    "en_GB/cori/high"
-    "en_GB/jenny_dioco/medium"
-    "en_GB/northern_english_male/medium"
-    "en_GB/semaine/medium"
-    "en_GB/southern_english_female/medium"
-    "en_GB/vctk/medium"
+    "en/en_GB/alan/medium"
+    "en/en_GB/alba/medium"
+    "en/en_GB/aru/medium"
+    "en/en_GB/cori/medium"
+    "en/en_GB/cori/high"
+    "en/en_GB/jenny_dioco/medium"
+    "en/en_GB/northern_english_male/medium"
+    "en/en_GB/semaine/medium"
+    "en/en_GB/southern_english_female/medium"
+    "en/en_GB/vctk/medium"
 )
 
 echo "Downloading ${#VOICES[@]} voice models to $VOICES_DIR"
@@ -62,14 +62,14 @@ skipped=0
 failed=0
 
 for voice_path in "${VOICES[@]}"; do
-    # Convert path to filename: en_US/lessac/medium -> en_US-lessac-medium
-    voice_name=$(echo "$voice_path" | tr '/' '-')
+    # Convert path to filename: en/en_US/lessac/medium -> en_US-lessac-medium
+    voice_name=$(echo "$voice_path" | cut -d'/' -f2- | tr '/' '-')
     onnx_file="$VOICES_DIR/${voice_name}.onnx"
     json_file="$VOICES_DIR/${voice_name}.onnx.json"
 
     if [ -f "$onnx_file" ]; then
         echo "[SKIP] $voice_name (already exists)"
-        ((skipped++))
+        skipped=$((skipped + 1))
         continue
     fi
 
@@ -80,11 +80,11 @@ for voice_path in "${VOICES[@]}"; do
         # Download JSON config
         wget -q -O "$json_file" "$PIPER_BASE/$voice_path/$voice_name.onnx.json" 2>/dev/null || true
         echo "OK"
-        ((downloaded++))
+        downloaded=$((downloaded + 1))
     else
         echo "FAILED"
         rm -f "$onnx_file" "$json_file"
-        ((failed++))
+        failed=$((failed + 1))
     fi
 done
 
