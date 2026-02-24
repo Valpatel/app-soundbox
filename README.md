@@ -1,18 +1,28 @@
 # Sound Box
 
-Synthetic music and sound effects generation as a service, with tagging and ratings.
+AI audio generation server with multiple engines, a community library, and a game asset review workflow.
 
 ![Sound Box Radio](docs/screenshots/radio.png)
 
 ## Features
 
-- **Music Generation** — Original music from text prompts using MusicGen
-- **Sound Effects** — Ambient sounds and SFX using AudioGen
-- **Text-to-Speech** — Natural voices with Piper TTS (20+ voices)
-- **Radio Stations** — Continuous playback with 10 canvas visualizer modes
-- **Library & Search** — Full-text search, voting, favorites, playlists
-- **Game Asset Tagging** — Tag generated audio for specific games/apps, with review workflow
-- **Smart Queue** — Priority-based job processing with tier limits
+### Generation Engines
+- **MusicGen** — Original music from text prompts (Meta AI)
+- **AudioGen** — Sound effects and ambient audio from text prompts (Meta AI)
+- **MAGNeT** — Fast non-autoregressive music and SFX generation (Meta AI)
+- **Piper TTS** — Natural text-to-speech with 20+ downloadable voices (Rhasspy)
+
+### Listening & Discovery
+- **Radio Stations** — Continuous playback across genre stations with skip, vote, and favorite
+- **10 Visualizer Modes** — Bars, wave, circle, particles, lissajous, tempest, pong, breakout, snake, random
+- **Library & Search** — Full-text search, filtering by type, sorting, voting, favorites, playlists
+
+### Tagging & Review
+- **Game Asset Tagging** — Tag generated audio for specific games or apps via API or MCP tools
+- **Review Workflow** — Thumbs-up/down voting with structured feedback: reviewers select rejection reasons and leave notes so sounds can be regenerated to spec
+
+### Infrastructure
+- **Smart Queue** — Priority-based job processing with model affinity and tier limits
 - **Quality Analysis** — Automatic scoring with retry on low quality
 - **Service Discovery** — mDNS, MCP tools, A2A agent card, OpenAPI spec
 - **Open Access Mode** — Zero-login usage with IP-based identity
@@ -105,7 +115,7 @@ See [API Documentation](docs/api/README.md) for the complete reference.
 
 ## Tech Stack
 
-Flask, PyTorch, AudioCraft, Piper TTS, SQLite (FTS5), vanilla JS, Web Audio API, Avahi mDNS, MCP, OpenAPI 3.1
+Flask, PyTorch, AudioCraft (MusicGen, AudioGen, MAGNeT), Piper TTS, SQLite (FTS5), vanilla JS, Web Audio API, Avahi mDNS, MCP, OpenAPI 3.1
 
 ## License
 
