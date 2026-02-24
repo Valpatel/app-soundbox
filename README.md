@@ -2,7 +2,7 @@
 
 Synthetic music and sound effects generation as a service, with tagging and ratings.
 
-![Sound Box Radio](screenshots/radio.png)
+![Sound Box Radio](docs/screenshots/radio.png)
 
 ## Features
 
@@ -22,11 +22,11 @@ Synthetic music and sound effects generation as a service, with tagging and rati
 
 | Radio | Library |
 |:---:|:---:|
-| ![Radio](screenshots/radio.png) | ![Library](screenshots/library.png) |
+| ![Radio](docs/screenshots/radio.png) | ![Library](docs/screenshots/library.png) |
 
 | Generate | Visualizer |
 |:---:|:---:|
-| ![Generate](screenshots/generate.png) | ![Visualizer](screenshots/visualizer.png) |
+| ![Generate](docs/screenshots/generate.png) | ![Visualizer](docs/screenshots/visualizer.png) |
 
 ## Quick Start
 
@@ -42,7 +42,7 @@ Open **http://localhost:5309**
 Optional: auto-start on boot with systemd:
 
 ```bash
-./service.sh install   # Installs soundbox + MCP + mDNS services
+./scripts/service.sh install   # Installs soundbox + MCP + mDNS services
 ```
 
 ## Requirements

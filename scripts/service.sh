@@ -1,6 +1,6 @@
 #!/bin/bash
 # Sound Box - systemd service management
-# Usage: ./service.sh [install|uninstall|enable|disable|start|stop|restart|status|logs]
+# Usage: ./scripts/service.sh [install|uninstall|enable|disable|start|stop|restart|status|logs]
 
 set -e
 
@@ -10,6 +10,7 @@ SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 MCP_SERVICE_FILE="/etc/systemd/system/${MCP_SERVICE_NAME}.service"
 AVAHI_SERVICE_FILE="/etc/avahi/services/soundbox.service"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 CURRENT_USER=$(whoami)
 
 RED='\033[0;31m'
@@ -31,15 +32,15 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=${CURRENT_USER}
-WorkingDirectory=${SCRIPT_DIR}
-ExecStart=${SCRIPT_DIR}/venv/bin/python ${SCRIPT_DIR}/app.py
+WorkingDirectory=${PROJECT_DIR}
+ExecStart=${PROJECT_DIR}/venv/bin/python ${PROJECT_DIR}/app.py
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
 
 # Environment
-EnvironmentFile=-${SCRIPT_DIR}/.env
+EnvironmentFile=-${PROJECT_DIR}/.env
 
 # Resource limits
 Nice=10
@@ -59,15 +60,15 @@ Wants=${SERVICE_NAME}.service
 [Service]
 Type=simple
 User=${CURRENT_USER}
-WorkingDirectory=${SCRIPT_DIR}
-ExecStart=${SCRIPT_DIR}/venv/bin/python ${SCRIPT_DIR}/mcp_server.py --transport sse
+WorkingDirectory=${PROJECT_DIR}
+ExecStart=${PROJECT_DIR}/venv/bin/python ${PROJECT_DIR}/mcp_server.py --transport sse
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
 
 # Environment
-EnvironmentFile=-${SCRIPT_DIR}/.env
+EnvironmentFile=-${PROJECT_DIR}/.env
 
 [Install]
 WantedBy=multi-user.target
@@ -75,7 +76,7 @@ EOF
 
         # Install Avahi mDNS service for LAN discovery
         if [ -d /etc/avahi/services ]; then
-            sudo cp "${SCRIPT_DIR}/avahi/soundbox.service" "$AVAHI_SERVICE_FILE"
+            sudo cp "${PROJECT_DIR}/avahi/soundbox.service" "$AVAHI_SERVICE_FILE"
             echo -e "${GREEN}Avahi mDNS service installed${NC}"
         else
             echo -e "${YELLOW}Avahi not found - skipping mDNS discovery${NC}"
@@ -91,12 +92,12 @@ EOF
         echo "  MCP Server: http://localhost:${MCP_PORT:-5310} (SSE)"
         echo ""
         echo "Management commands:"
-        echo "  ./service.sh status    - Check status"
-        echo "  ./service.sh stop      - Stop server"
-        echo "  ./service.sh restart   - Restart server"
-        echo "  ./service.sh logs      - View logs"
-        echo "  ./service.sh disable   - Disable auto-start"
-        echo "  ./service.sh uninstall - Remove service"
+        echo "  ./scripts/service.sh status    - Check status"
+        echo "  ./scripts/service.sh stop      - Stop server"
+        echo "  ./scripts/service.sh restart   - Restart server"
+        echo "  ./scripts/service.sh logs      - View logs"
+        echo "  ./scripts/service.sh disable   - Disable auto-start"
+        echo "  ./scripts/service.sh uninstall - Remove service"
         ;;
 
     uninstall)
@@ -156,7 +157,7 @@ EOF
     *)
         echo "Sound Box Service Manager"
         echo ""
-        echo "Usage: ./service.sh <command>"
+        echo "Usage: ./scripts/service.sh <command>"
         echo ""
         echo "Commands:"
         echo "  install    - Install and enable all services (main + MCP + mDNS)"

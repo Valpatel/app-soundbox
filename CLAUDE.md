@@ -2,7 +2,7 @@
 
 ## Important Reminders
 
-- **ALWAYS use `./start.sh`** to start the server - it uses the venv with all dependencies
+- **ALWAYS use `./start.sh`** to start the server — it uses the venv with all dependencies
 - **Don't try `python app.py`** directly - it won't have torch/audiocraft installed
 - Theme colors: **purple (#a855f7)** as primary accent, **cyan (#00d4ff)** as secondary - NO orange
 - Server runs on: **http://localhost:5309**
@@ -10,11 +10,11 @@
 ## Quick Start
 
 ```bash
-./setup.sh          # Initial setup (requires sudo) - multi-platform
-./start.sh          # Start server (uses venv)
-./service.sh install # Systemd service (auto-start on boot)
-./service.sh uninstall # Remove service
-npm test            # Run Playwright tests
+./setup.sh                    # Initial setup (requires sudo) - multi-platform
+./start.sh                    # Start server (uses venv)
+./test.sh                     # Run Playwright E2E tests
+./scripts/service.sh install  # Systemd service (auto-start on boot)
+./scripts/service.sh uninstall # Remove service
 ```
 
 ## App Overview
@@ -151,16 +151,22 @@ app-soundbox/
 ├── app.py                    # Flask server, AI generation endpoints (~4800 lines)
 ├── mcp_server.py             # MCP server for AI agent tool use (6 tools)
 ├── database.py               # SQLite operations, FTS5 search
+├── backup.py                 # Database backup utilities
+├── voice_licenses.py         # Voice license metadata
 ├── start.sh                  # Server startup script (uses venv)
 ├── setup.sh                  # Multi-platform setup (x86_64/ARM64/Jetson/DGX)
-├── service.sh                # Systemd service management (soundbox + MCP + mDNS)
-├── .env                      # Configuration (OPEN_ACCESS_MODE, IP_WHITELIST, MCP_PORT, MCP_API_KEY, etc)
+├── test.sh                   # E2E test runner
+├── .env                      # Configuration (OPEN_ACCESS_MODE, IP_WHITELIST, MCP_PORT, etc)
 ├── .env.example              # Template for .env
 ├── .mcp.json                 # Claude Code MCP auto-discovery (stdio transport)
-├── venv/                     # Python virtualenv (torch, audiocraft, flask, mcp)
-├── soundbox.db               # SQLite database
+├── scripts/
+│   ├── service.sh            # Systemd service management (soundbox + MCP + mDNS)
+│   ├── install-claude-skill.sh # Claude Code skill + MCP config installer
+│   ├── batch_generate.py     # Bulk audio generation
+│   ├── take-screenshots.js   # README screenshot generator
+│   └── ...                   # Other utility scripts
 ├── avahi/
-│   └── soundbox.service      # mDNS LAN discovery (XML, installed by service.sh)
+│   └── soundbox.service      # mDNS LAN discovery (XML)
 ├── templates/
 │   └── index.html            # Main SPA template (~15k lines)
 ├── static/
@@ -183,7 +189,10 @@ app-soundbox/
 │   ├── open-access.spec.js   # Open access mode + API tests
 │   ├── *.spec.js             # 19 Playwright test suites (250+ tests)
 │   └── utils/test-helpers.js  # Shared test utilities
-└── docs/                     # Full documentation (see docs/ hierarchy)
+├── docs/
+│   ├── screenshots/          # README screenshots
+│   └── ...                   # Full documentation
+└── venv/                     # Python virtualenv (torch, audiocraft, flask, mcp)
 ```
 
 ## API Endpoints
@@ -284,7 +293,7 @@ Saved to localStorage:
   - `/openapi.json` - OpenAPI 3.1 spec for 13 key endpoints
   - `avahi/soundbox.service` - mDNS LAN broadcast (`_soundbox._tcp`)
 - **`.mcp.json`**: Claude Code auto-discovers MCP server via stdio
-- **`service.sh`**: Now manages 3 services (soundbox + soundbox-mcp + Avahi mDNS)
+- **`scripts/service.sh`**: Now manages 3 services (soundbox + soundbox-mcp + Avahi mDNS)
 - **Discovery tests**: 18 Playwright tests covering all discovery endpoints
 - **Docs overhaul**: New `docs/systems/service-discovery.md`, updated all docs
 
@@ -293,7 +302,7 @@ Saved to localStorage:
 - **Multi-platform setup.sh**: Auto-detects x86_64/ARM64, GPU type, installs correct PyTorch
 - **NVRTC Blackwell fix**: Replaces PyTorch's bundled NVRTC 12.8 with system CUDA 13.0 for GB10 sm_121
 - **xformers stub**: Provides torch fallbacks for `ops.unbind` and `ops.memory_efficient_attention`
-- **Systemd service**: `service.sh` for install/uninstall/enable/disable/start/stop/restart
+- **Systemd service**: `scripts/service.sh` for install/uninstall/enable/disable/start/stop/restart
 - **Node.js + Playwright**: Auto-installed in setup.sh, `npm test` works
 - **Open access tests**: 14 new tests including end-to-end generation flow
 - **Rate limits**: Free tier bumped to 10/hr, 60s max; creator tier for whitelisted IPs

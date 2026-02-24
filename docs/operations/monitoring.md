@@ -256,7 +256,7 @@ exit 0
 sudo journalctl -u soundbox -u soundbox-mcp -f
 
 # Or use the service manager
-./service.sh logs
+./scripts/service.sh logs
 
 # Last hour
 sudo journalctl -u soundbox --since "1 hour ago"

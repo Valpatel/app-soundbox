@@ -109,7 +109,7 @@ python -c "import database; database.init_db()"
 Use the built-in service manager which sets up all three services:
 
 ```bash
-./service.sh install    # Installs and starts everything
+./scripts/service.sh install    # Installs and starts everything
 ```
 
 This creates:
@@ -118,10 +118,10 @@ This creates:
 3. **Avahi mDNS** - LAN auto-discovery broadcast
 
 ```bash
-./service.sh status     # Check all services
-./service.sh restart    # Restart all services
-./service.sh logs       # Follow logs (all services)
-./service.sh uninstall  # Remove everything
+./scripts/service.sh status     # Check all services
+./scripts/service.sh restart    # Restart all services
+./scripts/service.sh logs       # Follow logs (all services)
+./scripts/service.sh uninstall  # Remove everything
 ```
 
 ### Manual Systemd (Alternative)

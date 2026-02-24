@@ -78,7 +78,7 @@ Both include TXT records pointing to `/api/manifest`.
 
 ### Installation
 
-Installed automatically by `./service.sh install`, which copies the XML to `/etc/avahi/services/`.
+Installed automatically by `./scripts/service.sh install`, which copies the XML to `/etc/avahi/services/`.
 
 ### Testing
 
@@ -299,7 +299,7 @@ venv/bin/python mcp_server.py
 # SSE (for network AI agents)
 venv/bin/python mcp_server.py --transport sse --port 5310
 
-# systemd (installed by ./service.sh install)
+# systemd (installed by ./scripts/service.sh install)
 sudo systemctl status soundbox-mcp
 ```
 
@@ -442,12 +442,12 @@ sequenceDiagram
 
 | Action | Command |
 |--------|---------|
-| Install all services | `./service.sh install` |
-| Uninstall all services | `./service.sh uninstall` |
-| Check status | `./service.sh status` |
-| View logs | `./service.sh logs` |
+| Install all services | `./scripts/service.sh install` |
+| Uninstall all services | `./scripts/service.sh uninstall` |
+| Check status | `./scripts/service.sh status` |
+| View logs | `./scripts/service.sh logs` |
 
-`service.sh install` sets up:
+`scripts/service.sh install` sets up:
 1. **soundbox** systemd service (Flask on :5309)
 2. **soundbox-mcp** systemd service (MCP SSE on :5310)
 3. **Avahi mDNS** service file (LAN broadcast)

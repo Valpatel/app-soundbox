@@ -199,8 +199,8 @@ curl http://localhost:5309/.well-known/agent-card.json | python3 -m json.tool
 ### Optional: Auto-Start on Boot
 
 ```bash
-./service.sh install    # Installs soundbox + MCP + mDNS services
-./service.sh status     # Verify both services running
+./scripts/service.sh install    # Installs soundbox + MCP + mDNS services
+./scripts/service.sh status     # Verify both services running
 ```
 
 ## Troubleshooting

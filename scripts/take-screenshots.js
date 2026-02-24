@@ -17,7 +17,7 @@ const path = require('path');
 const fs = require('fs');
 
 const BASE_URL = process.env.SOUNDBOX_URL || 'http://localhost:5309';
-const OUTPUT_DIR = path.join(__dirname, '..', 'screenshots');
+const OUTPUT_DIR = path.join(__dirname, '..', 'docs', 'screenshots');
 
 async function takeScreenshots() {
     // Ensure output directory exists

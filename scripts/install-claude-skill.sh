@@ -6,15 +6,16 @@
 # config to your other projects.
 #
 # Usage:
-#   ./install-claude-skill.sh          # Install skill + show MCP setup
-#   ./install-claude-skill.sh --remove # Remove skill
+#   ./scripts/install-claude-skill.sh          # Install skill + show MCP setup
+#   ./scripts/install-claude-skill.sh --remove # Remove skill
 # ============================================================================
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SKILL_DIR="$HOME/.claude/skills/soundbox-generate"
-MCP_SNIPPET_FILE="$SCRIPT_DIR/.mcp-external.json"
+MCP_SNIPPET_FILE="$PROJECT_DIR/.mcp-external.json"
 
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
@@ -117,8 +118,8 @@ echo ""
 
 # ── 2. Generate .mcp-external.json with absolute paths ──────────────────────
 
-VENV_PYTHON="$SCRIPT_DIR/venv/bin/python"
-MCP_SCRIPT="$SCRIPT_DIR/mcp_server.py"
+VENV_PYTHON="$PROJECT_DIR/venv/bin/python"
+MCP_SCRIPT="$PROJECT_DIR/mcp_server.py"
 
 cat > "$MCP_SNIPPET_FILE" << EOF
 {

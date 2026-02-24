@@ -151,10 +151,10 @@ gunicorn -w 1 -b 0.0.0.0:5309 --timeout 300 app:app
 The built-in service manager installs all three services (main server, MCP, mDNS):
 
 ```bash
-./service.sh install    # Install and start everything
-./service.sh status     # Check all services
-./service.sh logs       # Follow combined logs
-./service.sh uninstall  # Remove everything
+./scripts/service.sh install    # Install and start everything
+./scripts/service.sh status     # Check all services
+./scripts/service.sh logs       # Follow combined logs
+./scripts/service.sh uninstall  # Remove everything
 ```
 
 ### Manual Systemd (Alternative)
