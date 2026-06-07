@@ -6,9 +6,9 @@
     <title>Sound Box - Valpatel Software</title>
     <meta name="description" content="Generate music & sound effects using AI">
     <meta name="theme-color" content="#1a1a2e">
-    <link rel="icon" type="image/png" href="/static/graphlings/favicon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/graphlings/favicon-32.png">
-    <link rel="apple-touch-icon" href="/static/graphlings/logo-104.png">
+    <link rel="icon" type="image/png" href="/static/branding/favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/branding/favicon-32.png">
+    <link rel="apple-touch-icon" href="/static/branding/logo-104.png">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Radio Widget Styles -->
     <link rel="stylesheet" href="/static/css/radio-widget.css">
@@ -4506,43 +4506,43 @@
         /* Genre sections visibility based on type tab */
         .category-sidebar[data-type="music"] .sfx-genres,
         .category-sidebar[data-type="music"] .speech-genres,
-        .category-sidebar[data-type="music"] .graphlings-genres {
+        .category-sidebar[data-type="music"] .assets-genres {
             display: none;
         }
 
         .category-sidebar[data-type="audio"] .music-genres,
         .category-sidebar[data-type="audio"] .speech-genres,
-        .category-sidebar[data-type="audio"] .graphlings-genres {
+        .category-sidebar[data-type="audio"] .assets-genres {
             display: none;
         }
 
         .category-sidebar[data-type="voice"] .music-genres,
         .category-sidebar[data-type="voice"] .sfx-genres,
-        .category-sidebar[data-type="voice"] .graphlings-genres {
+        .category-sidebar[data-type="voice"] .assets-genres {
             display: none;
         }
 
-        .category-sidebar[data-type="graphlings"] .music-genres,
-        .category-sidebar[data-type="graphlings"] .sfx-genres,
-        .category-sidebar[data-type="graphlings"] .speech-genres {
+        .category-sidebar[data-type="assets"] .music-genres,
+        .category-sidebar[data-type="assets"] .sfx-genres,
+        .category-sidebar[data-type="assets"] .speech-genres {
             display: none;
         }
 
-        /* Graphlings section styles */
-        .graphlings-loading {
+        /* Assets section styles */
+        .assets-loading {
             text-align: center;
             padding: 20px;
             color: var(--text-muted);
             font-size: 0.9rem;
         }
 
-        .graphlings-source {
+        .assets-source {
             margin-bottom: 8px;
             overflow: hidden;
             border-radius: 10px;
         }
 
-        .graphlings-source-header {
+        .assets-source-header {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -4552,23 +4552,23 @@
             transition: all 0.2s ease;
         }
 
-        .graphlings-source-header:hover {
+        .assets-source-header:hover {
             background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(139, 92, 246, 0.15));
         }
 
-        .graphlings-source-header .source-icon {
+        .assets-source-header .source-icon {
             width: 24px;
             height: 24px;
             color: var(--primary);
         }
 
-        .graphlings-source-header .source-name {
+        .assets-source-header .source-name {
             flex: 1;
             font-weight: 600;
             color: var(--text);
         }
 
-        .graphlings-source-header .source-count {
+        .assets-source-header .source-count {
             background: rgba(168, 85, 247, 0.2);
             color: var(--primary);
             padding: 2px 8px;
@@ -4577,16 +4577,16 @@
             font-weight: 600;
         }
 
-        .graphlings-source-types {
+        .assets-source-types {
             display: none;
             padding: 8px 0 0 16px;
         }
 
-        .graphlings-source.expanded .graphlings-source-types {
+        .assets-source.expanded .assets-source-types {
             display: block;
         }
 
-        .graphlings-type-item {
+        .assets-type-item {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -4598,27 +4598,27 @@
             color: var(--text-muted);
         }
 
-        .graphlings-type-item:hover {
+        .assets-type-item:hover {
             background: var(--hover);
             color: var(--text);
         }
 
-        .graphlings-type-item.active {
+        .assets-type-item.active {
             background: var(--primary);
             color: white;
         }
 
-        .graphlings-type-item .type-icon {
+        .assets-type-item .type-icon {
             width: 16px;
             height: 16px;
         }
 
-        .graphlings-type-item .type-name {
+        .assets-type-item .type-name {
             flex: 1;
             font-size: 0.9rem;
         }
 
-        .graphlings-type-item .type-count {
+        .assets-type-item .type-count {
             font-size: 0.75rem;
             opacity: 0.7;
         }
@@ -6197,10 +6197,10 @@
                             Speech
                             <span class="tab-count" id="voice-count">0</span>
                         </button>
-                        <button class="type-tab" data-type="graphlings" onclick="selectTypeTab('graphlings')" title="Browse game/app audio">
+                        <button class="type-tab" data-type="assets" onclick="selectTypeTab('assets')" title="Browse game/app audio">
                             <svg class="icon"><use href="#icon-game"/></svg>
                             Games
-                            <span class="tab-count" id="graphlings-count">0</span>
+                            <span class="tab-count" id="assets-count">0</span>
                         </button>
                     </div>
 
@@ -6548,9 +6548,9 @@
                     </div>
 
                     <!-- Games/Apps - Dynamic from API -->
-                    <div class="genre-section graphlings-genres" id="graphlings-genres">
-                        <div class="graphlings-loading">Loading games...</div>
-                        <!-- Dynamically populated by loadGraphlingsSources() (uses 'graphlings' as internal API name) -->
+                    <div class="genre-section assets-genres" id="assets-genres">
+                        <div class="assets-loading">Loading games...</div>
+                        <!-- Dynamically populated by loadAssetCounts() -->
                     </div>
 
                     <!-- Clear Filter Button -->
@@ -10653,7 +10653,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             document.querySelector('.library-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        // Load and update type counts (Music/SFX/Voice/Graphlings)
+        // Load and update type counts (Music/SFX/Voice/Assets)
         async function loadTypeCounts() {
             try {
                 const response = await fetch('/api/library/counts');
@@ -10674,52 +10674,52 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     voiceCountEl.textContent = counts.voice || 0;
                 }
 
-                // Load Graphlings count separately
-                loadGraphlingsCount();
+                // Load Assets count separately
+                loadAssetCounts();
             } catch (error) {
                 console.error('Error loading type counts:', error);
             }
         }
 
-        // Graphlings sources state
-        let graphlingsSources = {};
-        let graphlingsCounts = {};
-        let currentGraphlingsSource = '';
-        let currentGraphlingsModel = '';
+        // Assets sources state
+        let assetSources = {};
+        let assetCounts = {};
+        let currentAssetSource = '';
+        let currentAssetModel = '';
 
-        async function loadGraphlingsCount() {
+        async function loadAssetCounts() {
             try {
-                const response = await fetch('/api/graphlings/sources');
+                const response = await fetch('/api/assets/sources');
                 const data = await response.json();
 
-                graphlingsSources = data.sources || {};
-                graphlingsCounts = data.counts || {};
+                assetSources = data.sources || {};
+                assetCounts = data.counts || {};
 
-                // Calculate total Graphlings count
+                // Calculate total Assets count
                 let totalCount = 0;
-                for (const sourceId in graphlingsCounts) {
-                    totalCount += graphlingsCounts[sourceId].total || 0;
+                for (const sourceId in assetCounts) {
+                    totalCount += assetCounts[sourceId].total || 0;
                 }
 
-                const graphlingsCountEl = document.getElementById('graphlings-count');
-                if (graphlingsCountEl) {
-                    graphlingsCountEl.textContent = totalCount;
+                const assetsCountEl = document.getElementById('assets-count');
+                if (assetsCountEl) {
+                    assetsCountEl.textContent = totalCount;
                 }
 
-                // Render Graphlings sources in sidebar
-                renderGraphlingsSources();
+                // Render Assets sources in sidebar
+                renderAssetSources();
             } catch (error) {
                 console.error('Error loading game sources:', error);
             }
         }
 
-        function renderGraphlingsSources() {
-            const container = document.getElementById('graphlings-genres');
+        function renderAssetSources() {
+            const container = document.getElementById('assets-genres');
             if (!container) return;
 
-            if (Object.keys(graphlingsSources).length === 0) {
+            if (Object.keys(assetSources).length === 0) {
                 container.innerHTML = `
-                    <div class="graphlings-empty" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                    <div class="assets-empty" style="text-align: center; padding: 20px; color: var(--text-muted);">
                         <svg class="icon" style="width: 32px; height: 32px; opacity: 0.5;"><use href="#icon-game"/></svg>
                         <p style="margin-top: 8px; font-size: 0.9rem;">No game audio tagged yet</p>
                     </div>
@@ -10728,34 +10728,34 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             }
 
             let html = '';
-            for (const sourceId in graphlingsSources) {
-                const source = graphlingsSources[sourceId];
-                const counts = graphlingsCounts[sourceId] || { music: 0, audio: 0, voice: 0, total: 0 };
+            for (const sourceId in assetSources) {
+                const source = assetSources[sourceId];
+                const counts = assetCounts[sourceId] || { music: 0, audio: 0, voice: 0, total: 0 };
 
                 html += `
-                    <div class="graphlings-source" data-source="${sourceId}">
-                        <div class="graphlings-source-header" onclick="toggleGraphlingsSource('${sourceId}')">
+                    <div class="assets-source" data-source="${sourceId}">
+                        <div class="assets-source-header" onclick="toggleAssetSource('${sourceId}')">
                             <svg class="source-icon"><use href="#icon-game"/></svg>
                             <span class="source-name">${escapeHtml(source.name)}</span>
                             <span class="source-count">${counts.total}</span>
                         </div>
-                        <div class="graphlings-source-types">
-                            <div class="graphlings-type-item" data-source="${sourceId}" data-model="" onclick="selectGraphlingsFilter('${sourceId}', '')">
+                        <div class="assets-source-types">
+                            <div class="assets-type-item" data-source="${sourceId}" data-model="" onclick="selectAssetFilter('${sourceId}', '')">
                                 <svg class="type-icon"><use href="#icon-grid"/></svg>
                                 <span class="type-name">All Audio</span>
                                 <span class="type-count">${counts.total}</span>
                             </div>
-                            <div class="graphlings-type-item" data-source="${sourceId}" data-model="music" onclick="selectGraphlingsFilter('${sourceId}', 'music')">
+                            <div class="assets-type-item" data-source="${sourceId}" data-model="music" onclick="selectAssetFilter('${sourceId}', 'music')">
                                 <svg class="type-icon"><use href="#icon-music"/></svg>
                                 <span class="type-name">Music</span>
                                 <span class="type-count">${counts.music || 0}</span>
                             </div>
-                            <div class="graphlings-type-item" data-source="${sourceId}" data-model="audio" onclick="selectGraphlingsFilter('${sourceId}', 'audio')">
+                            <div class="assets-type-item" data-source="${sourceId}" data-model="audio" onclick="selectAssetFilter('${sourceId}', 'audio')">
                                 <svg class="type-icon"><use href="#icon-volume"/></svg>
                                 <span class="type-name">SFX</span>
                                 <span class="type-count">${counts.audio || 0}</span>
                             </div>
-                            <div class="graphlings-type-item" data-source="${sourceId}" data-model="voice" onclick="selectGraphlingsFilter('${sourceId}', 'voice')">
+                            <div class="assets-type-item" data-source="${sourceId}" data-model="voice" onclick="selectAssetFilter('${sourceId}', 'voice')">
                                 <svg class="type-icon"><use href="#icon-mic"/></svg>
                                 <span class="type-name">Speech</span>
                                 <span class="type-count">${counts.voice || 0}</span>
@@ -10768,31 +10768,31 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             container.innerHTML = html;
         }
 
-        function toggleGraphlingsSource(sourceId) {
-            const sourceEl = document.querySelector(`.graphlings-source[data-source="${sourceId}"]`);
+        function toggleAssetSource(sourceId) {
+            const sourceEl = document.querySelector(`.assets-source[data-source="${sourceId}"]`);
             if (sourceEl) {
                 sourceEl.classList.toggle('expanded');
             }
         }
 
-        function selectGraphlingsFilter(sourceId, model) {
-            currentGraphlingsSource = sourceId;
-            currentGraphlingsModel = model;
+        function selectAssetFilter(sourceId, model) {
+            currentAssetSource = sourceId;
+            currentAssetModel = model;
 
             // Update active states
-            document.querySelectorAll('.graphlings-type-item').forEach(item => {
+            document.querySelectorAll('.assets-type-item').forEach(item => {
                 const isActive = item.dataset.source === sourceId && item.dataset.model === model;
                 item.classList.toggle('active', isActive);
             });
 
             // Expand the source group
-            document.querySelectorAll('.graphlings-source').forEach(source => {
+            document.querySelectorAll('.assets-source').forEach(source => {
                 source.classList.toggle('expanded', source.dataset.source === sourceId);
             });
 
             updateClearFilterButton();
 
-            // Reload library with graphlings filter
+            // Reload library with asset filter
             libraryPage = 1;
             loadLibrary();
         }
@@ -10813,16 +10813,16 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 sort: librarySortEl.value
             });
 
-            // Handle Graphlings source filtering
-            if (currentGraphlingsSource) {
-                params.set('source', currentGraphlingsSource);
-                if (currentGraphlingsModel) {
-                    params.set('model', currentGraphlingsModel);
+            // Handle Assets source filtering
+            if (currentAssetSource) {
+                params.set('source', currentAssetSource);
+                if (currentAssetModel) {
+                    params.set('model', currentAssetModel);
                 }
             } else {
                 // Use currentCategory if set by type tabs, otherwise use model dropdown
                 const effectiveModel = currentCategory || model;
-                if (effectiveModel && effectiveModel !== 'graphlings') {
+                if (effectiveModel && effectiveModel !== 'assets') {
                     params.set('model', effectiveModel);
                 }
             }
@@ -10850,7 +10850,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 if (data.items.length === 0) {
                     let emptyMessage = '';
                     // Check if any filters are active
-                    const hasActiveFilters = search || model || currentCategory || currentSubcategory || currentGraphlingsSource || currentQuickFilter;
+                    const hasActiveFilters = search || model || currentCategory || currentSubcategory || currentAssetSource || currentQuickFilter;
 
                     if (search) {
                         emptyMessage = `
@@ -11080,11 +11080,11 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             currentGenre = '';
             currentQuickFilter = '';
 
-            // Clear Graphlings filter when switching tabs
-            currentGraphlingsSource = '';
-            currentGraphlingsModel = '';
-            document.querySelectorAll('.graphlings-type-item').forEach(item => item.classList.remove('active'));
-            document.querySelectorAll('.graphlings-source').forEach(source => source.classList.remove('expanded'));
+            // Clear Assets filter when switching tabs
+            currentAssetSource = '';
+            currentAssetModel = '';
+            document.querySelectorAll('.assets-type-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.assets-source').forEach(source => source.classList.remove('expanded'));
 
             // Update tab active states
             document.querySelectorAll('.type-tab').forEach(tab => {
@@ -11099,7 +11099,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             document.querySelectorAll('.quick-filter-btn').forEach(btn => btn.classList.remove('active'));
 
             // Update category for filtering
-            if (type === 'all' || type === 'graphlings') {
+            if (type === 'all' || type === 'assets') {
                 currentCategory = '';
             } else {
                 currentCategory = type;
@@ -11183,16 +11183,16 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         }
 
         function clearAllFilters() {
-            // Keep the current top-level type tab (Music, SFX, Speech, Graphlings)
+            // Keep the current top-level type tab (Music, SFX, Speech, Assets)
             // Only clear sub-filters
             currentGenre = '';
             currentQuickFilter = '';
             currentCategory = '';
             currentSubcategory = '';
 
-            // Clear Graphlings filters
-            currentGraphlingsSource = '';
-            currentGraphlingsModel = '';
+            // Clear Assets filters
+            currentAssetSource = '';
+            currentAssetModel = '';
 
             // Clear search box
             const searchInput = document.getElementById('library-search');
@@ -11201,10 +11201,10 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             // Reset active states on sub-filters only
             document.querySelectorAll('.genre-item').forEach(item => item.classList.remove('active'));
             document.querySelectorAll('.quick-filter-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.graphlings-type-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.assets-type-item').forEach(item => item.classList.remove('active'));
 
             // Collapse all expanded menus
-            document.querySelectorAll('.graphlings-source').forEach(source => source.classList.remove('expanded'));
+            document.querySelectorAll('.assets-source').forEach(source => source.classList.remove('expanded'));
             document.querySelectorAll('.genre-group').forEach(group => group.classList.add('collapsed'));
 
             updateSearchPlaceholder();
@@ -11218,8 +11218,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             const searchInput = document.getElementById('library-search');
             if (currentQuickFilter === 'favorites') {
                 searchInput.placeholder = 'Search your favorites...';
-            } else if (currentGraphlingsSource) {
-                const sourceName = graphlingsSources[currentGraphlingsSource]?.name || currentGraphlingsSource;
+            } else if (currentAssetSource) {
+                const sourceName = assetSources[currentAssetSource]?.name || currentAssetSource;
                 searchInput.placeholder = `Search ${sourceName} audio...`;
             } else if (currentGenre) {
                 searchInput.placeholder = `Search ${currentGenre} sounds...`;
@@ -11227,7 +11227,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 searchInput.placeholder = 'Search music tracks...';
             } else if (currentTypeTab === 'audio') {
                 searchInput.placeholder = 'Search sound effects...';
-            } else if (currentTypeTab === 'graphlings') {
+            } else if (currentTypeTab === 'assets') {
                 searchInput.placeholder = 'Search game audio...';
             } else {
                 searchInput.placeholder = 'Search music, sound effects, prompts...';
@@ -11238,7 +11238,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             const btn = document.getElementById('clear-filter-btn');
             const searchInput = document.getElementById('library-search');
             const hasSearch = searchInput && searchInput.value.trim().length > 0;
-            const hasFilters = currentGenre || currentQuickFilter || currentGraphlingsSource || hasSearch;
+            const hasFilters = currentGenre || currentQuickFilter || currentAssetSource || hasSearch;
             btn.style.display = hasFilters ? 'flex' : 'none';
         }
 
@@ -14537,7 +14537,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
     <div class="mini-player hidden" id="mini-player">
         <!-- Valpatel Branding -->
         <a href="https://valpatel.com" target="_blank" class="mini-player-brand" title="Powered by Valpatel Software">
-            <img src="/static/graphlings/logo-104.png" alt="Valpatel" class="graphlings-logo" onerror="this.style.display='none'">
+            <img src="/static/branding/logo-104.png" alt="Valpatel" class="branding-logo" onerror="this.style.display='none'">
             <span class="brand-text">VALPATEL</span>
         </a>
 
@@ -14637,7 +14637,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             background: rgba(168, 85, 247, 0.15);
         }
 
-        .graphlings-logo {
+        .assets-logo {
             width: 24px;
             height: 24px;
             filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.5));

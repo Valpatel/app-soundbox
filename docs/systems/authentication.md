@@ -34,11 +34,11 @@ When `OPEN_ACCESS_MODE=true` (the default), no login is required:
 - **Rate limits per-IP** - Prevents abuse without requiring accounts
 - **Localhost exempt** - `127.0.0.1` and `::1` bypass rate limits (except MCP-proxied requests)
 - **IP whitelist** - `IP_WHITELIST` env var for creator-tier limits on trusted IPs
-- **Graphlings SDK skipped** - Frontend doesn't load external auth scripts
+- **Auth SDK skipped** - Frontend doesn't load external auth scripts
 
 ### Valnet Auth Mode
 
-When `OPEN_ACCESS_MODE=false`, Sound Box uses Valnet/Graphlings for authentication:
+When `OPEN_ACCESS_MODE=false`, Sound Box uses Valnet for authentication:
 - **No local accounts** - All users from external auth
 - **Token-based** - Bearer tokens in Authorization header
 - **Tier-aware** - Subscription tier affects limits
@@ -316,7 +316,7 @@ def spend_aura(token, amount, description, job_id=None):
 
 ```python
 CORS(app, origins=[
-    'https://graphlings.net',
+    'https://yourdomain.com',
     'https://soundbox.example.com'
 ])
 ```

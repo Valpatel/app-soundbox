@@ -2371,7 +2371,7 @@ def api_library():
         sort: 'recent', 'popular', or 'rating'
         user_id: Filter by creator
         category: Filter by genre/category (e.g., 'ambient', 'nature')
-        source: Filter by game/app source (e.g., 'byk3s')
+        source: Filter by project source (e.g., 'byk3s')
     """
     page, per_page = get_pagination_params()
 
@@ -2422,7 +2422,7 @@ def api_library():
 
     # Validate source parameter
     source = request.args.get('source')
-    if source and source not in db.GRAPHLINGS_SOURCES:
+    if source and source not in db.PROJECT_SOURCES:
         source = None  # Invalid source, ignore
 
     result = db.get_library(
@@ -3004,20 +3004,20 @@ def api_get_categories(model):
 
 
 # =============================================================================
-# Game/App Sources API (routes use /api/graphlings/ prefix for compatibility)
+# Project Sources API
 # =============================================================================
 
-@app.route('/api/graphlings/sources')
-def api_graphlings_sources():
+@app.route('/api/assets/sources')
+def api_asset_sources():
     """
-    Get all available Graphlings sources (games/apps) with counts.
+    Get all available asset sources (projects) with counts.
 
     Returns:
         sources: dict of source_id -> source info
         counts: dict of source_id -> {music, audio, voice, total}
     """
-    sources = db.get_graphlings_sources()
-    counts = db.get_graphlings_source_counts()
+    sources = db.get_project_sources()
+    counts = db.get_project_source_counts()
 
     return jsonify({
         'sources': sources,
@@ -3025,20 +3025,20 @@ def api_graphlings_sources():
     })
 
 
-@app.route('/api/graphlings/sources/<source_id>')
-def api_graphlings_source_detail(source_id):
+@app.route('/api/assets/sources/<source_id>')
+def api_asset_source_detail(source_id):
     """
-    Get details for a specific Graphlings source.
+    Get details for a specific asset source.
 
     Returns source info and library filtered to that source.
     """
-    sources = db.get_graphlings_sources()
+    sources = db.get_project_sources()
 
     if source_id not in sources:
         return jsonify({'error': 'Source not found'}), 404
 
     source = sources[source_id]
-    counts = db.get_graphlings_source_counts().get(source_id, {
+    counts = db.get_project_source_counts().get(source_id, {
         'music': 0, 'audio': 0, 'voice': 0, 'total': 0
     })
 
@@ -3049,13 +3049,13 @@ def api_graphlings_source_detail(source_id):
     })
 
 
-@app.route('/api/graphlings/library')
-def api_graphlings_library():
+@app.route('/api/assets/library')
+def api_asset_library():
     """
-    Get library filtered by Graphlings source.
+    Get library filtered by asset source.
 
     Query params:
-        source: Required - Graphlings source ID (e.g., 'byk3s')
+        source: Required - source ID (e.g., 'byk3s')
         model: Optional - Filter by 'music', 'audio', or 'voice'
         page: Page number (default 1)
         per_page: Items per page (default 20, max 100)
@@ -3066,7 +3066,7 @@ def api_graphlings_library():
     if not source:
         return jsonify({'error': 'source parameter required'}), 400
 
-    sources = db.get_graphlings_sources()
+    sources = db.get_project_sources()
     if source not in sources:
         return jsonify({'error': 'Invalid source'}), 400
 
@@ -3089,10 +3089,10 @@ def api_graphlings_library():
     return jsonify(result)
 
 
-@app.route('/api/graphlings/set-source', methods=['POST'])
+@app.route('/api/assets/set-source', methods=['POST'])
 @limiter.limit("60 per minute")
 @require_auth
-def api_set_graphlings_source():
+def api_set_asset_source():
     """
     Set or update the source for one or more generations.
     Requires admin authentication.
@@ -3117,7 +3117,7 @@ def api_set_graphlings_source():
 
     # Validate source if provided
     if source:
-        sources = db.get_graphlings_sources()
+        sources = db.get_project_sources()
         if source not in sources:
             return jsonify({'error': f'Invalid source: {source}'}), 400
 
@@ -4621,20 +4621,20 @@ def openapi_spec():
 # WIDGET EMBED ENDPOINTS
 # ========================================
 
-@app.route('/widget/graphlings-radio.js')
+@app.route('/widget/soundbox-radio.js')
 def widget_js():
     """Serve the embeddable widget JavaScript with CORS headers."""
-    response = send_file('static/dist/graphlings-radio.js', mimetype='application/javascript')
+    response = send_file('static/dist/soundbox-radio.js', mimetype='application/javascript')
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET'
     response.headers['Cache-Control'] = 'public, max-age=3600'  # Cache for 1 hour
     return response
 
 
-@app.route('/widget/graphlings-radio.css')
+@app.route('/widget/soundbox-radio.css')
 def widget_css():
     """Serve the embeddable widget CSS with CORS headers."""
-    response = send_file('static/dist/graphlings-radio.css', mimetype='text/css')
+    response = send_file('static/dist/soundbox-radio.css', mimetype='text/css')
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET'
     response.headers['Cache-Control'] = 'public, max-age=3600'  # Cache for 1 hour

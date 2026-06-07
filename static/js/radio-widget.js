@@ -543,7 +543,7 @@ class RadioWidgetInstance {
             <!-- Branding watermark -->
             <div class="rw-fs-branding">
                 <a href="https://valpatel.com" target="_blank" class="rw-fs-brand-link">
-                    <img src="/static/graphlings/logo-104.png" alt="Valpatel" class="rw-fs-brand-logo">
+                    <img src="/static/branding/logo-104.png" alt="Valpatel" class="rw-fs-brand-logo">
                     <span class="rw-fs-brand-text">Valpatel.com</span>
                 </a>
             </div>
@@ -736,7 +736,7 @@ class RadioWidgetInstance {
         return `
             <div class="rw-branding">
                 <a href="${brandUrl}" target="_blank" rel="noopener noreferrer" class="rw-branding-link" title="Powered by Valpatel Software">
-                    <img src="/static/graphlings/logo-104.png" alt="Valpatel" class="rw-branding-logo">
+                    <img src="/static/branding/logo-104.png" alt="Valpatel" class="rw-branding-logo">
                     <span class="rw-branding-text">Valpatel.com</span>
                 </a>
             </div>

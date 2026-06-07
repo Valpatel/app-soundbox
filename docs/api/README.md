@@ -55,7 +55,7 @@ curl http://localhost:5309/api/library
 
 ### Bearer Token Mode
 
-When `OPEN_ACCESS_MODE=false`, most endpoints require a Bearer token from Valnet/Graphlings.
+When `OPEN_ACCESS_MODE=false`, most endpoints require a Bearer token from Valnet.
 
 ```bash
 # Include token in Authorization header

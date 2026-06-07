@@ -1,5 +1,9 @@
 # Sound Box Dependencies
-# Note: For full setup including CUDA-enabled PyTorch, run ./setup.sh instead
+#
+# WARNING: This file installs CPU-only PyTorch. For GPU support, run:
+#   ./setup.sh
+# which auto-detects your GPU and installs the correct CUDA-enabled PyTorch.
+# Only use this file for reference or CI environments without GPU.
 
 # Core framework
 flask>=2.0

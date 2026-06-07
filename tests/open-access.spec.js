@@ -53,7 +53,7 @@ test.describe('Open Access Mode', () => {
         expect(result).toBe(true);
 
         // Verify no login modal is visible
-        const loginModal = page.locator('.graphlings-modal, .login-modal, #login-modal');
+        const loginModal = page.locator('.assets-modal, .login-modal, #login-modal');
         await expect(loginModal).not.toBeVisible();
     });
 
@@ -71,12 +71,12 @@ test.describe('Open Access Mode', () => {
         }
     });
 
-    test('no Graphlings SDK loaded', async ({ page }) => {
-        const hasGraphlings = await page.evaluate(() => {
-            return typeof window.GraphlingsSDK !== 'undefined' ||
-                   document.querySelector('script[src*="graphlings"]') !== null;
+    test('no auth SDK loaded', async ({ page }) => {
+        const hasAuthSDK = await page.evaluate(() => {
+            return typeof window.AuthSDK !== 'undefined' ||
+                   document.querySelector('script[src*="auth-sdk"]') !== null;
         });
-        expect(hasGraphlings).toBe(false);
+        expect(hasAuthSDK).toBe(false);
     });
 });
 

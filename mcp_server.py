@@ -290,16 +290,16 @@ def get_radio_track(
 
 
 @mcp.tool()
-def generate_for_game(
+def generate_for_project(
     prompt: str,
-    game: str,
+    project: str,
     model: str = "audio",
     duration: int = 3,
     wait: bool = True,
     poll_interval: int = 3,
     max_wait: int = 300,
 ) -> dict:
-    """Generate audio and tag it for a specific game/app.
+    """Generate audio and tag it for a specific project.
 
     Combines generation + source tagging in one step. Use wait=True
     (default) to block until the sound is ready and tagged.
@@ -309,7 +309,7 @@ def generate_for_game(
                 Keep prompts short and specific (3-8 words work best).
                 Bad: "cute tiny creature yawn, adorable small animal sleepy sound, gentle tired exhale"
                 Good: "soft gentle yawn sound"
-        game: Game/app source ID (e.g. "graphlings", "byk3s").
+        project: Project source ID (e.g. "my-project", "byk3s").
         model: "audio" (SFX, default) or "music" (MusicGen).
         duration: Length in seconds (1-60, default 3).
         wait: If True (default), poll until complete then tag.
@@ -340,7 +340,7 @@ def generate_for_game(
         return {"error": data.get("error", "Generation failed"), "status_code": r.status_code}
 
     job_id = data["job_id"]
-    result = {"job_id": job_id, "status": "queued", "game": game}
+    result = {"job_id": job_id, "status": "queued", "project": project}
 
     if not wait:
         return result
@@ -360,10 +360,10 @@ def generate_for_game(
             result["audio_url"] = f"{SOUNDBOX_URL}/audio/{filename}"
             result["download_url"] = f"{SOUNDBOX_URL}/download/{filename}"
 
-            # Tag for game
-            tag_r = client.post("/api/graphlings/set-source", json={
+            # Tag for project
+            tag_r = client.post("/api/assets/set-source", json={
                 "generation_ids": [job_id],
-                "source": game,
+                "source": project,
             })
             tag_data = tag_r.json()
             result["tagged"] = tag_data.get("success", False)
@@ -378,18 +378,18 @@ def generate_for_game(
 
 
 @mcp.tool()
-def tag_for_game(
+def tag_for_project(
     generation_ids: list[str],
-    game: str,
+    project: str,
 ) -> dict:
-    """Tag existing audio generations as belonging to a game/app.
+    """Tag existing audio generations as belonging to a project.
 
-    Tags sounds so they appear in the game's asset section of the Sound Box UI
+    Tags sounds so they appear in the project's asset section of the Sound Box UI
     for review and approval.
 
     Args:
         generation_ids: List of generation IDs to tag.
-        game: Game/app source ID (e.g. "graphlings", "byk3s").
+        project: Project source ID (e.g. "my-project", "byk3s").
 
     Returns:
         Success status and count of updated items.
@@ -402,40 +402,40 @@ def tag_for_game(
             return {"error": str(e)}
 
     client = get_client()
-    r = client.post("/api/graphlings/set-source", json={
+    r = client.post("/api/assets/set-source", json={
         "generation_ids": generation_ids,
-        "source": game,
+        "source": project,
     })
     return r.json()
 
 
 @mcp.tool()
-def get_game_assets(
-    game: str,
+def get_project_assets(
+    project: str,
     sort: str = "recent",
     page: int = 1,
     per_page: int = 50,
 ) -> dict:
-    """Get all audio assets tagged for a specific game.
+    """Get all audio assets tagged for a specific project.
 
-    Use this to see what sounds have been generated for a game,
+    Use this to see what sounds have been generated for a project,
     check their approval status, and find rejected ones to regenerate.
 
     Args:
-        game: Game/app source ID (e.g. "graphlings", "byk3s").
+        project: Project source ID (e.g. "my-project", "byk3s").
         sort: "recent", "popular", or "rating".
         page: Page number (default 1).
         per_page: Results per page (default 50, max 100).
 
     Returns:
-        Paginated list of game assets with vote counts and feedback.
+        Paginated list of project assets with vote counts and feedback.
     """
     page = _clamp(page, 1, 1000)
     per_page = _clamp(per_page, 1, 100)
 
     client = get_client()
     r = client.get("/api/library", params={
-        "source": game,
+        "source": project,
         "sort": sort,
         "page": page,
         "per_page": per_page,
@@ -452,24 +452,24 @@ def get_game_assets(
 
 
 @mcp.tool()
-def get_rejected_assets(game: str) -> dict:
-    """Get downvoted/rejected audio assets for a game.
+def get_rejected_assets(project: str) -> dict:
+    """Get downvoted/rejected audio assets for a project.
 
     Returns assets that have been thumbs-downed by reviewers, including
     their feedback reasons and notes. Use this to understand what went
     wrong and generate better replacements.
 
     Args:
-        game: Game/app source ID (e.g. "graphlings").
+        project: Project source ID (e.g. "my-project").
 
     Returns:
         List of rejected assets with prompts, feedback reasons, and notes.
     """
     client = get_client()
 
-    # Get all game assets sorted by rating (worst first)
+    # Get all project assets sorted by rating (worst first)
     r = client.get("/api/library", params={
-        "source": game,
+        "source": project,
         "sort": "rating",
         "per_page": 100,
     })
@@ -502,7 +502,7 @@ def get_rejected_assets(game: str) -> dict:
             rejected.append(entry)
 
     return {
-        "game": game,
+        "project": project,
         "total_assets": data.get("total", 0),
         "rejected_count": len(rejected),
         "rejected": rejected,
@@ -510,17 +510,17 @@ def get_rejected_assets(game: str) -> dict:
 
 
 @mcp.tool()
-def list_game_sources() -> dict:
-    """List all registered game/app sources.
+def list_project_sources() -> dict:
+    """List all registered project sources.
 
     Returns all available source IDs with their names and descriptions.
-    Use this to see which games have audio assets in Sound Box.
+    Use this to see which projects have audio assets in Sound Box.
 
     Returns:
         Dict of sources with names, descriptions, and asset counts.
     """
     client = get_client()
-    r = client.get("/api/graphlings/sources")
+    r = client.get("/api/assets/sources")
     return r.json()
 
 

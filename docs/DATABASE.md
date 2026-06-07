@@ -21,7 +21,7 @@ CREATE TABLE generations (
     is_loop BOOLEAN DEFAULT FALSE,    -- Seamless loop mode
     quality_score INTEGER,            -- 0-100 quality rating
     spectrogram TEXT,                 -- Spectrogram filename
-    user_id TEXT,                     -- Graphlings user ID
+    user_id TEXT,                     -- User ID
     category TEXT,                    -- JSON array of categories (added via migration)
     upvotes INTEGER DEFAULT 0,        -- Denormalized count
     downvotes INTEGER DEFAULT 0,      -- Denormalized count

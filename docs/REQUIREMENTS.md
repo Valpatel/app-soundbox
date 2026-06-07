@@ -15,7 +15,7 @@ This document describes the key features, business rules, and configuration opti
 
 ## Subscription Tiers
 
-Sound Box integrates with Valnet/Graphlings subscription system. All features scale by tier.
+Sound Box integrates with Valnet subscription system. All features scale by tier.
 
 | Tier | Price | Generations/Hour | Max Duration | Storage | Aura/Month |
 |------|-------|-----------------|--------------|---------|------------|

@@ -7,9 +7,9 @@
  *
  * Usage:
  *   <div id="my-radio"></div>
- *   <script src="https://localhost:5309/widget/graphlings-radio.js"></script>
+ *   <script src="https://localhost:5309/widget/soundbox-radio.js"></script>
  *   <script>
- *     GraphlingsRadio.init('#my-radio', {
+ *     SoundBoxRadio.init('#my-radio', {
  *       size: 'medium',      // 'ultra-minimal', 'minimal', 'small', 'medium', 'large'
  *       template: 'default', // Theme: 'default', 'neon', 'sunset', 'ocean', etc.
  *       station: 'shuffle',  // Station to play: 'shuffle', 'ambient', 'lofi', etc.
@@ -23,7 +23,7 @@
 
     const VERSION = '1.0.0';
     const API_BASE = 'https://localhost:5309';
-    const WIDGET_CSS_URL = `${API_BASE}/widget/graphlings-radio.css`;
+    const WIDGET_CSS_URL = `${API_BASE}/widget/soundbox-radio.css`;
 
     // ========================================
     // EVENT EMITTER
@@ -55,7 +55,7 @@
                     try {
                         cb(...args);
                     } catch (e) {
-                        console.error('[GraphlingsRadio] Event handler error:', e);
+                        console.error('[SoundBox] Event handler error:', e);
                     }
                 });
             }
@@ -69,7 +69,7 @@
     // ========================================
     // CORE PLAYER
     // ========================================
-    class GraphlingsRadioCore {
+    class SoundBoxRadioCore {
         constructor(options = {}) {
             this._events = new RadioWidgetEvents();
             this.queue = [];
@@ -116,7 +116,7 @@
             });
 
             this.audioElement.addEventListener('error', (e) => {
-                console.error('[GraphlingsRadio] Audio error:', e);
+                console.error('[SoundBox] Audio error:', e);
                 this._events.emit('error', { type: 'audio', error: e });
                 this.next();
             });
@@ -136,7 +136,7 @@
         play() {
             if (this.audioElement.src) {
                 this.audioElement.play().catch(e => {
-                    console.error('[GraphlingsRadio] Play failed:', e);
+                    console.error('[SoundBox] Play failed:', e);
                 });
             } else if (this.queue.length > 0) {
                 this._playTrack(this.queue.shift());
@@ -230,7 +230,7 @@
 
                 return this.queue;
             } catch (e) {
-                console.error('[GraphlingsRadio] Failed to load station:', e);
+                console.error('[SoundBox] Failed to load station:', e);
                 this._events.emit('error', { type: 'network', error: e });
                 return [];
             }
@@ -257,7 +257,7 @@
                     this._playTrack(this.queue.shift());
                 }
             } catch (e) {
-                console.error('[GraphlingsRadio] Failed to fetch more tracks:', e);
+                console.error('[SoundBox] Failed to fetch more tracks:', e);
             }
         }
 
@@ -268,7 +268,7 @@
             const audioUrl = `${this.apiBaseUrl}/audio/${track.filename}`;
             this.audioElement.src = audioUrl;
             this.audioElement.play().catch(e => {
-                console.error('[GraphlingsRadio] Play failed:', e);
+                console.error('[SoundBox] Play failed:', e);
             });
 
             this._events.emit('trackChange', track);
@@ -319,14 +319,14 @@
     // ========================================
     // WIDGET UI
     // ========================================
-    class GraphlingsRadioWidget {
+    class SoundBoxRadioWidget {
         constructor(container, options = {}) {
             this.container = typeof container === 'string'
                 ? document.querySelector(container)
                 : container;
 
             if (!this.container) {
-                console.error('[GraphlingsRadio] Container not found');
+                console.error('[SoundBox] Container not found');
                 return;
             }
 
@@ -339,7 +339,7 @@
                 ...options
             };
 
-            this.core = new GraphlingsRadioCore({
+            this.core = new SoundBoxRadioCore({
                 apiBaseUrl: options.apiBaseUrl || API_BASE,
                 userId: options.userId
             });
@@ -358,10 +358,10 @@
 
         _injectStyles() {
             // Check if styles already injected
-            if (document.getElementById('graphlings-radio-styles')) return;
+            if (document.getElementById('soundbox-radio-styles')) return;
 
             const link = document.createElement('link');
-            link.id = 'graphlings-radio-styles';
+            link.id = 'soundbox-radio-styles';
             link.rel = 'stylesheet';
             link.href = WIDGET_CSS_URL;
             document.head.appendChild(link);
@@ -465,7 +465,7 @@
             return `
                 <div class="rw-branding">
                     <a href="https://valpatel.com" target="_blank" rel="noopener noreferrer" class="rw-branding-link" title="Powered by Valpatel Software">
-                        <img src="https://localhost:5309/static/graphlings/logo-104.png" alt="Valpatel" class="rw-branding-logo">
+                        <img src="https://localhost:5309/static/branding/logo-104.png" alt="Valpatel" class="rw-branding-logo">
                         <span class="rw-branding-text">Powered by Sound Box</span>
                     </a>
                 </div>
@@ -628,7 +628,7 @@
     // ========================================
     // PUBLIC API
     // ========================================
-    const GraphlingsRadio = {
+    const SoundBoxRadio = {
         version: VERSION,
         _instances: new Map(),
         _instanceId: 0,
@@ -637,11 +637,11 @@
          * Initialize a radio widget
          * @param {string|HTMLElement} container - Container element or CSS selector
          * @param {Object} options - Widget options
-         * @returns {GraphlingsRadioWidget} Widget instance
+         * @returns {SoundBoxRadioWidget} Widget instance
          */
         init(container, options = {}) {
-            const widget = new GraphlingsRadioWidget(container, options);
-            const id = `graphlings_radio_${++this._instanceId}`;
+            const widget = new SoundBoxRadioWidget(container, options);
+            const id = `soundbox_radio_${++this._instanceId}`;
             this._instances.set(id, widget);
             widget._id = id;
             return widget;
@@ -675,17 +675,17 @@
     };
 
     // Export to window
-    window.GraphlingsRadio = GraphlingsRadio;
+    window.SoundBoxRadio = SoundBoxRadio;
 
-    // Auto-init widgets with data-graphlings-radio attribute
+    // Auto-init widgets with data-soundbox-radio attribute
     document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('[data-graphlings-radio]').forEach(el => {
+        document.querySelectorAll('[data-soundbox-radio]').forEach(el => {
             const options = {};
             if (el.dataset.size) options.size = el.dataset.size;
             if (el.dataset.template) options.template = el.dataset.template;
             if (el.dataset.station) options.station = el.dataset.station;
             if (el.dataset.autoplay === 'true') options.autoPlay = true;
-            GraphlingsRadio.init(el, options);
+            SoundBoxRadio.init(el, options);
         });
     });
 

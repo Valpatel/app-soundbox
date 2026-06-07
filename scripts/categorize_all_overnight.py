@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Ollama servers that have qwen2.5:14b model available
 OLLAMA_SERVERS = [
-    "http://graphlings-ai-01:11434/api/generate",
+    "http://ollama-ai-01:11434/api/generate",
     "http://graphling-ai-02:11434/api/generate",
 ]
 

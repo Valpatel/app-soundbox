@@ -30,8 +30,9 @@ if curl -s http://localhost:5309/ > /dev/null 2>&1; then
     echo -e "${GREEN}✓ Server is running on http://localhost:5309${NC}"
 else
     echo -e "${RED}✗ Server not running. Starting server...${NC}"
-    ./venv/bin/python app.py &
+    ./start.sh &
     SERVER_PID=$!
+    trap "kill $SERVER_PID 2>/dev/null" EXIT
     echo "  Started server (PID: $SERVER_PID)"
     sleep 5
 

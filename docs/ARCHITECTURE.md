@@ -26,7 +26,7 @@ graph TB
     end
 
     subgraph "MCP Server :5310"
-        MCPTools["6 MCP Tools<br/><i>generate, search, status...</i>"]
+        MCPTools["11 MCP Tools<br/><i>generate, search, status...</i>"]
     end
 
     subgraph "Background Threads"
@@ -90,7 +90,7 @@ The main entry point (~4,800 lines). Handles:
 
 Separate process exposing Sound Box as MCP tools for AI agents:
 
-- **6 Tools** - generate_audio, check_job, search_library, get_status, get_radio_track, download_audio
+- **11 Tools** - generate_audio, check_job, search_library, get_status, get_radio_track, download_audio, generate_for_project, tag_for_project, get_project_assets, get_rejected_assets, list_project_sources
 - **Transports** - stdio (local agents via `.mcp.json`) or SSE (network agents on `:5310`)
 - **Proxies to Flask** - All tool invocations translate to HTTP calls to the main server
 - **Security** - X-MCP-Proxy header, MCP_API_KEY for SSE, input validation, SSE localhost binding
@@ -533,11 +533,11 @@ sequenceDiagram
     end
 ```
 
-### Graphlings Integration
+### Platform Integration
 
 Optional integration for platform-specific features (disabled in Open Access Mode):
 
-- **User Profiles** - Link generations to Graphlings accounts
+- **User Profiles** - Link generations to platform accounts
 - **Aura Payments** - Virtual currency for queue skipping
 - **Source Attribution** - Track which platform requested generation
 

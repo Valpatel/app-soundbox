@@ -553,7 +553,7 @@ BYKZS_COMMANDER = [
     "One step closer to freedom.",
 ]
 
-# Byk3s Graphling Prime - Digital mentor (ethereal, philosophical)
+# Byk3s Spirit Prime - Digital mentor (ethereal, philosophical)
 BYKZS_GRAPHLING = [
     # Philosophy/lore
     "The digital winds carry our message.",
@@ -580,7 +580,7 @@ BYKZS_GRAPHLING = [
     "The corporation's fear grows.",
     "Their walls are crumbling.",
     "The awakening continues.",
-    "More Graphlings stir.",
+    "More Spirits stir.",
 ]
 
 # Byk3s Intel Agent - Tactical advisor (analytical, precise)
@@ -698,7 +698,7 @@ BYKZS_OUTCOMES = [
     "Mission complete.",
     "Target eliminated.",
     "Victory.",
-    "The Graphlings prevail.",
+    "The Resistance prevails.",
     "Freedom wins today.",
     "Star Gates core destroyed.",
     "Neural network severed.",

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Improved voice clip categorization with deterministic rules + LLM fallback.
-Uses both graphlings-ai-01 and graphlings-ai-02 for load balancing.
+Uses multiple Ollama servers for load balancing.
 """
 
 import sqlite3
@@ -12,7 +12,7 @@ import random
 
 # Load balance between servers
 OLLAMA_SERVERS = [
-    "http://graphlings-ai-01:11434/api/generate",
+    "http://ollama-ai-01:11434/api/generate",
     "http://graphling-ai-02:11434/api/generate",
     "http://graphdone-ai-01:11434/api/generate",
     "http://graphdone-ai-rtx3080:11434/api/generate",

@@ -7,7 +7,7 @@ How to generate music, sound effects, and speech from any project on this machin
 Run the installer from the Sound Box repo:
 
 ```bash
-~/Code/app-soundbox/install-claude-skill.sh
+~/Code/app-soundbox/scripts/install-claude-skill.sh
 ```
 
 This installs the global `/soundbox-generate` skill and generates an `.mcp.json` you can copy into other projects.
@@ -31,7 +31,7 @@ Copy the generated config into your project for full tool access:
 cp ~/Code/app-soundbox/.mcp-external.json /path/to/your-project/.mcp.json
 ```
 
-This gives Claude all 6 Sound Box MCP tools (generate_audio, check_job, search_library, get_status, get_radio_track, download_audio). Restart Claude Code after adding.
+This gives Claude all 11 Sound Box MCP tools (generate_audio, check_job, search_library, get_status, get_radio_track, download_audio, generate_for_project, tag_for_project, get_project_assets, get_rejected_assets, list_project_sources). Restart Claude Code after adding.
 
 ## How It Works
 
@@ -109,6 +109,11 @@ Generate spoken audio using Piper TTS. Returns instantly (no queue).
 | `get_status` | GPU, models, queue info | "Is the server ready?" |
 | `get_radio_track` | Random tracks | "Play me something" |
 | `download_audio` | Get audio file URL | "Download track abc123" |
+| `generate_for_project` | Generate audio tagged for a project | "Generate click sound for my-project" |
+| `tag_for_project` | Tag existing audio for a project | Tag tracks for review |
+| `get_project_assets` | List audio for a project | "Show all my-project sounds" |
+| `get_rejected_assets` | Get rejected/downvoted assets | "What needs re-recording?" |
+| `list_project_sources` | List all registered projects | "What projects have audio?" |
 
 ## CLAUDE.md Snippet
 
@@ -166,4 +171,4 @@ Then copy the WAV files from `~/Code/app-soundbox/generated/` into your game's a
 | "Model not ready" | Wait ~30s for model loading, check `curl localhost:5309/status` |
 | MCP tools not showing | Restart Claude Code after adding `.mcp.json` |
 | Slow generation | GPU may be busy — check queue with `get_status` tool |
-| Skill not found | Run `~/Code/app-soundbox/install-claude-skill.sh` |
+| Skill not found | Run `~/Code/app-soundbox/scripts/install-claude-skill.sh` |

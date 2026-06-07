@@ -274,6 +274,21 @@ Get random tracks for discovery or playlist building.
 #### `download_audio`
 Get stream/download URLs for a specific track by ID.
 
+#### `generate_for_project`
+Generate audio and tag it for a specific project in one step.
+
+#### `tag_for_project`
+Tag existing audio generations as belonging to a project.
+
+#### `get_project_assets`
+Get all audio assets tagged for a specific project.
+
+#### `get_rejected_assets`
+Get downvoted/rejected audio assets with feedback.
+
+#### `list_project_sources`
+List all registered project sources.
+
 ### Configuration
 
 **Claude Code** auto-discovers via `.mcp.json` in the project root:

@@ -213,7 +213,7 @@
 **Solutions:**
 
 1. **Check user identification**
-   - User ID from Graphlings, or
+   - User ID from auth provider, or
    - Device ID from localStorage
 
 2. **Check API response**

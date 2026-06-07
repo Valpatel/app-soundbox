@@ -45,3 +45,11 @@ Desktop.ini
 
 # SFX generation progress files
 scripts/*_progress.json
+
+# External MCP config (contains absolute paths)
+.mcp-external.json
+
+# Local tool artifacts
+.codegraph.db
+.memsearch/
+.claude/

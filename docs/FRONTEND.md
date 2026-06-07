@@ -40,7 +40,7 @@ let modelStatus = {             // Model loading status
   audio: 'pending'
 };
 let modelsReady = false;        // True when at least one model is ready
-let currentUserId = null;       // Graphlings user ID (if authenticated)
+let currentUserId = null;       // User ID (if authenticated)
 let isAdultAccount = false;     // Content filter flag
 ```
 
@@ -234,13 +234,13 @@ Update UI with new counts
 
 ## Integration Points
 
-### Graphlings Authentication
+### Authentication
 
-The app integrates with Graphlings.net for optional user authentication:
+The app integrates with an external auth provider for optional user authentication:
 
 ```javascript
-// Listen for auth events from Graphlings widget
-window.addEventListener('graphlings-user', (e) => {
+// Listen for auth events from auth widget
+window.addEventListener('auth-user', (e) => {
   currentUserId = e.detail.userId;
   isAdultAccount = e.detail.isAdult;
 });

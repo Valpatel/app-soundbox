@@ -20,7 +20,7 @@ graph TB
 
     subgraph "Shared"
         I[Web Audio API]
-        J[Graphlings SDK]
+        J[Auth SDK]
     end
 
     D --> I
@@ -118,11 +118,11 @@ Components use these variables for consistency.
 
 ## Authentication
 
-### Graphlings SDK Integration
+### Auth SDK Integration
 
 ```javascript
-// Initialize Graphlings SDK
-const graphlings = new GraphlingsSDK({
+// Initialize Auth SDK
+const authSDK = new AuthSDK({
     appId: 'soundbox',
     onLogin: (user) => updateUI(user),
     onLogout: () => resetUI()
@@ -130,7 +130,7 @@ const graphlings = new GraphlingsSDK({
 
 // Get auth token for API calls
 async function apiCall(endpoint, options = {}) {
-    const token = await graphlings.getToken();
+    const token = await authSDK.getToken();
     return fetch(endpoint, {
         ...options,
         headers: {

@@ -16,10 +16,10 @@ graph LR
 
 ```html
 <!-- Required CSS -->
-<link rel="stylesheet" href="https://soundbox.example.com/widget/graphlings-radio.css">
+<link rel="stylesheet" href="https://soundbox.example.com/widget/soundbox-radio.css">
 
 <!-- Required JS -->
-<script src="https://soundbox.example.com/widget/graphlings-radio.js"></script>
+<script src="https://soundbox.example.com/widget/soundbox-radio.js"></script>
 ```
 
 ### 2. Add Container
@@ -374,8 +374,8 @@ export default {
 
 ```php
 function enqueue_radio_widget() {
-    wp_enqueue_style('radio-widget', 'https://soundbox.example.com/widget/graphlings-radio.css');
-    wp_enqueue_script('radio-widget', 'https://soundbox.example.com/widget/graphlings-radio.js');
+    wp_enqueue_style('radio-widget', 'https://soundbox.example.com/widget/soundbox-radio.css');
+    wp_enqueue_script('radio-widget', 'https://soundbox.example.com/widget/soundbox-radio.js');
 }
 add_action('wp_enqueue_scripts', 'enqueue_radio_widget');
 ```

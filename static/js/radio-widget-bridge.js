@@ -14,7 +14,7 @@ class RadioWidgetBridge {
         this.heartbeatInterval = null;
 
         // Configuration
-        this.channelName = options.channelName || 'graphlings-radio-sync';
+        this.channelName = options.channelName || 'soundbox-radio-sync';
         this.heartbeatMs = options.heartbeatMs || 2000;
         this.staleThresholdMs = options.staleThresholdMs || 5000;
 
