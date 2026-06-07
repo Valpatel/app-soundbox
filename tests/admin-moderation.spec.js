@@ -49,23 +49,34 @@ test.describe('Admin Moderation API', () => {
         });
 
         test('supports pagination via page and per_page query params', async ({ request }) => {
-            const res = await request.get('/api/admin/moderation?page=1&per_page=5');
+            const res = await request.get('/api/admin/moderation?page=2&per_page=5');
             expect(res.status()).toBe(200);
 
+            // db.get_pending_moderation returns { items, total, page, per_page, pages }
             const body = await res.json();
-            expect(typeof body).toBe('object');
-            expect(body).not.toBeNull();
+            expect(body.page).toBe(2);
+            expect(body.per_page).toBe(5);
         });
 
         test('clamps out-of-range pagination params without error', async ({ request }) => {
             // page=0 should be clamped to 1, per_page=9999 clamped to 100
             const res = await request.get('/api/admin/moderation?page=0&per_page=9999');
             expect(res.status()).toBe(200);
+
+            // get_pagination_params() clamps per_page to max 100
+            const body = await res.json();
+            expect(body.per_page).toBeLessThanOrEqual(100);
         });
 
         test('supports model filter query param', async ({ request }) => {
-            const res = await request.get('/api/admin/moderation?model=musicgen');
+            const res = await request.get('/api/admin/moderation?model=audio');
             expect(res.status()).toBe(200);
+
+            // All returned items must match the requested model filter
+            const body = await res.json();
+            for (const item of body.items) {
+                expect(item.model).toBe('audio');
+            }
         });
 
         // NOTE: X-Forwarded-For spoofing does NOT affect is_localhost_request(),

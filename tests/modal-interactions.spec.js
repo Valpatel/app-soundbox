@@ -23,7 +23,7 @@ async function mockAuth(page) {
     });
 }
 
-test.describe('Feedback Modal - Voting', () => {
+test.describe('@xb Feedback Modal - Voting', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -170,7 +170,7 @@ test.describe('Feedback Modal - Voting', () => {
     });
 });
 
-test.describe('Tag Suggestion Modal', () => {
+test.describe('@xb Tag Suggestion Modal', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -256,7 +256,7 @@ test.describe('Tag Suggestion Modal', () => {
     });
 });
 
-test.describe('Add to Playlist Modal', () => {
+test.describe('@xb Add to Playlist Modal', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -337,7 +337,7 @@ test.describe('Add to Playlist Modal', () => {
     });
 });
 
-test.describe('Modal Accessibility', () => {
+test.describe('@xb Modal Accessibility', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');

@@ -1,0 +1,43 @@
+name: Setup smoke test
+
+# Runs only when files that affect the setup/install path change.
+# This job takes 10-15 min (pip + CPU PyTorch wheel) so we avoid running
+# it on every PR.
+on:
+  push:
+    paths:
+      - setup.sh
+      - requirements.txt
+      - scripts/**
+  pull_request:
+    paths:
+      - setup.sh
+      - requirements.txt
+      - scripts/**
+
+jobs:
+  # ────────────────────────────────────────────────────────────────
+  # docker-setup-smoke
+  # Runs scripts/test-setup-docker.sh which:
+  #   1. Pulls ubuntu:24.04
+  #   2. Copies the repo to a scratch dir (excludes venv/, .git/, etc.)
+  #   3. Runs: echo n | bash setup.sh  (SKIP_SERVICES=1 SKIP_TESTS=1 FORCE_CUDA=0)
+  #      — the "n" answers the AudioCraft model-download prompt so setup
+  #        completes without downloading the ~5 GB model weights
+  #   4. Asserts: venv/bin/python -c "import app, database, mcp_server"
+  #
+  # ~10-15 min on ubuntu-latest (CPU PyTorch wheel install dominates).
+  # ────────────────────────────────────────────────────────────────
+  docker-setup-smoke:
+    name: Docker setup smoke (ubuntu:24.04)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x scripts/test-setup-docker.sh setup.sh
+
+      - name: Run Docker setup smoke test
+        run: ./scripts/test-setup-docker.sh

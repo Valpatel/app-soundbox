@@ -18,7 +18,7 @@ const viewports = {
     ultrawide: { width: 2560, height: 1080, name: 'ultrawide' }
 };
 
-test.describe('Viewport Breakpoints - Radio Tab', () => {
+test.describe('@xb Viewport Breakpoints - Radio Tab', () => {
     for (const [key, viewport] of Object.entries(viewports)) {
         test(`radio layout works at ${viewport.name} (${viewport.width}x${viewport.height})`, async ({ page }) => {
             await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -41,7 +41,7 @@ test.describe('Viewport Breakpoints - Radio Tab', () => {
     }
 });
 
-test.describe('Viewport Breakpoints - Library Tab', () => {
+test.describe('@xb Viewport Breakpoints - Library Tab', () => {
     for (const [key, viewport] of Object.entries(viewports)) {
         test(`library layout works at ${viewport.name} (${viewport.width}x${viewport.height})`, async ({ page }) => {
             await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -77,7 +77,7 @@ test.describe('Viewport Breakpoints - Library Tab', () => {
     }
 });
 
-test.describe('Viewport Breakpoints - Generate Tab', () => {
+test.describe('@xb Viewport Breakpoints - Generate Tab', () => {
     for (const [key, viewport] of Object.entries(viewports)) {
         test(`generate form works at ${viewport.name} (${viewport.width}x${viewport.height})`, async ({ page }) => {
             await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -117,7 +117,7 @@ test.describe('Viewport Breakpoints - Generate Tab', () => {
     }
 });
 
-test.describe('Touch and Scroll Behavior', () => {
+test.describe('@xb Touch and Scroll Behavior', () => {
     test('mobile scrolling works correctly', async ({ page }) => {
         await page.setViewportSize({ width: 375, height: 667 });
         await page.goto(BASE_URL);
@@ -166,7 +166,7 @@ test.describe('Touch and Scroll Behavior', () => {
     });
 });
 
-test.describe('Text Readability', () => {
+test.describe('@xb Text Readability', () => {
     test('text is readable at mobile size', async ({ page }) => {
         await page.setViewportSize({ width: 375, height: 667 });
         await page.goto(BASE_URL);
@@ -198,7 +198,7 @@ test.describe('Text Readability', () => {
     });
 });
 
-test.describe('Orientation Changes', () => {
+test.describe('@xb Orientation Changes', () => {
     test('handles portrait to landscape switch', async ({ page }) => {
         // Start in portrait
         await page.setViewportSize({ width: 375, height: 667 });
@@ -235,7 +235,7 @@ test.describe('Orientation Changes', () => {
     });
 });
 
-test.describe('Content Overflow', () => {
+test.describe('@xb Content Overflow', () => {
     test('long prompts do not break layout', async ({ page }) => {
         // Use larger viewport where Library tab is visible
         await page.setViewportSize({ width: 768, height: 1024 });

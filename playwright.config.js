@@ -17,5 +17,15 @@ module.exports = defineConfig({
             name: 'chromium',
             use: { browserName: 'chromium' },
         },
+        {
+            name: 'firefox',
+            use: { browserName: 'firefox' },
+            grep: /@xb/,
+        },
+        {
+            name: 'webkit',
+            use: { browserName: 'webkit' },
+            grep: /@xb/,
+        },
     ],
 });

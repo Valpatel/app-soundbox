@@ -151,9 +151,8 @@ test.describe('Asset Sources API', () => {
             expect(res.status()).toBe(200);
 
             const body = await res.json();
-            // The library endpoint should return an array or an object with items/tracks
-            const tracks = Array.isArray(body) ? body : (body.tracks || body.items || body.results || []);
-            expect(Array.isArray(tracks)).toBe(true);
+            // db.get_library() returns { items, total, page, per_page, pages }
+            expect(Array.isArray(body.items)).toBe(true);
         });
 
         test('pagination params are respected (page/per_page)', async ({ request }) => {
@@ -169,10 +168,12 @@ test.describe('Asset Sources API', () => {
             const res = await request.get(`/api/assets/library?source=${sourceKeys[0]}&page=1&per_page=5`);
             expect(res.status()).toBe(200);
 
+            // db.get_library() echoes back the clamped pagination params
             const body = await res.json();
-            const tracks = Array.isArray(body) ? body : (body.tracks || body.items || body.results || []);
+            expect(body.page).toBe(1);
+            expect(body.per_page).toBe(5);
             // Should return at most 5 items
-            expect(tracks.length).toBeLessThanOrEqual(5);
+            expect(body.items.length).toBeLessThanOrEqual(5);
         });
     });
 

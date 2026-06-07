@@ -75,9 +75,10 @@ test.describe('Stats API', () => {
             expect(res.status()).toBe(200);
             const body = await res.json();
 
-            // System stats should have queue, GPU, or similar system-level keys
-            expect(typeof body).toBe('object');
-            expect(body).not.toBeNull();
+            // System stats from db.get_system_stats() returns: totals, by_model,
+            // generation_rate, top_users — verify the top-level structure is present.
+            expect(body).toHaveProperty('totals');
+            expect(body).toHaveProperty('generation_rate');
         });
 
         test('responds quickly (under 1500ms)', async ({ request }) => {

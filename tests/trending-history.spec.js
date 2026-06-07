@@ -37,6 +37,13 @@ test.describe('Trending and Most-Played', () => {
             const res = await request.get('/api/trending');
             const body = await res.json();
 
+            // Skip rather than silently pass with zero assertions on a fresh DB
+            if (body.tracks.length === 0) {
+                test.skip(true, 'No trending tracks in DB — skipping field shape assertions');
+                return;
+            }
+
+            expect(body.tracks.length).toBeGreaterThan(0);
             for (const track of body.tracks) {
                 expect(track).toHaveProperty('id');
                 expect(track).toHaveProperty('prompt');

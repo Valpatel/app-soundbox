@@ -8,7 +8,7 @@ const { test, expect } = require('@playwright/test');
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:5309';
 
-test.describe('Accessibility - Basic Requirements', () => {
+test.describe('@xb Accessibility - Basic Requirements', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -104,7 +104,7 @@ test.describe('Accessibility - Basic Requirements', () => {
     });
 });
 
-test.describe('Accessibility - Color and Contrast', () => {
+test.describe('@xb Accessibility - Color and Contrast', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -147,7 +147,7 @@ test.describe('Accessibility - Color and Contrast', () => {
     });
 });
 
-test.describe('Accessibility - Screen Reader', () => {
+test.describe('@xb Accessibility - Screen Reader', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -193,7 +193,7 @@ test.describe('Accessibility - Screen Reader', () => {
     });
 });
 
-test.describe('Accessibility - Reduced Motion', () => {
+test.describe('@xb Accessibility - Reduced Motion', () => {
     test('respects prefers-reduced-motion', async ({ page }) => {
         // Emulate reduced motion preference
         await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -208,7 +208,7 @@ test.describe('Accessibility - Reduced Motion', () => {
     });
 });
 
-test.describe('Accessibility - Focus Visibility', () => {
+test.describe('@xb Accessibility - Focus Visibility', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');

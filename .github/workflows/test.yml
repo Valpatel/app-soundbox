@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  # ────────────────────────────────────────────────────────────────
+  # Job 1 — lint
+  # Parse-check all shell scripts and Python module imports.
+  # No heavy deps needed. ~1 min.
+  # ────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint (shell + Python syntax)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Shell script syntax check (bash -n)
+        run: |
+          find . -name "*.sh" \
+               -not -path "./venv/*" \
+               -not -path "./node_modules/*" \
+               -print0 \
+          | xargs -0 bash -n
+
+      - name: Shell script lint (shellcheck)
+        run: |
+          find . -name "*.sh" \
+               -not -path "./venv/*" \
+               -not -path "./node_modules/*" \
+               -print0 \
+          | xargs -0 shellcheck \
+              --severity=error \
+              --exclude=SC1091,SC2034,SC2086,SC2046
+        # SC1091 — don't follow sourced files (venv activate, etc.)
+        # SC2034 — unused variable (colour-var blocks)
+        # SC2086 — double-quote expansions (many intentional)
+        # SC2046 — unquoted command substitution (many intentional)
+
+      - name: Python syntax check (py_compile)
+        run: |
+          python -m py_compile database.py
+          python -m py_compile voice_licenses.py
+          python -m py_compile backup.py
+          python -m py_compile plugins/base.py
+          python -m py_compile plugins/registry.py
+          python -m py_compile plugins/manager.py
+        # app.py and mcp_server.py import torch/audiocraft/mcp at module level,
+        # which aren't present on the lite CI runner. Those files are covered
+        # by the pytest-unit job (mcp_server.py) and the smoke job (app.py).
+
+  # ────────────────────────────────────────────────────────────────
+  # Job 2 — pytest-unit
+  # Runs the four stable unit-test files (123 tests) that need only
+  # lightweight dependencies — no torch, no audiocraft, no Flask server.
+  #
+  #   test_database.py       — SQLite, stdlib only
+  #   test_api_validation.py — skips tests that require app.py imports
+  #                            (torch/audiocraft absent), runs pure-Python cases
+  #   test_plugins.py        — plugin base/registry/manager, no models loaded
+  #   test_mcp_server.py     — mcp_server mocked via httpx; needs mcp + httpx
+  #
+  # Explicitly excluded: test_mcp_integration.py (needs live Flask + GPU models)
+  # ~3 min.
+  # ────────────────────────────────────────────────────────────────
+  pytest-unit:
+    name: pytest (unit tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install lightweight Python dependencies
+        run: |
+          pip install --upgrade pip
+          # Flask stack — needed by database.py, plugin imports, mcp_server imports
+          pip install flask flask-limiter python-dotenv requests
+          # MCP server + HTTP client (for test_mcp_server.py)
+          pip install "mcp[cli]" httpx
+          # Test runner
+          pip install pytest pytest-asyncio
+
+      - name: Run unit tests
+        run: |
+          python -m pytest \
+            tests/test_database.py \
+            tests/test_api_validation.py \
+            tests/test_plugins.py \
+            tests/test_mcp_server.py \
+            -v \
+            --tb=short \
+            -x

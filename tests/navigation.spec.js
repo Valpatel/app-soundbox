@@ -8,7 +8,7 @@ const { test, expect } = require('@playwright/test');
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:5309';
 
-test.describe('Tab Navigation', () => {
+test.describe('@xb Tab Navigation', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -69,7 +69,7 @@ test.describe('Tab Navigation', () => {
     });
 });
 
-test.describe('Keyboard Navigation', () => {
+test.describe('@xb Keyboard Navigation', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -157,7 +157,7 @@ test.describe('Keyboard Navigation', () => {
     });
 });
 
-test.describe('URL and Deep Links', () => {
+test.describe('@xb URL and Deep Links', () => {
     test('can navigate directly to library', async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');

@@ -35,6 +35,7 @@ soundbox.db-wal
 # Test artifacts
 playwright-report/
 test-results/
+reports/
 .last-run.json
 
 # OS

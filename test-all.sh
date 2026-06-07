@@ -5,6 +5,11 @@
 # Usage: ./test-all.sh [options]
 #   --skip-e2e    Skip Playwright E2E tests
 #   --skip-unit   Skip Python unit tests
+#
+# Reports written to reports/ (gitignored):
+#   reports/index.html     — unified summary with links
+#   reports/pytest.html    — pytest detail report
+#   reports/playwright.html — Playwright detail report
 
 set -e
 cd "$(dirname "$0")"
@@ -30,6 +35,9 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BLUE}  Sound Box - Full Test Suite${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
+
+# ─── Reports directory ───
+mkdir -p reports
 
 # ─── Prerequisites ───
 echo -e "${YELLOW}Checking prerequisites...${NC}"
@@ -108,7 +116,7 @@ if [ "$SKIP_UNIT" = false ]; then
     echo ""
 
     set +e
-    ./venv/bin/python -m pytest tests/test_*.py -v 2>&1 | tee /tmp/soundbox-unit-tests.txt
+    ./venv/bin/python -m pytest tests/test_*.py -v --html=reports/pytest.html --self-contained-html 2>&1 | tee /tmp/soundbox-unit-tests.txt
     UNIT_EXIT=${PIPESTATUS[0]}
     set -e
 
@@ -194,6 +202,99 @@ fi
 
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+# ─── Copy Playwright report ───
+if [ "$SKIP_E2E" = false ] && [ -f "playwright-report/index.html" ]; then
+    cp playwright-report/index.html reports/playwright.html
+fi
+
+# ─── Generate unified index.html ───
+RUN_TS=$(date '+%Y-%m-%d %H:%M:%S')
+
+# Build per-suite status strings and colors for the HTML
+if [ "$SKIP_UNIT" = true ]; then
+    UNIT_HTML_STATUS="skipped"
+    UNIT_HTML_COLOR="#64748b"
+    UNIT_HTML_LINK="<span style='color:#64748b'>no report</span>"
+elif [ "$UNIT_EXIT" -eq 0 ]; then
+    UNIT_HTML_STATUS="${UNIT_PASSED} passed, ${UNIT_FAILED} failed"
+    UNIT_HTML_COLOR="#10b981"
+    UNIT_HTML_LINK="<a href='pytest.html'>open pytest report</a>"
+else
+    UNIT_HTML_STATUS="${UNIT_PASSED} passed, ${UNIT_FAILED} failed"
+    UNIT_HTML_COLOR="#ef4444"
+    UNIT_HTML_LINK="<a href='pytest.html'>open pytest report</a>"
+fi
+
+if [ "$SKIP_E2E" = true ]; then
+    E2E_HTML_STATUS="skipped"
+    E2E_HTML_COLOR="#64748b"
+    E2E_HTML_LINK="<span style='color:#64748b'>no report</span>"
+elif [ "$E2E_EXIT" -eq 0 ]; then
+    E2E_HTML_STATUS="${E2E_PASSED} passed, ${E2E_FAILED} failed"
+    E2E_HTML_COLOR="#10b981"
+    E2E_HTML_LINK="<a href='playwright.html'>open Playwright report</a>"
+else
+    E2E_HTML_STATUS="${E2E_PASSED} passed, ${E2E_FAILED} failed"
+    E2E_HTML_COLOR="#ef4444"
+    E2E_HTML_LINK="<a href='playwright.html'>open Playwright report</a>"
+fi
+
+if [ "$OVERALL_EXIT" -eq 0 ]; then
+    OVERALL_LABEL="All suites passed"
+    OVERALL_COLOR="#10b981"
+    BADGE_BG="#10b981"
+else
+    OVERALL_LABEL="Some suites failed"
+    OVERALL_COLOR="#ef4444"
+    BADGE_BG="#ef4444"
+fi
+
+cat > reports/index.html << HTMLEOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sound Box — Test Report</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #0a0e17; color: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem 1rem; box-sizing: border-box; }
+  h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
+  .subtitle { color: #64748b; font-size: 0.85rem; margin: 0 0 2rem; }
+  .badge { display: inline-block; padding: 0.35rem 1rem; border-radius: 999px; background: ${BADGE_BG}; color: #fff; font-weight: 600; font-size: 0.9rem; margin-bottom: 2rem; }
+  .card { background: #111827; border-radius: 0.75rem; padding: 1.25rem 1.5rem; width: 100%; max-width: 480px; margin-bottom: 1rem; border: 1px solid #1e293b; }
+  .card-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin: 0 0 0.5rem; }
+  .card-status { font-size: 1.1rem; font-weight: 600; color: ${UNIT_HTML_COLOR}; margin: 0 0 0.75rem; }
+  .card-status.e2e { color: ${E2E_HTML_COLOR}; }
+  .card-link { font-size: 0.85rem; }
+  .card-link a { color: #a855f7; text-decoration: none; }
+  .card-link a:hover { text-decoration: underline; }
+  .totals { color: #64748b; font-size: 0.8rem; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<h1>Sound Box — Test Report</h1>
+<p class="subtitle">${RUN_TS}</p>
+<div class="badge">${OVERALL_LABEL}</div>
+
+<div class="card">
+  <div class="card-title">Python Unit Tests</div>
+  <div class="card-status">${UNIT_HTML_STATUS}</div>
+  <div class="card-link">${UNIT_HTML_LINK}</div>
+</div>
+
+<div class="card">
+  <div class="card-title">Playwright E2E Tests</div>
+  <div class="card-status e2e">${E2E_HTML_STATUS}</div>
+  <div class="card-link">${E2E_HTML_LINK}</div>
+</div>
+
+<p class="totals">Total: ${TOTAL_PASSED} passed &nbsp;|&nbsp; ${TOTAL_FAILED} failed</p>
+</body>
+</html>
+HTMLEOF
+
+echo -e "${GREEN}  Report: reports/index.html${NC}"
 
 # Cleanup temp files
 rm -f /tmp/soundbox-unit-tests.txt /tmp/soundbox-e2e-tests.txt

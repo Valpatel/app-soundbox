@@ -2885,13 +2885,15 @@ def api_suggest_tag(gen_id):
     """
     if not is_valid_gen_id(gen_id):
         return jsonify({'error': 'Invalid generation ID format'}), 400
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'invalid_body', 'message': 'Request body must be valid JSON'}), 400
     # SECURITY: Use verified user_id from auth token when available.
     # Fallback to IP for anonymous users - see docstring for implications.
     # We use request.remote_addr (not X-Forwarded-For) to prevent header spoofing.
     user_id = request.user_id or request.remote_addr
 
-    if not data or 'category' not in data:
+    if 'category' not in data:
         return jsonify({'error': 'Missing category'}), 400
 
     action = data.get('action', 'add')
@@ -2917,11 +2919,13 @@ def api_cancel_tag(gen_id):
         category: The category suggestion to cancel
         action: 'add' (default) or 'remove' - which type of suggestion to cancel
     """
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'invalid_body', 'message': 'Request body must be valid JSON'}), 400
     # SECURITY: Same user identification as suggest-tag (see that endpoint for details)
     user_id = request.user_id or request.remote_addr
 
-    if not data or 'category' not in data:
+    if 'category' not in data:
         return jsonify({'error': 'Missing category'}), 400
 
     action = data.get('action', 'add')
@@ -3360,7 +3364,9 @@ def api_vote_history():
 @require_auth
 def api_create_playlist():
     """Create a new playlist. Requires authentication."""
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'invalid_body', 'message': 'Request body must be valid JSON'}), 400
     user_id = request.user_id  # From verified auth token
 
     # Validate name with content moderation
@@ -3421,7 +3427,9 @@ def api_get_playlist(playlist_id):
 @require_auth
 def api_update_playlist(playlist_id):
     """Update playlist name/description. Requires authentication and ownership."""
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'invalid_body', 'message': 'Request body must be valid JSON'}), 400
     user_id = request.user_id  # From verified auth token
 
     # Validate name if provided
@@ -3465,7 +3473,9 @@ def api_delete_playlist(playlist_id):
 @require_auth
 def api_add_playlist_track(playlist_id):
     """Add a track to a playlist. Requires authentication and ownership."""
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'invalid_body', 'message': 'Request body must be valid JSON'}), 400
     user_id = request.user_id  # From verified auth token
     generation_id = data.get('generation_id')
 
@@ -3495,7 +3505,9 @@ def api_remove_playlist_track(playlist_id, generation_id):
 @require_auth
 def api_reorder_playlist(playlist_id):
     """Reorder tracks in a playlist. Requires authentication and ownership."""
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'invalid_body', 'message': 'Request body must be valid JSON'}), 400
     user_id = request.user_id  # From verified auth token
     track_order = data.get('track_order', [])
 
@@ -3557,7 +3569,9 @@ def api_record_play(gen_id):
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         return response
 
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'invalid_body', 'message': 'Request body must be valid JSON'}), 400
     # Security: Use authenticated user_id from token, not client-provided value
     # Fall back to session_id for anonymous tracking
     user_id = request.user_id if request.user_id else None
@@ -3862,7 +3876,9 @@ def api_tts_generate():
     import base64
     import tempfile
 
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'invalid_body', 'message': 'Request body must be valid JSON'}), 400
     text = data.get('text', '').strip()
     voice_id = data.get('voice') or 'en_US-lessac-medium'  # Handle empty string
     save_to_library = data.get('save_to_library', False)

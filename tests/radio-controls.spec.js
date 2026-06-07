@@ -14,7 +14,7 @@ const { test, expect } = require('@playwright/test');
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:5309';
 
-test.describe('Radio - Station Selection', () => {
+test.describe('@xb Radio - Station Selection', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -73,7 +73,7 @@ test.describe('Radio - Station Selection', () => {
     });
 });
 
-test.describe('Radio - Featured Playlists', () => {
+test.describe('@xb Radio - Featured Playlists', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -151,7 +151,7 @@ test.describe('Radio - Featured Playlists', () => {
     });
 });
 
-test.describe('Radio - Queue Display', () => {
+test.describe('@xb Radio - Queue Display', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -194,7 +194,7 @@ test.describe('Radio - Queue Display', () => {
     });
 });
 
-test.describe('Radio - Shuffle Controls', () => {
+test.describe('@xb Radio - Shuffle Controls', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -236,7 +236,7 @@ test.describe('Radio - Shuffle Controls', () => {
     });
 });
 
-test.describe('Radio - Skip Controls', () => {
+test.describe('@xb Radio - Skip Controls', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -293,7 +293,7 @@ test.describe('Radio - Skip Controls', () => {
     });
 });
 
-test.describe('Radio - Keyword Filters', () => {
+test.describe('@xb Radio - Keyword Filters', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -331,7 +331,7 @@ test.describe('Radio - Keyword Filters', () => {
     });
 });
 
-test.describe('Radio - Visualizer', () => {
+test.describe('@xb Radio - Visualizer', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');
@@ -365,7 +365,7 @@ test.describe('Radio - Visualizer', () => {
     });
 });
 
-test.describe('Radio - Track Actions', () => {
+test.describe('@xb Radio - Track Actions', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('networkidle');

@@ -616,7 +616,7 @@ if ! pip install apscheduler; then
 fi
 
 # Dev/test tooling (pytest used by tests/test_*.py and test-all.sh)
-pip_group "dev tooling" pytest
+pip_group "dev tooling" pytest pytest-html
 
 step_result ok "all required packages installed"
 echo ""
