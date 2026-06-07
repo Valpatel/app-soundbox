@@ -94,8 +94,12 @@ class TestValidatePrompt:
         """Overly long prompts should be truncated or rejected."""
         long_prompt = "x" * 10000
         is_valid, prompt, error = validate_prompt(long_prompt)
-        # Should either truncate or reject
-        assert len(prompt) < 10000 or error is not None
+        # Should either reject (error set, prompt None) or truncate (prompt < 10000).
+        # Current contract: rejected with error and prompt=None.
+        if error is not None:
+            assert is_valid == False
+        else:
+            assert prompt is not None and len(prompt) < 10000
 
     def test_prompt_stripped(self):
         """Prompts should be stripped of whitespace."""

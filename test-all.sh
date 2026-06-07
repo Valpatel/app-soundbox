@@ -112,8 +112,13 @@ if [ "$SKIP_UNIT" = false ]; then
     UNIT_EXIT=${PIPESTATUS[0]}
     set -e
 
-    UNIT_PASSED=$(grep -cE "PASSED" /tmp/soundbox-unit-tests.txt 2>/dev/null || echo "0")
-    UNIT_FAILED=$(grep -cE "FAILED" /tmp/soundbox-unit-tests.txt 2>/dev/null || echo "0")
+    # grep -c always prints a count, but exits non-zero on no-match. Without
+    # `|| true` the `|| echo "0"` fallback double-emits "0\n0" which breaks
+    # downstream arithmetic.
+    UNIT_PASSED=$(grep -cE "PASSED" /tmp/soundbox-unit-tests.txt 2>/dev/null || true)
+    UNIT_FAILED=$(grep -cE "FAILED" /tmp/soundbox-unit-tests.txt 2>/dev/null || true)
+    UNIT_PASSED=${UNIT_PASSED:-0}
+    UNIT_FAILED=${UNIT_FAILED:-0}
 
     if [ "$UNIT_EXIT" -eq 0 ]; then
         echo -e "\n${GREEN}✓ Unit tests passed${NC}"
@@ -136,8 +141,10 @@ if [ "$SKIP_E2E" = false ]; then
     E2E_EXIT=${PIPESTATUS[0]}
     set -e
 
-    E2E_PASSED=$(grep -oE '[0-9]+ passed' /tmp/soundbox-e2e-tests.txt | tail -1 | grep -oE '[0-9]+' || echo "0")
-    E2E_FAILED=$(grep -oE '[0-9]+ failed' /tmp/soundbox-e2e-tests.txt | tail -1 | grep -oE '[0-9]+' || echo "0")
+    E2E_PASSED=$(grep -oE '[0-9]+ passed' /tmp/soundbox-e2e-tests.txt 2>/dev/null | tail -1 | grep -oE '[0-9]+' || true)
+    E2E_FAILED=$(grep -oE '[0-9]+ failed' /tmp/soundbox-e2e-tests.txt 2>/dev/null | tail -1 | grep -oE '[0-9]+' || true)
+    E2E_PASSED=${E2E_PASSED:-0}
+    E2E_FAILED=${E2E_FAILED:-0}
 
     if [ "$E2E_EXIT" -eq 0 ]; then
         echo -e "\n${GREEN}✓ E2E tests passed${NC}"

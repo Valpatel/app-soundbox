@@ -324,9 +324,14 @@ class TestFavorites:
         gen_id = gen_for_favorites
         user_id = "fav_user"
 
-        result = db.toggle_favorite(gen_id, user_id)
-        assert result['success'] == True
-        assert result['is_favorite'] == True
+        added = db.add_favorite(user_id, gen_id)
+        assert added == True
+        assert db.is_favorite(user_id, gen_id) == True
+
+        # Adding again should be a no-op (returns False on conflict)
+        added_again = db.add_favorite(user_id, gen_id)
+        assert added_again == False
+        assert db.is_favorite(user_id, gen_id) == True
 
     def test_remove_favorite(self, gen_for_favorites):
         """Test removing a favorite."""
@@ -334,11 +339,11 @@ class TestFavorites:
         user_id = "fav_user2"
 
         # Add then remove
-        db.toggle_favorite(gen_id, user_id)
-        result = db.toggle_favorite(gen_id, user_id)
+        db.add_favorite(user_id, gen_id)
+        removed = db.remove_favorite(user_id, gen_id)
 
-        assert result['success'] == True
-        assert result['is_favorite'] == False
+        assert removed == True
+        assert db.is_favorite(user_id, gen_id) == False
 
     def test_get_favorites(self, gen_for_favorites):
         """Test getting user favorites."""
@@ -346,13 +351,14 @@ class TestFavorites:
         user_id = "fav_user3"
 
         # Add favorite
-        db.toggle_favorite(gen_id, user_id)
+        db.add_favorite(user_id, gen_id)
 
-        # Get favorites
+        # Get favorites (paginated dict with 'items' key)
         favorites = db.get_favorites(user_id)
 
-        assert len(favorites['favorites']) > 0
-        fav_ids = [f['id'] for f in favorites['favorites']]
+        assert favorites['total'] > 0
+        assert len(favorites['items']) > 0
+        fav_ids = [f['id'] for f in favorites['items']]
         assert gen_id in fav_ids
 
 

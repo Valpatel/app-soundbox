@@ -3637,7 +3637,21 @@ def api_most_played():
 @limiter.limit("10 per minute")  # Strict rate limit to prevent log flooding
 def api_log_error():
     """Log frontend errors to backend."""
-    data = request.get_json() or {}
+    # Use silent=True so non-JSON content-types (e.g. text/plain from
+    # navigator.sendBeacon or naive fetch calls) don't raise 415/500.
+    # We then validate that we got a dict; anything else returns 400 with
+    # a clear error so a misbehaving client can fix its request.
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({
+            'error': 'invalid_body',
+            'message': 'Request body must be JSON with Content-Type: application/json'
+        }), 400
+    if not isinstance(data, dict):
+        return jsonify({
+            'error': 'invalid_body',
+            'message': 'Request body must be a JSON object'
+        }), 400
 
     def sanitize_log_input(text, max_length):
         """Sanitize user input for safe logging.

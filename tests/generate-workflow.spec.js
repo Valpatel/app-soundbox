@@ -100,13 +100,22 @@ test.describe('Generate Tab - Form Controls', () => {
             const min = await durationSlider.first().getAttribute('min') || '3';
             const max = await durationSlider.first().getAttribute('max') || '120';
 
-            // Try to set below minimum
-            await durationSlider.first().fill('1');
+            // Use evaluate to set the value - mirrors how the UI sets values
+            // via slider interaction. Playwright's fill() can reject values
+            // outside the range with "Malformed value" instead of clamping.
+            await durationSlider.first().evaluate((el, v) => {
+                el.value = v;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }, '1');
             const minResult = await durationSlider.first().inputValue();
             expect(parseInt(minResult)).toBeGreaterThanOrEqual(parseInt(min));
 
-            // Try to set above maximum
-            await durationSlider.first().fill('999');
+            await durationSlider.first().evaluate((el, v) => {
+                el.value = v;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }, '999');
             const maxResult = await durationSlider.first().inputValue();
             expect(parseInt(maxResult)).toBeLessThanOrEqual(parseInt(max));
         }

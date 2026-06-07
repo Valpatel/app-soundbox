@@ -34,6 +34,12 @@ def sanitize_fts5_query(search):
     clean_search = re.sub(r'\b(NOT|AND|OR|NEAR)\b', '', clean_search, flags=re.IGNORECASE)
     # Remove colons (used for column specifiers in FTS5)
     clean_search = clean_search.replace(':', ' ')
+    # Strip SQL injection metacharacters as defense in depth.
+    # FTS5 parameter binding already protects against SQL injection, but removing
+    # these chars keeps the sanitized output free of any syntax that could be
+    # mistaken for SQL if logged or interpolated.
+    clean_search = re.sub(r"--", " ", clean_search)
+    clean_search = re.sub(r"[;'\\()]", " ", clean_search)
 
     words = clean_search.strip().split()
     if not words:
