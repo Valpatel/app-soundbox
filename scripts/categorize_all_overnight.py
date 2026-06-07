@@ -6,6 +6,7 @@ Uses multiple Ollama servers for load balancing.
 Run with: nohup python3 -u scripts/categorize_all_overnight.py > /tmp/categorize_overnight.log 2>&1 &
 """
 
+import os
 import sqlite3
 import json
 import requests
@@ -15,14 +16,18 @@ import time
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Ollama servers that have qwen2.5:14b model available
+# Ollama servers (override with OLLAMA_SERVERS env var: comma-separated URLs).
+# Default to a single local instance.
+_DEFAULT_OLLAMA = "http://localhost:11434/api/generate"
 OLLAMA_SERVERS = [
-    "http://ollama-ai-01:11434/api/generate",
-    "http://graphling-ai-02:11434/api/generate",
+    s.strip() for s in os.environ.get('OLLAMA_SERVERS', _DEFAULT_OLLAMA).split(',') if s.strip()
 ]
 
-MODEL = "qwen2.5:14b"
-DB_PATH = '/home/mvalancy/Code/app-soundbox/soundbox.db'
+MODEL = os.environ.get('OLLAMA_MODEL', 'qwen2.5:14b')
+DB_PATH = os.environ.get(
+    'SOUNDBOX_DB',
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'soundbox.db'),
+)
 
 # ============================================================================
 # SFX CATEGORIES

@@ -16,8 +16,9 @@ import json
 import os
 import sys
 
-DB_PATH = '/home/mvalancy/Code/app-soundbox/soundbox.db'
-AUDIO_DIR = '/home/mvalancy/Code/app-soundbox/generated'
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.environ.get('SOUNDBOX_DB', os.path.join(_REPO_ROOT, 'soundbox.db'))
+AUDIO_DIR = os.environ.get('SOUNDBOX_AUDIO_DIR', os.path.join(_REPO_ROOT, 'generated'))
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)

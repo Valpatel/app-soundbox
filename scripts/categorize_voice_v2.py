@@ -4,20 +4,20 @@ Improved voice clip categorization with deterministic rules + LLM fallback.
 Uses multiple Ollama servers for load balancing.
 """
 
+import os
 import sqlite3
 import json
 import requests
 import re
 import random
 
-# Load balance between servers
+# Ollama servers (override with OLLAMA_SERVERS env var: comma-separated URLs).
+# Default to a single local instance.
+_DEFAULT_OLLAMA = "http://localhost:11434/api/generate"
 OLLAMA_SERVERS = [
-    "http://ollama-ai-01:11434/api/generate",
-    "http://graphling-ai-02:11434/api/generate",
-    "http://graphdone-ai-01:11434/api/generate",
-    "http://graphdone-ai-rtx3080:11434/api/generate",
+    s.strip() for s in os.environ.get('OLLAMA_SERVERS', _DEFAULT_OLLAMA).split(',') if s.strip()
 ]
-MODEL = "qwen2.5:14b"
+MODEL = os.environ.get('OLLAMA_MODEL', 'qwen2.5:14b')
 
 # ============================================================================
 # DETERMINISTIC RULES - Applied first, no LLM needed
@@ -218,7 +218,10 @@ def get_voice_metadata(voice_id):
 # ============================================================================
 
 def main():
-    db_path = '/home/mvalancy/Code/app-soundbox/soundbox.db'
+    db_path = os.environ.get(
+        'SOUNDBOX_DB',
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'soundbox.db'),
+    )
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()

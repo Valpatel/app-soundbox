@@ -4,14 +4,15 @@ Use Ollama LLM to intelligently categorize voice clips.
 Much more accurate than keyword matching.
 """
 
+import os
 import sqlite3
 import json
 import requests
 import time
 import sys
 
-OLLAMA_URL = "http://graphling-ai-02:11434/api/generate"
-MODEL = "qwen2.5:14b"  # Good balance of speed and quality
+OLLAMA_URL = os.environ.get('OLLAMA_URL', 'http://localhost:11434/api/generate')
+MODEL = os.environ.get('OLLAMA_MODEL', 'qwen2.5:14b')  # Good balance of speed and quality
 
 # Categories the LLM can choose from
 CATEGORIES = [
@@ -137,7 +138,10 @@ def get_voice_metadata(voice_id):
     return result
 
 def main():
-    db_path = '/home/mvalancy/Code/app-soundbox/soundbox.db'
+    db_path = os.environ.get(
+        'SOUNDBOX_DB',
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'soundbox.db'),
+    )
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()

@@ -53,3 +53,9 @@ scripts/*_progress.json
 .codegraph.db
 .memsearch/
 .claude/
+
+# Per-deployment project list (see project_sources.example.json)
+project_sources.json
+
+# Per-deployment scripts and prompt libraries (game-specific content, internal hostnames, etc.)
+scripts/local/

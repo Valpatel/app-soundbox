@@ -96,7 +96,7 @@ def generation_endpoint():
 | Tier | Priority | Price | Source |
 |------|----------|-------|--------|
 | Admin | 0 | - | `is_admin` flag |
-| Creator | 1 | $20/mo | ai-graphling-monthly |
+| Creator | 1 | $20/mo | creator-monthly |
 | Premium | 2 | $10/mo | premium-monthly |
 | Supporter | 3 | $5/mo | supporter-monthly |
 | Free | 4 | $0 | No subscription |
@@ -117,7 +117,7 @@ def get_user_tier(user):
     tier = user.get('subscription_tier') or user.get('tier')
     if tier:
         tier_lower = tier.lower()
-        if tier_lower in ('creator', 'ai-graphling'):
+        if tier_lower == 'creator':
             return 'creator'
         if tier_lower in ('premium', 'pro'):
             return 'premium'
@@ -128,7 +128,7 @@ def get_user_tier(user):
     sub = user.get('subscription', {})
     if isinstance(sub, dict) and sub.get('status') in ('active', 'trialing'):
         plan_id = sub.get('plan_id', '').lower()
-        if 'ai-graphling' in plan_id:
+        if 'creator' in plan_id:
             return 'creator'
         if 'premium' in plan_id:
             return 'premium'

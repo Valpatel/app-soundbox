@@ -353,22 +353,24 @@ SPEECH_CATEGORIES = {
 # =============================================================================
 # Assets can be tagged with a source to indicate which project uses them.
 # This enables a unified assets tab showing all project audio in one place.
-# Format: 'source_id': {'name': 'Display Name', 'icon': 'icon-name', 'type': 'game'|'app'}
+#
+# Loaded from project_sources.json (gitignored) so each deployment defines its
+# own projects. Copy project_sources.example.json to project_sources.json and
+# edit. If the file is missing, the assets feature is simply disabled.
 
-PROJECT_SOURCES = {
-    'byk3s': {
-        'name': 'Byk3s',
-        'description': 'Cyberpunk bike combat game',
-        'icon': 'gamepad',
-        'type': 'game'
-    },
-    'graphlings': {
-        'name': 'Graphlings',
-        'description': 'AI crystal creature companions - offline Godot game',
-        'icon': 'sparkles',
-        'type': 'game'
-    },
-}
+def _load_project_sources():
+    path = os.path.join(os.path.dirname(__file__), 'project_sources.json')
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, 'r') as f:
+            data = json.load(f)
+        return {k: v for k, v in data.items() if not k.startswith('_')}
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"[DB] Warning: failed to load {path}: {e}")
+        return {}
+
+PROJECT_SOURCES = _load_project_sources()
 
 SCHEMA = """
 -- Generations table (replaces generations.json)
@@ -675,7 +677,7 @@ def init_db():
         conn.execute("CREATE INDEX IF NOT EXISTS idx_generations_voice ON generations(voice_id)")
 
         # Migration: Add source column for project tagging
-        # Allows assets to be tagged with which project uses them (e.g., 'byk3s')
+        # Allows assets to be tagged with which project uses them (e.g., 'my-project')
         try:
             conn.execute("ALTER TABLE generations ADD COLUMN source TEXT")
             print("[DB] Added source column to generations table for project tagging")
@@ -850,7 +852,7 @@ def get_library(page=1, per_page=20, model=None, search=None, sort='recent', use
         sort: 'recent', 'popular', or 'rating'
         user_id: Deprecated - use get_user_generations() for private content
         category: Filter by category/genre (e.g., 'ambient', 'nature')
-        source: Filter by project source (e.g., 'byk3s')
+        source: Filter by project source (e.g., 'my-project')
 
     Returns:
         dict with items, total, page, per_page, pages
@@ -2611,7 +2613,7 @@ def set_generation_source(generation_id, source):
 
     Args:
         generation_id: The generation ID
-        source: Source ID (e.g., 'byk3s') or None to clear
+        source: Source ID (e.g., 'my-project') or None to clear
 
     Returns:
         True on success, False on error

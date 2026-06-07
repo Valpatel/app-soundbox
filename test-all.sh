@@ -34,16 +34,30 @@ echo ""
 # ─── Prerequisites ───
 echo -e "${YELLOW}Checking prerequisites...${NC}"
 
-# Ensure pytest is available
+# Venv must exist (created by setup.sh)
+if [ ! -x "./venv/bin/python" ]; then
+    echo -e "${RED}✗ venv not found - run ./setup.sh first${NC}"
+    exit 1
+fi
+
+# pytest (installed by setup.sh, but self-heal for older envs)
 if ! ./venv/bin/python -m pytest --version > /dev/null 2>&1; then
-    echo -e "${YELLOW}Installing pytest...${NC}"
+    echo -e "${YELLOW}  Installing pytest into venv...${NC}"
     ./venv/bin/pip install pytest -q
 fi
 
-# Ensure playwright browsers
+# Node deps
 if [ ! -d "node_modules" ]; then
-    echo -e "${YELLOW}Installing Node dependencies...${NC}"
+    echo -e "${YELLOW}  Installing Node dependencies...${NC}"
     npm install
+fi
+
+# Playwright browser binaries (separate from node_modules)
+if [ "$SKIP_E2E" = false ]; then
+    if ! find "$HOME/.cache/ms-playwright" -name "headless_shell" -type f 2>/dev/null | grep -q .; then
+        echo -e "${YELLOW}  Installing Playwright Chromium browser...${NC}"
+        npx playwright install chromium
+    fi
 fi
 
 echo -e "${GREEN}✓ Prerequisites ready${NC}"

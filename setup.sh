@@ -419,6 +419,9 @@ pip install piper-tts 2>/dev/null || print_warn "piper-tts not available for $AR
 # Backup scheduler
 pip install apscheduler 2>/dev/null || print_warn "apscheduler not available (scheduled backups disabled)"
 
+# Dev/test tooling
+pip install pytest 2>&1 | tail -1
+
 echo ""
 
 # ==============================================================================
@@ -590,9 +593,22 @@ else
     if command -v npm &> /dev/null; then
         print_info "Node.js $(node --version), npm $(npm --version)"
         npm install 2>&1 | tail -3
-        npx playwright install chromium 2>&1 | tail -3 || true
-        npx playwright install-deps chromium 2>&1 | tail -3 || true
-        echo "  Tests ready: npm test"
+
+        # Playwright browser binaries (live in ~/.cache/ms-playwright, NOT node_modules,
+        # so npm install alone does not provision them). Verify the binary exists.
+        print_info "Installing Playwright Chromium browser..."
+        npx playwright install chromium 2>&1 | tail -3 || \
+            print_warn "Playwright browser install failed - E2E tests will fail until resolved"
+        npx playwright install-deps chromium 2>&1 | tail -3 || \
+            print_warn "Playwright system deps install failed - may need: sudo npx playwright install-deps"
+
+        # Verify chromium headless shell actually landed
+        if find "$HOME/.cache/ms-playwright" -name "headless_shell" -type f 2>/dev/null | grep -q .; then
+            echo "  Tests ready: npm test (or ./test-all.sh)"
+        else
+            print_warn "Playwright Chromium not found at $HOME/.cache/ms-playwright/"
+            print_warn "Re-run: npx playwright install chromium"
+        fi
     else
         print_warn "npm not available - skipping Playwright test setup"
     fi

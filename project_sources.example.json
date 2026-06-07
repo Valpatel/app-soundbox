@@ -1,0 +1,16 @@
+{
+  "_comment": "Copy this file to project_sources.json and fill in your own projects. project_sources.json is gitignored so your project list stays local. If the file is missing, the assets feature is simply disabled (PROJECT_SOURCES = {}).",
+  "_format": "source_id: {name, description, icon, type}. type is 'game' or 'app'. icon is a Lucide icon name.",
+  "my-game": {
+    "name": "My Game",
+    "description": "A short description of your game",
+    "icon": "gamepad",
+    "type": "game"
+  },
+  "my-app": {
+    "name": "My App",
+    "description": "A short description of your app",
+    "icon": "sparkles",
+    "type": "app"
+  }
+}

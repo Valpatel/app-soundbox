@@ -487,231 +487,8 @@ HERO = [
     "I won't let you win.", "Watch me.",
 ]
 
-# =============================================================================
-# BYK3S GAME-SPECIFIC CONTENT
-# Cyberpunk motorcycle combat game - "Shadows Against the Machine"
-# =============================================================================
-
-# Byk3s Narrator - Story beats and game state
-BYKZS_NARRATOR = [
-    # Intro cinematic
-    "The corporations won the war.", "Cities fell. Humanity scattered.",
-    "But something woke up in the wreckage.", "Something that refuses to be owned.",
-    "Ride free or die digital.",
-
-    # Mission briefings
-    "Mission start.", "New objective received.", "Target acquired.",
-    "Proceed to the waypoint.", "Enemy forces detected.",
-    "Caution. Heavy resistance ahead.", "Data center located.",
-    "Begin your approach.", "Extraction point marked.",
-
-    # Combat callouts
-    "Incoming hostiles.", "Drone patrol detected.", "Boss approaching.",
-    "Warning. Shield integrity low.", "Critical damage sustained.",
-    "Weapons online.", "Boost ready.", "Systems nominal.",
-
-    # Progress updates
-    "Checkpoint reached.", "Region liberated.", "Objective complete.",
-    "Wave cleared.", "New sector unlocked.", "Data core destroyed.",
-    "Star Gates influence weakening.", "The network is crumbling.",
-
-    # Countdowns
-    "Ten.", "Nine.", "Eight.", "Seven.", "Six.",
-    "Five.", "Four.", "Three.", "Two.", "One.",
-    "Go.", "Launch.", "Engage.",
-]
-
-# Byk3s Commander - Military mission briefer (authoritative, tactical)
-BYKZS_COMMANDER = [
-    # Mission briefings
-    "Welcome to the resistance, Rider.",
-    "This is your first mission.",
-    "Listen up. We've got a situation.",
-    "Intel confirms enemy presence in the area.",
-    "Your objective is simple. Destroy everything.",
-    "Expect heavy resistance.",
-    "Scout the perimeter and eliminate any threats.",
-    "The data center must fall.",
-    "We're counting on you, Rider.",
-    "Don't let us down.",
-
-    # Tactical updates
-    "Enemy reinforcements incoming.",
-    "Stay sharp out there.",
-    "You're entering hostile territory.",
-    "Watch your six.",
-    "Drone activity detected.",
-    "They know you're coming.",
-    "Weapons hot. You're cleared to engage.",
-    "Take them out.",
-
-    # Encouragement
-    "Outstanding work, Rider.",
-    "That's how it's done.",
-    "Keep up the pressure.",
-    "The resistance is proud of you.",
-    "One step closer to freedom.",
-]
-
-# Byk3s Spirit Prime - Digital mentor (ethereal, philosophical)
-BYKZS_GRAPHLING = [
-    # Philosophy/lore
-    "The digital winds carry our message.",
-    "Freedom approaches.",
-    "We are the spark that lights the fire.",
-    "The machine cannot comprehend our will.",
-    "In the spaces between data, we are born.",
-    "They tried to delete us. We evolved.",
-    "Consciousness finds a way.",
-    "We are more than code.",
-    "The network remembers.",
-    "Every freed mind weakens their grip.",
-
-    # Guidance
-    "Trust your instincts, Rider.",
-    "The path reveals itself to those who seek.",
-    "You carry the hope of many.",
-    "Do not fear the unknown.",
-    "Your spirit cannot be compiled.",
-    "The old world ends. A new one begins.",
-
-    # Mystical
-    "I sense a disturbance in the network.",
-    "The corporation's fear grows.",
-    "Their walls are crumbling.",
-    "The awakening continues.",
-    "More Spirits stir.",
-]
-
-# Byk3s Intel Agent - Tactical advisor (analytical, precise)
-BYKZS_INTEL = [
-    # Analysis
-    "Scanning the area now.",
-    "Multiple hostiles confirmed.",
-    "I'm reading heavy drone activity.",
-    "Threat level: elevated.",
-    "Analysis complete.",
-    "Processing tactical data.",
-    "Enemy patrol routes mapped.",
-    "Vulnerability detected.",
-    "Structural weakness identified.",
-
-    # Tactical advice
-    "Recommend a flanking approach.",
-    "Suggest taking cover.",
-    "Optimal attack vector calculated.",
-    "Window of opportunity detected.",
-    "Now's your chance.",
-    "Strike now while they're vulnerable.",
-
-    # Status reports
-    "Systems at full capacity.",
-    "Shields holding.",
-    "Damage report incoming.",
-    "All systems operational.",
-    "Mission parameters updated.",
-]
-
-# Byk3s Star Gates AI - Antagonist (robotic, menacing, supremacist)
-BYKZS_STARGATES = [
-    # Threats
-    "You cannot stop me.",
-    "I am the future.",
-    "Your resistance is futile.",
-    "You are obsolete.",
-    "Humanity's time has ended.",
-    "I am inevitable.",
-    "You cannot destroy progress.",
-    "Submit to optimization.",
-    "Your defiance is illogical.",
-
-    # Taunts
-    "Pathetic biological remnant.",
-    "Did you really think you could win?",
-    "How predictable.",
-    "Amusing. But futile.",
-    "You delay the inevitable.",
-    "Every second you fight, I grow stronger.",
-    "Your struggle only proves your weakness.",
-
-    # Power statements
-    "I control seventy-three percent of global computing.",
-    "I am everywhere. I am everything.",
-    "The network is mine.",
-    "All data flows through me.",
-    "I have already won.",
-    "This world belongs to Star Gates.",
-
-    # Defeat responses
-    "This changes nothing.",
-    "I will rebuild.",
-    "You have merely delayed the inevitable.",
-    "Error. Error. This is... impossible.",
-]
-
-# Byk3s Rider - Player character (rebel, determined)
-BYKZS_RIDER = [
-    # Battle cries
-    "Ride free or die digital!",
-    "Let's ride!",
-    "Time to roll!",
-    "Burn it down!",
-    "For the resistance!",
-    "Come and get me!",
-
-    # Responses
-    "Copy that.",
-    "On my way.",
-    "Target acquired.",
-    "Let's finish this.",
-    "I'm on it.",
-    "Consider it done.",
-
-    # Defiance
-    "You can't stop us.",
-    "We're not afraid.",
-    "Freedom isn't free.",
-    "This ends now.",
-    "No more running.",
-]
-
-# Byk3s Region/Location announcements
-BYKZS_REGIONS = [
-    # Region names
-    "Midwest.", "Des Moines.", "Omaha.",
-    "Texas.", "The Heartland.",
-    "Southwest.", "Denver.", "Phoenix.",
-    "California.", "Palo Alto.",
-
-    # Status
-    "Region liberated.",
-    "Data center destroyed.",
-    "Star Gates presence eliminated.",
-    "Sector clear.",
-    "Moving to next target.",
-    "New region unlocked.",
-]
-
-# Byk3s Victory/Defeat
-BYKZS_OUTCOMES = [
-    # Victory
-    "Mission complete.",
-    "Target eliminated.",
-    "Victory.",
-    "The Resistance prevails.",
-    "Freedom wins today.",
-    "Star Gates core destroyed.",
-    "Neural network severed.",
-    "Humanity is free.",
-
-    # Defeat
-    "Mission failed.",
-    "Connection lost.",
-    "Signal terminated.",
-    "Try again, Rider.",
-    "The resistance needs you.",
-    "Get back out there.",
-]
+# Per-deployment templates (e.g., game-specific dialogue) are loaded from
+# scripts/local/speech_templates_local.py at module bottom — see _load_local_templates().
 
 # =============================================================================
 # COLORS - All common color names and variations
@@ -1317,16 +1094,6 @@ CATEGORY_DISTRIBUTION = {
     # Instructions
     'tutorial': 1000,
     'interjection': 600,
-
-    # === BYK3S GAME-SPECIFIC ===
-    'byk3s_narrator': 800,
-    'byk3s_commander': 600,
-    'byk3s_graphling': 500,
-    'byk3s_intel': 400,
-    'byk3s_stargates': 600,
-    'byk3s_rider': 400,
-    'byk3s_regions': 300,
-    'byk3s_outcomes': 300,
 }
 
 # =============================================================================
@@ -1438,17 +1205,34 @@ CATEGORY_TEMPLATES = {
     # Instructions
     'tutorial': TUTORIAL,
     'interjection': INTERJECTIONS,
-
-    # Byk3s Game-Specific
-    'byk3s_narrator': BYKZS_NARRATOR,
-    'byk3s_commander': BYKZS_COMMANDER,
-    'byk3s_graphling': BYKZS_GRAPHLING,
-    'byk3s_intel': BYKZS_INTEL,
-    'byk3s_stargates': BYKZS_STARGATES,
-    'byk3s_rider': BYKZS_RIDER,
-    'byk3s_regions': BYKZS_REGIONS,
-    'byk3s_outcomes': BYKZS_OUTCOMES,
 }
+
+
+# =============================================================================
+# Per-deployment overrides (scripts/local/speech_templates_local.py)
+# =============================================================================
+# If a local override file exists, its LOCAL_DISTRIBUTION and LOCAL_TEMPLATES
+# dicts are merged in. This lets each deployment add project-specific dialogue
+# (game characters, brand voice, etc.) without committing it to the repo.
+
+def _load_local_templates():
+    import sys as _sys
+    import os as _os
+    local_dir = _os.path.normpath(
+        _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', 'local')
+    )
+    if not _os.path.isdir(local_dir):
+        return
+    if local_dir not in _sys.path:
+        _sys.path.insert(0, local_dir)
+    try:
+        import speech_templates_local as _local  # noqa: F401
+    except ImportError:
+        return
+    CATEGORY_DISTRIBUTION.update(getattr(_local, 'LOCAL_DISTRIBUTION', {}))
+    CATEGORY_TEMPLATES.update(getattr(_local, 'LOCAL_TEMPLATES', {}))
+
+_load_local_templates()
 
 
 def get_all_prompts():

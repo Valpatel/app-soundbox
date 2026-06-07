@@ -2371,7 +2371,7 @@ def api_library():
         sort: 'recent', 'popular', or 'rating'
         user_id: Filter by creator
         category: Filter by genre/category (e.g., 'ambient', 'nature')
-        source: Filter by project source (e.g., 'byk3s')
+        source: Filter by project source (e.g., 'my-project')
     """
     page, per_page = get_pagination_params()
 
@@ -3055,7 +3055,7 @@ def api_asset_library():
     Get library filtered by asset source.
 
     Query params:
-        source: Required - source ID (e.g., 'byk3s')
+        source: Required - source ID (e.g., 'my-project')
         model: Optional - Filter by 'music', 'audio', or 'voice'
         page: Page number (default 1)
         per_page: Items per page (default 20, max 100)
@@ -3099,7 +3099,7 @@ def api_set_asset_source():
 
     Body:
         generation_ids: List of generation IDs
-        source: Source ID (e.g., 'byk3s') or null to clear
+        source: Source ID (e.g., 'my-project') or null to clear
     """
     # Check if user is admin
     if not request.user.get('is_admin', False):

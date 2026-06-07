@@ -309,7 +309,7 @@ def generate_for_project(
                 Keep prompts short and specific (3-8 words work best).
                 Bad: "cute tiny creature yawn, adorable small animal sleepy sound, gentle tired exhale"
                 Good: "soft gentle yawn sound"
-        project: Project source ID (e.g. "my-project", "byk3s").
+        project: Project source ID (e.g. "my-project").
         model: "audio" (SFX, default) or "music" (MusicGen).
         duration: Length in seconds (1-60, default 3).
         wait: If True (default), poll until complete then tag.
@@ -389,7 +389,7 @@ def tag_for_project(
 
     Args:
         generation_ids: List of generation IDs to tag.
-        project: Project source ID (e.g. "my-project", "byk3s").
+        project: Project source ID (e.g. "my-project").
 
     Returns:
         Success status and count of updated items.
@@ -422,7 +422,7 @@ def get_project_assets(
     check their approval status, and find rejected ones to regenerate.
 
     Args:
-        project: Project source ID (e.g. "my-project", "byk3s").
+        project: Project source ID (e.g. "my-project").
         sort: "recent", "popular", or "rating".
         page: Page number (default 1).
         per_page: Results per page (default 50, max 100).
