@@ -53,6 +53,7 @@ scripts/*_progress.json
 .codegraph.db
 .memsearch/
 .claude/
+setup.log
 
 # Per-deployment project list (see project_sources.example.json)
 project_sources.json
