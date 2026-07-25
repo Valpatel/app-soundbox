@@ -86,6 +86,11 @@ class ModelManager:
         self._gpu_memory_cache = {'value': 0.0, 'time': 0.0}
         self._gpu_memory_cache_ttl = 1.0  # 1 second cache
 
+        # Whether this box has a GPU at all; None until probed. Free memory
+        # reads as 0.0 both when the GPU is full and when there is no GPU, so
+        # the memory gate needs this to tell those two cases apart.
+        self._gpu_present: Optional[bool] = None
+
         # Start cleanup thread
         self._stop_cleanup = threading.Event()
         self._cleanup_thread = threading.Thread(
@@ -285,6 +290,11 @@ class ModelManager:
 
     def _make_room(self, required_gb: float) -> None:
         """Unload least recently used models to free memory."""
+        # No GPU means no GPU memory to reclaim; evicting here would just
+        # unload every model on each call, since free reads as 0.0.
+        if not self._has_gpu():
+            return
+
         while self._get_free_gpu_memory() < required_gb:
             with self._lock:
                 if not self._loaded:
@@ -300,6 +310,12 @@ class ModelManager:
 
     def _wait_for_memory(self, required_gb: float, timeout: float) -> bool:
         """Wait for sufficient GPU memory to become available."""
+        # Nothing to wait for on a CPU-only box — models load on CPU. Without
+        # this the loop spins for the whole timeout and then reports failure,
+        # because free memory reads as 0.0 when there is no GPU.
+        if not self._has_gpu():
+            return True
+
         start = time.time()
 
         while time.time() - start < timeout:
@@ -337,6 +353,32 @@ class ModelManager:
             time.sleep(0.5)
 
         return None
+
+    def _has_gpu(self) -> bool:
+        """Whether this machine has a usable GPU. Probed once, then cached."""
+        if self._gpu_present is not None:
+            return self._gpu_present
+
+        present = False
+        try:
+            result = subprocess.run(
+                ['nvidia-smi', '--query-gpu=memory.free',
+                 '--format=csv,noheader,nounits'],
+                capture_output=True, text=True, timeout=5
+            )
+            present = result.returncode == 0 and bool(result.stdout.strip())
+        except Exception:
+            pass
+
+        if not present:
+            try:
+                import torch
+                present = torch.cuda.is_available()
+            except ImportError:
+                pass
+
+        self._gpu_present = present
+        return present
 
     def _get_free_gpu_memory(self) -> float:
         """Get available GPU memory in GB with caching."""
