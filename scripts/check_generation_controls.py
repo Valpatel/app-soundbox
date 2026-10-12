@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Strict browser controls regression; stubs expensive generation, never silently skips controls.
-Run against the reviewed deployment. Separate --live test is required for GPU qualification.
+Run against the reviewed deployment. Use check_live_music_loop.py separately for GPU qualification.
 """
 import argparse
 import json
