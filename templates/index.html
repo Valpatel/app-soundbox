@@ -8854,6 +8854,9 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 return;
             }
 
+            // A previous completed job hides this panel; every new attempt needs feedback.
+            statusEl.style.display = 'block';
+
             const prompt = promptEl.value.trim();
             if (!prompt) {
                 statusEl.className = 'status error';

@@ -214,7 +214,7 @@ GENERATION_LIMITS = {
     'creator': {'per_hour': 60, 'max_duration': 180},   # Whitelisted IPs / admin
     'premium': {'per_hour': 30, 'max_duration': 120},   # Premium tier
     'supporter': {'per_hour': 15, 'max_duration': 60},  # Supporter tier
-    'free': {'per_hour': 10, 'max_duration': 60}        # Free / anonymous users
+    'free': {'per_hour': 10, 'max_duration': 120}        # Free / anonymous users
 }
 
 # =============================================================================
@@ -1597,8 +1597,10 @@ def process_queue():
                 print(f"[Generation] Job {job_id} failed: {e}")
                 # Sanitize error - only show safe generic messages
                 error_str = str(e).lower()
-                if 'cuda' in error_str or 'gpu' in error_str or 'memory' in error_str:
-                    job['error'] = 'GPU memory error - try a shorter duration'
+                if 'out of memory' in error_str:
+                    job['error'] = 'GPU memory exhausted - try a shorter duration'
+                elif 'cuda' in error_str or 'gpu' in error_str:
+                    job['error'] = 'GPU unavailable - the server needs attention'
                 elif 'model' in error_str or 'load' in error_str:
                     job['error'] = 'Model temporarily unavailable'
                 else:
@@ -4533,7 +4535,7 @@ def api_manifest():
             'method': 'anonymous_ip' if OPEN_ACCESS_MODE else 'bearer_token',
         },
         'rate_limits': {
-            'free_tier': '10 generations/hour, 60s max duration',
+            'free_tier': '10 generations/hour, 120s max duration',
             'creator_tier': '60 generations/hour, 180s max duration (whitelisted IPs)',
         },
         'endpoints': {
