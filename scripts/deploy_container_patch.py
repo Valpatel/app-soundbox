@@ -20,6 +20,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--patch', action='append', required=True)
     p.add_argument('--apply', action='store_true')
+    p.add_argument('--generation-quotas', choices=('true', 'false'), help='Explicit generation quota setting for the derived image')
     p.add_argument('--expected-image', help='Explicitly replace a prior image-only override with this exact image tag')
     a = p.parse_args()
     container = 'app-soundbox-soundbox-1'
@@ -51,7 +52,8 @@ def main():
         image = 'soundbox-reviewed:' + str(time.time_ns())
         base = 'soundbox-base:' + info['Image'].split(':')[-1][:16]
         run(['docker', 'tag', info['Image'], base])
-        (stage / 'Dockerfile').write_text('FROM ' + base + '\nCOPY app.py database.py /app/\nCOPY templates/index.html /app/templates/index.html\nENV PYTHONUNBUFFERED=1\n')
+        quota_env = '' if a.generation_quotas is None else 'ENV SOUNDBOX_GENERATION_QUOTAS=' + a.generation_quotas + '\n'
+        (stage / 'Dockerfile').write_text('FROM ' + base + '\nCOPY app.py database.py /app/\nCOPY templates/index.html /app/templates/index.html\nENV PYTHONUNBUFFERED=1\n' + quota_env)
         if not a.apply:
             print('Patches and Python syntax verified; no deployment')
             return
