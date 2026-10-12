@@ -10875,6 +10875,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                                 <svg class="empty-icon"><use href="#icon-search"/></svg>
                                 <h3>No tracks found</h3>
                                 <p>No results for "<strong>${escapeHtml(search)}</strong>". Try different keywords.</p>
+                                <button class="page-btn" onclick="clearAllFilters()">Clear search and filters</button>
                             </div>
                         `;
                     } else if (hasActiveFilters) {
@@ -10882,7 +10883,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                             <div class="library-empty">
                                 <svg class="empty-icon"><use href="#icon-filter"/></svg>
                                 <h3>No matching tracks</h3>
-                                <p>Try adjusting the filters in the sidebar, or use the "Clear Filters" button.</p>
+                                <p>Try adjusting your filters.</p>
+                                <button class="page-btn" onclick="clearAllFilters()">Clear search and filters</button>
                             </div>
                         `;
                     } else {

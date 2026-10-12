@@ -21,7 +21,8 @@ with sync_playwright() as pw:
         assert sample, 'Requires one existing Library item'
         def library(route):
             number = int(parse_qs(urlsplit(route.request.url).query).get('page', ['1'])[0])
-            route.fulfill(json={'items': sample, 'page': number, 'pages': 12, 'per_page': 10, 'total': 120})
+            search = parse_qs(urlsplit(route.request.url).query).get('search')
+            route.fulfill(json={'items': [] if search else sample, 'page': number, 'pages': 0 if search else 12, 'per_page': 10, 'total': 0 if search else 120})
         page.route('**/api/library?*', library)
         page.goto(args.url, wait_until='networkidle')
         page.add_style_tag(content='*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}')
@@ -56,6 +57,10 @@ with sync_playwright() as pw:
         assert min(geometry['targets']) >= 44, geometry
         assert not geometry['overflow'], geometry
         print(json.dumps({'width':width,'geometry':geometry,'navigation':'passed'}), flush=True)
+        page.locator('#library-search').fill('unmatched search')
+        page.get_by_role('button', name='Clear search and filters', exact=True).click()
+        expect(page.locator('#library-search')).to_have_value('')
+        expect(page.locator('.library-item').first).to_be_visible()
         page.screenshot(path='/tmp/soundbox-pagination-'+str(width)+'.png', full_page=True)
         page.close()
     browser.close()
