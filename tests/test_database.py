@@ -412,3 +412,16 @@ def test_explicit_private_generation_remains_private(test_db):
     db.create_generation('private-explicit', 'private.wav', 'A bell', 'audio', 2, is_public=False)
     assert not db.get_generation('private-explicit')['is_public']
     assert db.get_library()['total'] == 0
+
+
+def test_publish_existing_is_explicit_backed_up_and_idempotent(test_db):
+    from scripts.publish_library import publish
+    db.create_generation('old-private', 'old.wav', 'A bell', 'audio', 2, is_public=False)
+    assert publish(test_db) == {'private_records': 1, 'applied': False}
+    assert not db.get_generation('old-private')['is_public']
+    result = publish(test_db, apply=True)
+    assert result['applied'] and db.get_generation('old-private')['is_public']
+    with sqlite3.connect(result['backup']) as backup:
+        assert backup.execute('SELECT is_public FROM generations WHERE id=?', ('old-private',)).fetchone()[0] == 0
+    assert publish(test_db, apply=True) == {'private_records': 0, 'applied': False}
+    os.unlink(result['backup'])

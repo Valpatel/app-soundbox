@@ -161,3 +161,17 @@ Created by Matthew Valancy
 All engines are part of [AudioCraft](https://github.com/facebookresearch/audiocraft) (Meta AI) except Piper TTS ([Rhasspy](https://github.com/rhasspy/piper)). Generated audio is [CC0 public domain](https://creativecommons.org/publicdomain/zero/1.0/).
 
 (c) 2026 Valpatel Software LLC
+
+### Shared library visibility
+
+Generated music, sound effects and speech saved to the server are public in the
+Soundbox library by default. No administrator approval menu is required.
+Explicit private records are still supported for integrations that request them.
+This setting does not change network access to your server.
+
+To publish older pending records, preview and then apply a backed-up migration:
+
+```bash
+python scripts/publish_library.py --database data/soundbox.db
+python scripts/publish_library.py --database data/soundbox.db --apply
+```
