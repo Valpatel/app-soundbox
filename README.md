@@ -161,3 +161,12 @@ Created by Matthew Valancy
 All engines are part of [AudioCraft](https://github.com/facebookresearch/audiocraft) (Meta AI) except Piper TTS ([Rhasspy](https://github.com/rhasspy/piper)). Generated audio is [CC0 public domain](https://creativecommons.org/publicdomain/zero/1.0/).
 
 (c) 2026 Valpatel Software LLC
+
+### Private deployments without generation quotas
+
+Set `SOUNDBOX_GENERATION_QUOTAS=false` in the application environment to disable
+hourly music/SFX/speech request quotas and per-user pending-job limits. The
+default remains enabled for public installations. This does not grant admin
+access or change authentication. The global 100-job queue, model readiness,
+prompt/text validation, and 180-second per-request audio bound remain enforced.
+Restart after draining the queue; queued jobs currently live in process memory.

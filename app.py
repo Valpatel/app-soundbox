@@ -200,6 +200,8 @@ PRIORITY_LEVELS = {
 
 # Queue and rate limits by user tier
 MAX_QUEUE_SIZE = 100  # Total jobs in queue
+# Explicit opt-out for trusted private deployments; public defaults stay enabled.
+GENERATION_QUOTAS_ENABLED = os.environ.get('SOUNDBOX_GENERATION_QUOTAS', 'true').lower() not in ('0', 'false', 'no')
 MAX_PENDING_PER_USER = {
     'creator': 20,    # Whitelisted IPs / admin
     'premium': 10,    # Premium tier
@@ -1998,7 +2000,7 @@ def is_email_verified(user):
 
 
 @app.route('/generate', methods=['POST'])
-@limiter.limit("60 per hour")  # Global rate limit (per-user limits are stricter)
+@limiter.limit("60 per hour", exempt_when=lambda: not GENERATION_QUOTAS_ENABLED)
 @require_auth_or_localhost  # Auth required, but localhost can bypass for batch generation
 def generate():
     """
@@ -2027,6 +2029,8 @@ def generate():
     # Determine user tier and limits
     tier = get_user_tier(user)
     limits = GENERATION_LIMITS.get(tier, GENERATION_LIMITS['free'])
+    if not GENERATION_QUOTAS_ENABLED:
+        limits = {'per_hour': None, 'max_duration': 180}
 
     # Free users must have verified email to generate
     # Paying subscribers (supporter, premium, creator) can generate without verification
@@ -2041,7 +2045,7 @@ def generate():
     # Check per-user pending job limit
     pending_count = count_user_pending_jobs(user_id)
     max_pending = MAX_PENDING_PER_USER.get(tier, 2)
-    if pending_count >= max_pending:
+    if GENERATION_QUOTAS_ENABLED and pending_count >= max_pending:
         return jsonify({
             'success': False,
             'error': f'You have {pending_count} pending jobs. Please wait for them to complete.',
@@ -2078,7 +2082,7 @@ def generate():
     )
     if not is_valid:
         if 'at most' in str(error):
-            error = f'Duration limited to {max_duration}s for your account tier'
+            error = f'Duration limited to {max_duration}s' + (' for your account tier' if GENERATION_QUOTAS_ENABLED else ' per request')
         return jsonify({'success': False, 'error': error}), 400
 
     # Validate model type
@@ -2128,7 +2132,7 @@ def generate():
         # SECURITY: Final atomic check for pending job limit (prevents race condition)
         pending_count = sum(1 for j in jobs.values()
                            if j.get('user_id') == user_id and j['status'] in ['queued', 'processing'])
-        if pending_count >= max_pending:
+        if GENERATION_QUOTAS_ENABLED and pending_count >= max_pending:
             return jsonify({
                 'success': False,
                 'error': f'You have {pending_count} pending jobs. Please wait for them to complete.',
@@ -3804,7 +3808,7 @@ def api_voice_licenses():
 
 
 @app.route('/api/tts/generate', methods=['POST'])
-@limiter.limit("60 per hour")  # Base rate limit (tier-based limits checked in handler)
+@limiter.limit("60 per hour", exempt_when=lambda: not GENERATION_QUOTAS_ENABLED)
 @require_auth_or_localhost  # Authentication required, but localhost can bypass for batch generation
 def api_tts_generate():
     """
