@@ -161,3 +161,12 @@ Created by Matthew Valancy
 All engines are part of [AudioCraft](https://github.com/facebookresearch/audiocraft) (Meta AI) except Piper TTS ([Rhasspy](https://github.com/rhasspy/piper)). Generated audio is [CC0 public domain](https://creativecommons.org/publicdomain/zero/1.0/).
 
 (c) 2026 Valpatel Software LLC
+
+### Build identity
+
+The top-left build label exposes a fingerprint of `app.py`, `database.py` and
+`templates/index.html`, the UTC build time, and supplied Git revisions. Hover
+or tap to expand details. Docker builds accept `--build-arg VCS_REF=<git-sha>`;
+local releases can run `python scripts/write_build_info.py --revision <git-sha>`.
+Without stamping, the UI honestly shows development. The fingerprint identifies
+the core app source, not every dependency or runtime setting.
