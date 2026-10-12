@@ -36,7 +36,9 @@ override, applies patches with no fuzz to copies of the installed sources, and
 builds a derived image without reinstalling CUDA or replacing data volumes.
 The persistent Compose override selects that image across container recreation.
 The receipt records the prior image for rollback. Reconcile any existing override
-explicitly rather than bypassing that refusal.
+explicitly rather than bypassing that refusal. For an image-only override created
+by this tool, pass `--expected-image` with its exact currently installed tag;
+unrecognized overrides or concurrent changes are still refused.
 
 For rollback, restore the receipt's prior image in the Compose override and run
 `docker compose up -d --no-build soundbox` after verifying the queue is empty.

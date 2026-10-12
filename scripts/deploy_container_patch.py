@@ -20,13 +20,21 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--patch', action='append', required=True)
     p.add_argument('--apply', action='store_true')
+    p.add_argument('--expected-image', help='Explicitly replace a prior image-only override with this exact image tag')
     a = p.parse_args()
     container = 'app-soundbox-soundbox-1'
     info = json.loads(run(['docker', 'inspect', container]))[0]
     root = Path(info['Config']['Labels']['com.docker.compose.project.working_dir'])
     override = root / 'docker-compose.override.yml'
-    if override.exists():
-        raise SystemExit('Existing Compose override: reconcile it explicitly; refusing overwrite')
+    previous_override = override.read_text() if override.exists() else None
+    if previous_override is not None:
+        expected = {'services': {'soundbox': {'image': a.expected_image}}}
+        try:
+            matches = a.expected_image and json.loads(previous_override) == expected
+        except ValueError:
+            matches = False
+        if not matches or info['Config']['Image'] != a.expected_image:
+            raise SystemExit('Override is not the explicitly expected installed image-only configuration; refusing overwrite')
     with urllib.request.urlopen('http://127.0.0.1:5309/status', timeout=5) as response:
         if json.load(response).get('queue_length') != 0:
             raise SystemExit('Queue is busy; leave running jobs intact')
@@ -51,9 +59,14 @@ def main():
         with urllib.request.urlopen('http://127.0.0.1:5309/status', timeout=5) as response:
             if json.load(response).get('queue_length') != 0:
                 raise SystemExit('Queue became busy; image built but not deployed')
+        if (override.read_text() if override.exists() else None) != previous_override:
+            raise SystemExit('Compose override changed during build; refusing deployment')
+        current = json.loads(run(['docker', 'inspect', container]))[0]
+        if current['Id'] != info['Id'] or current['Image'] != info['Image']:
+            raise SystemExit('Container changed during build; refusing deployment')
         override.write_text(json.dumps({'services': {'soundbox': {'image': image}}}, indent=2) + '\n')
         receipt = root / ('soundbox-release-' + str(time.time_ns()) + '.json')
-        receipt.write_text(json.dumps({'old_image': info['Image'], 'new_image': image, 'override': str(override)}, indent=2))
+        receipt.write_text(json.dumps({'old_image': info['Image'], 'new_image': image, 'override': str(override), 'previous_override': previous_override}, indent=2))
         print('Rollback receipt:', receipt)
         subprocess.run(['docker', 'compose', 'up', '-d', '--no-build', 'soundbox'], cwd=root, check=True)
 
