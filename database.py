@@ -782,7 +782,7 @@ def migrate_from_json():
 # =============================================================================
 
 def create_generation(gen_id, filename, prompt, model, duration, is_loop=False,
-                      quality_score=None, spectrogram=None, user_id=None, is_public=False,
+                      quality_score=None, spectrogram=None, user_id=None, is_public=True,
                       voice_id=None, tags=None):
     """Create a new generation record with auto-categorization.
 
@@ -796,12 +796,12 @@ def create_generation(gen_id, filename, prompt, model, duration, is_loop=False,
         quality_score: Quality analysis score (0-100)
         spectrogram: Path to spectrogram image
         user_id: Creator's user ID (from auth)
-        is_public: Whether to add to public library (default False for moderation)
+        is_public: Whether to add to public library (default True for the shared library)
         voice_id: For voice model, the TTS voice ID used (e.g., 'en_GB-vctk-medium')
         tags: Optional list of category tags to merge with auto-categorization
 
-    New generations start as private (is_public=False) and require admin review
-    before being promoted to the public library. All content is CC0 licensed.
+    New generations are public by default. Explicit private records remain supported.
+    All content is CC0 licensed.
     """
     # Auto-categorize based on prompt
     auto_categories = categorize_prompt(prompt, model)
@@ -816,7 +816,7 @@ def create_generation(gen_id, filename, prompt, model, duration, is_loop=False,
     category_json = json.dumps(all_categories) if all_categories else None
 
     with get_db() as conn:
-        # If is_public=True, it's from localhost/admin and doesn't need review
+        # Public-by-default records do not require a separate approval step.
         admin_reviewed = is_public
         conn.execute("""
             INSERT INTO generations

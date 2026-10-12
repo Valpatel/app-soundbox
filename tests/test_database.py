@@ -399,3 +399,16 @@ class TestCategoryFunctions:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
+
+
+def test_new_generation_is_in_public_library_by_default(test_db):
+    db.create_generation('public-default', 'public-default.wav', 'A bell', 'audio', 2)
+    row = db.get_generation('public-default')
+    assert row['is_public'] and row['admin_reviewed']
+    assert any(item['id'] == 'public-default' for item in db.get_library()['items'])
+
+
+def test_explicit_private_generation_remains_private(test_db):
+    db.create_generation('private-explicit', 'private.wav', 'A bell', 'audio', 2, is_public=False)
+    assert not db.get_generation('private-explicit')['is_public']
+    assert db.get_library()['total'] == 0

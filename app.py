@@ -1547,7 +1547,7 @@ def process_queue():
                             quality_score=quality['score'],
                             spectrogram=spec_filename,
                             user_id=job.get('user_id'),
-                            is_public=job.get('is_public', False)  # Localhost/admin = public
+                            is_public=job.get('is_public', True)
                         )
                         db_saved = True
                         break
@@ -2101,11 +2101,8 @@ def generate():
     job_id = uuid.uuid4().hex
     priority_num = PRIORITY_LEVELS.get(priority, 2)
 
-    # Determine if this generation should be public immediately
-    # Localhost requests (batch generation, admin scripts) are trusted
-    # Admin users can also create public content directly
-    is_admin = user.get('is_admin', False) if user else False
-    is_public = is_localhost_request() or is_admin
+    # This shared library publishes generated audio without an admin review step.
+    is_public = True
 
     job = {
         'id': job_id,
@@ -2120,7 +2117,7 @@ def generate():
         'created': datetime.now().isoformat(),
         'progress': 'Waiting in queue...',
         'user_id': user_id,
-        'is_public': is_public,  # Localhost/admin = public, user = needs review
+        'is_public': is_public,
         'notify_on_complete': True  # Flag to send notification when done
     }
 
@@ -3887,7 +3884,7 @@ def api_tts_generate():
 
             # Save to database - clean up file on failure
             # Localhost/admin TTS generations are public by default
-            is_public = is_localhost_request() or (hasattr(request, 'user') and request.user.get('is_admin', False))
+            is_public = True  # Saved speech joins the shared library too.
             try:
                 db.create_generation(
                     gen_id=gen_id,
