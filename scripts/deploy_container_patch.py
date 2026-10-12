@@ -4,6 +4,8 @@ Run on the Docker host with --patch for each reviewed diff. Refuses busy queues.
 Creates an immutable derived image and persistent Compose override; never removes volumes.
 """
 import argparse
+from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -20,6 +22,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--patch', action='append', required=True)
     p.add_argument('--apply', action='store_true')
+    p.add_argument('--source-revision', action='append', default=[], help='Contributing Git revision for visible build metadata')
     p.add_argument('--generation-quotas', choices=('true', 'false'), help='Explicit generation quota setting for the derived image')
     p.add_argument('--expected-image', help='Explicitly replace a prior image-only override with this exact image tag')
     a = p.parse_args()
@@ -52,8 +55,14 @@ def main():
         image = 'soundbox-reviewed:' + str(time.time_ns())
         base = 'soundbox-base:' + info['Image'].split(':')[-1][:16]
         run(['docker', 'tag', info['Image'], base])
+        digest = hashlib.sha256()
+        for name in ('app.py', 'database.py', 'templates/index.html'):
+            digest.update(name.encode() + b'\0' + (stage / name).read_bytes())
+        (stage / 'build-info.json').write_text(json.dumps({
+            'build_id': digest.hexdigest(), 'built_at': datetime.now(timezone.utc).isoformat(),
+            'source_revisions': a.source_revision, 'base_image': info['Image']}))
         quota_env = '' if a.generation_quotas is None else 'ENV SOUNDBOX_GENERATION_QUOTAS=' + a.generation_quotas + '\n'
-        (stage / 'Dockerfile').write_text('FROM ' + base + '\nCOPY app.py database.py /app/\nCOPY templates/index.html /app/templates/index.html\nENV PYTHONUNBUFFERED=1\n' + quota_env)
+        (stage / 'Dockerfile').write_text('FROM ' + base + '\nCOPY app.py database.py /app/\nCOPY templates/index.html /app/templates/index.html\nCOPY build-info.json /app/static/build-info.json\nENV PYTHONUNBUFFERED=1\n' + quota_env)
         if not a.apply:
             print('Patches and Python syntax verified; no deployment')
             return
