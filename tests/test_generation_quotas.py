@@ -25,7 +25,7 @@ class GenerationQuotasTest(unittest.TestCase):
                          jobs={}, queue_lock=threading.Lock(), loading_status={'music': 'ready'})
         names = {'MAX_QUEUE_SIZE', 'GENERATION_QUOTAS_ENABLED', 'MAX_PENDING_PER_USER',
                  'GENERATION_LIMITS', 'PRIORITY_LEVELS', 'get_user_tier',
-                 'count_user_pending_jobs', 'validate_integer', 'require_json_content_type', 'generate'}
+                 'count_user_pending_jobs', 'validate_integer', 'require_json_content_type', 'generate', 'api_tts_generate'}
         source = Path(__file__).resolve().parents[1] / 'app.py'
         nodes = []
         for node in ast.parse(source.read_text()).body:
@@ -66,6 +66,13 @@ class GenerationQuotasTest(unittest.TestCase):
                 self.assertIsNone(response.json['limits']['per_hour'])
                 ns['jobs'].update({str(i): {'user_id': 'someone-else', 'status': 'queued'} for i in range(100)})
                 self.assertEqual(client.post('/generate', json={'model': 'music'}).status_code, 503)
+
+    def test_speech_quota_is_optional(self):
+        for setting, expected in ((None, 429), ('false', 400)):
+            client, _ = self.build(setting)
+            for _ in range(60):
+                self.assertEqual(client.post('/api/tts/generate', json={'text': ''}).status_code, 400)
+            self.assertEqual(client.post('/api/tts/generate', json={'text': ''}).status_code, expected)
 
     def test_private_mode_preserves_duration_validation(self):
         client, _ = self.build('false')
