@@ -52,7 +52,7 @@ def sanitize_fts5_query(search):
     return ' OR '.join(quoted_words)
 
 DB_PATH = os.environ.get('DB_PATH', 'soundbox.db')
-METADATA_FILE = 'generations.json'
+METADATA_FILE = os.environ.get('METADATA_FILE', os.path.join(os.path.dirname(DB_PATH), 'generations.json'))
 
 # =============================================================================
 # User Storage Limits (by subscription tier)

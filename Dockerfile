@@ -42,6 +42,9 @@ RUN python3 scripts/write_build_info.py --revision "$VCS_REF"
 # SKIP_TESTS: no need for Playwright in production image
 RUN FORCE_CUDA=1 FORCE_NVRTC_FIX=1 SKIP_SERVICES=1 SKIP_TESTS=1 bash setup.sh --auto
 
+# The all-inclusive image supports optional S3-compatible backing storage.
+RUN /app/venv/bin/python -m pip install --no-cache-dir -r requirements-s3.txt
+
 # Create directories for volume mounts
 RUN mkdir -p generated spectrograms data
 
