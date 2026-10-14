@@ -9296,9 +9296,11 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 if (radioQueue.length === 0) {
                     nowPlayingEl.classList.remove('hidden');
                     radioPlayer.pause();
-                    radioQueueEl.classList.add('hidden');
                     currentRadioTrack = null;
                     updateRadioControlsState();
+                    updateRadioQueue();
+                    if (radioUserStarted && currentStation !== 'favorites' && currentStation !== 'playlist')
+                        playRadioFallback(radioSession);
                     fillRadioStation();
                     return;
                 }
@@ -9332,7 +9334,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             }
 
             // Add to play history (avoid repeats when fetching more)
-            if (currentRadioTrack.id && !playHistory.includes(currentRadioTrack.id)) {
+            if (currentRadioTrack.id) {
+                playHistory = playHistory.filter(id => id !== currentRadioTrack.id);
                 playHistory.push(currentRadioTrack.id);
                 // Trim history if too long
                 if (playHistory.length > MAX_HISTORY) {
@@ -9431,6 +9434,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     updateRadioQueue();
                     if (!currentRadioTrack && radioUserStarted) playNextTrack();
                 }
+                // Prepare the next song before the last queued song finishes.
+                if (radioUserStarted && radioQueue.length < 2) fillRadioStation();
             } catch (err) {
                 console.error('Failed to fetch more tracks:', err);
             } finally {
@@ -9938,15 +9943,23 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 radioFallbackSession === session) return;
             radioFallbackSession = session;
             try {
-                const response = await fetch('/api/radio/shuffle?model=music&count=10');
+                const keywords = document.getElementById('radio-keywords').value.trim();
+                const params = new URLSearchParams({model: 'music', count: 10});
+                if (keywords) params.set('search', keywords);
+                let response = await fetch('/api/radio/shuffle?' + params);
                 if (!response.ok) return;
-                const data = await response.json();
+                let data = await response.json();
+                if (!data.tracks?.length && keywords) {
+                    response = await fetch('/api/radio/shuffle?model=music&count=10');
+                    if (!response.ok) return;
+                    data = await response.json();
+                }
                 if (session !== radioSession || !radioUserStarted || currentRadioTrack) return;
                 const tracks = (data.tracks || []).filter(t => t.filename &&
                     Number(t.downvotes || 0) <= Number(t.upvotes || 0));
                 // Prefer something not heard recently; repeats are better than silence
                 // when a small library is waiting for its next generated song.
-                tracks.sort((a, b) => Number(playHistory.includes(a.id)) - Number(playHistory.includes(b.id)));
+                tracks.sort((a, b) => playHistory.indexOf(a.id) - playHistory.indexOf(b.id));
                 if (tracks.length) {
                     radioQueue.push(tracks[0]);
                     playNextTrack();
@@ -10690,8 +10703,10 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             const queueCountBadge = document.getElementById('queue-count-badge');
 
             if (radioQueue.length === 0) {
-                radioQueueEl.classList.add('hidden');
+                radioQueueEl.classList.remove('hidden');
                 if (queueCountBadge) queueCountBadge.textContent = '0';
+                queueItemsEl.innerHTML = '<p class="queue-empty">' +
+                    (radioUserStarted ? 'Radio continues · finding your next song' : 'Nothing queued next') + '</p>';
                 return;
             }
 

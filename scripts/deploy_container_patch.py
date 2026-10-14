@@ -48,6 +48,11 @@ def main():
             target = stage / name
             target.parent.mkdir(parents=True, exist_ok=True)
             run(['docker', 'cp', container + ':/app/' + name, str(target)])
+        # Optional runtime modules introduced by prior releases may also be patched.
+        for name in ('radio_generation.py', 'radio_catalog.py', 'object_storage.py'):
+            exists = subprocess.run(['docker', 'exec', container, 'test', '-f', '/app/' + name], capture_output=True).returncode == 0
+            if exists:
+                run(['docker', 'cp', container + ':/app/' + name, str(stage / name)])
         for patch in a.patch:
             subprocess.run(['patch', '--batch', '--fuzz=0', '-p1', '-i', str(Path(patch).resolve())], cwd=stage, check=True)
         for source in stage.glob('*.py'):
