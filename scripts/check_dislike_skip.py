@@ -12,7 +12,7 @@ p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('--url', required=True)
 p.add_argument('--html')
 p.add_argument('--static-dir', help='Preview modified widget JS from this directory')
-p.add_argument('--modes', nargs='+', default=['radio', 'dismiss', 'mini', 'library', 'nonplaying', 'failure'])
+p.add_argument('--modes', nargs='+', default=['radio', 'dismiss', 'mini', 'library', 'nonplaying', 'failure', 'undo'])
 a = p.parse_args()
 tracks = [dict(id=c * 32, filename=c + '.wav', prompt='Track ' + c.upper(), model='music',
                duration=90, upvotes=0, downvotes=0) for c in 'abc']
@@ -45,6 +45,24 @@ with sync_playwright() as pw:
             page.add_style_tag(content='*,*::before,*::after{animation:none!important;transition:none!important}')
             page.evaluate("tracks => {switchTab('radio'); currentStation='playlist'; radioUserStarted=true; radioQueue=tracks; playNextTrack();}", tracks)
             page.wait_for_function('!radioPlayer.paused')
+            if mode == 'undo':
+                page.evaluate("switchTab('library')")
+                page.locator('.library-item').first.wait_for()
+                page.evaluate("id => {userVotes[id]=-1; rejectedTrackIds.add(id); playNextTrack();}", tracks[0]['id'])
+                page.wait_for_function('!radioPlayer.paused')
+                page.locator('.library-item .vote-down').first.click()
+                page.wait_for_timeout(150)
+                assert len(held) == 1 and requests[0][1]['vote'] == 0
+                assert requests[0][0].endswith('/' + tracks[0]['id'] + '/vote')
+                held.pop().fulfill(json={'user_vote': 0, 'upvotes': 0, 'downvotes': 0})
+                page.wait_for_timeout(150)
+                assert page.evaluate('id => !rejectedTrackIds.has(id)', tracks[0]['id'])
+                assert page.evaluate('currentRadioTrack.id') == tracks[1]['id']
+                assert page.evaluate('!radioPlayer.paused')
+                assert not errors, errors
+                print(f'{width}px undo: real vote endpoint, restored eligibility and no unrelated skip passed', flush=True)
+                page.close()
+                continue
             if mode in ('mini', 'library', 'nonplaying'):
                 page.evaluate("switchTab('library')")
                 page.locator('.library-item').first.wait_for()
