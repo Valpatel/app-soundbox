@@ -6064,7 +6064,7 @@
             </div>
 
             <!-- Now Playing - Enhanced -->
-            <div class="now-playing hidden" id="now-playing">
+            <div class="now-playing" id="now-playing">
                 <div class="hero-section">
                     <!-- Animated EQ Visualizer -->
                     <div class="eq-visualizer" id="eq-visualizer">
@@ -6098,10 +6098,19 @@
                         </div>
                     </div>
 
+                    <div id="radio-generation-status" class="radio-generation-status" hidden>
+                        <div class="radio-generation-copy" role="status" aria-live="polite">
+                            <strong>Up next · New station music</strong>
+                            <span id="radio-generation-detail"></span>
+                        </div>
+                        <progress id="radio-generation-progress" max="100" aria-label="Song generation progress"></progress>
+                    </div>
+
                     <!-- Unified Control Bar -->
                     <div class="control-bar">
                         <!-- Playback Controls -->
                         <div class="playback-controls">
+                            <button class="control-btn" id="radio-stop-btn" onclick="stopPlayback()" title="Stop playback and automatic radio" aria-label="Stop radio">■</button>
                             <button class="control-btn" id="radio-prev-btn" onclick="playPreviousTrack()" title="Play previous track" disabled>
                                 <svg class="icon"><use href="#icon-skip-prev"/></svg>
                             </button>
@@ -7208,6 +7217,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         // TAB SWITCHING
         // ========================================
         function switchTab(tabName) {
+            if (tabName !== currentTab) stopPlayback(false);
             currentTab = tabName;
 
             // Update tab buttons
@@ -8777,6 +8787,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 if (btn) btn.classList.remove('playing');
                 playingVoiceId = null;
             };
+            stopOtherAudio(sampleAudio);
             sampleAudio.play().catch(e => {
                 console.error('Sample playback failed:', e);
                 if (btn) btn.classList.remove('playing');
@@ -8785,6 +8796,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         }
 
         async function generateTTS() {
+            const playbackSession = radioSession;
             const text = promptEl.value.trim();
             if (!text) {
                 showToast('Please enter text to speak', 'warning');
@@ -8825,7 +8837,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                         audioEl.src = `/generated/${encodeURIComponent(data.filename)}`;
                     }
 
-                    audioEl.play().catch(e => console.warn('TTS play failed:', e.message));
+                    if (currentTab === 'generate' && playbackSession === radioSession)
+                        audioEl.play().catch(e => console.warn('TTS play failed:', e.message));
                     document.getElementById('player').style.display = 'block';
                     showToast('Speech generated!', 'success');
                 } else {
@@ -9260,7 +9273,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
             while (true) {
                 if (radioQueue.length === 0) {
-                    nowPlayingEl.classList.add('hidden');
+                    nowPlayingEl.classList.remove('hidden');
+                    radioPlayer.pause();
                     radioQueueEl.classList.add('hidden');
                     currentRadioTrack = null;
                     updateRadioControlsState();
@@ -9880,29 +9894,58 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         let radioSession = 0;
         let radioFillSession = null;
         let radioUserStarted = false;
+        let radioFailedSession = null;
 
         function radioStatus(message) {
-            let el = document.getElementById('radio-generation-status');
-            if (!el) {
-                el = document.createElement('p');
-                el.id = 'radio-generation-status';
-                el.setAttribute('role', 'status');
-                document.getElementById('content-radio').prepend(el);
-            }
-            el.textContent = message;
+            const el = document.getElementById('radio-generation-status');
             el.hidden = !message;
-            if (message && radioFillSession === radioSession) {
-                const stop = document.createElement('button');
-                stop.textContent = 'Stop waiting';
-                stop.style.marginLeft = '0.75rem';
-                stop.onclick = () => { radioSession++; radioUserStarted = false; radioStatus(''); };
-                el.append(stop);
+            document.getElementById('radio-generation-detail').textContent = message;
+            const progress = document.getElementById('radio-generation-progress');
+            const percent = message.match(/(\d+(?:\.\d+)?)\s*%/);
+            if (percent) progress.value = Math.min(100, Number(percent[1]));
+            else progress.removeAttribute('value');
+            progress.hidden = radioFillSession !== radioSession;
+            if (message) nowPlayingEl.classList.remove('hidden');
+        }
+
+        // Keep music playing while the requested station grows. This is a read-only
+        // fallback; it never changes station selection or admits another GPU job.
+        let radioFallbackSession = null;
+        async function playRadioFallback(session) {
+            if (session !== radioSession || !radioUserStarted || currentRadioTrack ||
+                radioFallbackSession === session) return;
+            radioFallbackSession = session;
+            try {
+                const response = await fetch('/api/radio/shuffle?model=music&count=10');
+                if (!response.ok) return;
+                const data = await response.json();
+                if (session !== radioSession || !radioUserStarted || currentRadioTrack) return;
+                const tracks = (data.tracks || []).filter(t => t.filename &&
+                    Number(t.downvotes || 0) <= Number(t.upvotes || 0));
+                // Prefer something not heard recently; repeats are better than silence
+                // when a small library is waiting for its next generated song.
+                tracks.sort((a, b) => Number(playHistory.includes(a.id)) - Number(playHistory.includes(b.id)));
+                if (tracks.length) {
+                    radioQueue.push(tracks[0]);
+                    playNextTrack();
+                } else {
+                    document.getElementById('radio-prompt').textContent = 'Preparing your station';
+                    document.getElementById('audio-start-overlay').classList.add('hidden');
+                }
+            } catch (error) {
+                console.warn('Radio interlude unavailable:', error.message);
+            } finally {
+                if (radioFallbackSession === session) radioFallbackSession = null;
             }
         }
 
         async function fillRadioStation() {
             const session = radioSession;
-            if (!radioUserStarted || radioFillSession === session ||
+            if (radioFillSession === session) {
+                playRadioFallback(session);
+                return;
+            }
+            if (!radioUserStarted || radioFailedSession === session ||
                 document.getElementById('radio-model').value !== 'music' ||
                 !currentStation || currentStation === 'favorites' || currentStation === 'playlist') return;
             radioFillSession = session;
@@ -9916,7 +9959,9 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || 'Unable to extend this station');
                 let tracks = data.tracks || [];
+                if (session !== radioSession) return;
                 if (data.job_id) {
+                    playRadioFallback(session);
                     radioStatus('Creating a new 90-second song for this station…');
                     const deadline = Date.now() + 30 * 60 * 1000;
                     while (session === radioSession) {
@@ -9925,9 +9970,10 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                         if (session !== radioSession) return;
                         const progressResponse = await authFetch('/job/' + encodeURIComponent(data.job_id));
                         const job = await progressResponse.json();
+                        if (session !== radioSession) return;
                         if (!progressResponse.ok || ['failed', 'error', 'cancelled', 'skipped'].includes(job.status))
                             throw new Error(job.error || 'Song generation failed. Select the station to retry.');
-                        radioStatus('Creating a new song · ' + (job.progress || job.status));
+                        radioStatus(job.progress || job.status);
                         if (job.status === 'completed') {
                             const trackResponse = await fetch('/api/library/' + encodeURIComponent(data.job_id));
                             if (!trackResponse.ok) throw new Error('Generated track could not be loaded');
@@ -9939,14 +9985,20 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 }
                 if (session !== radioSession) return;
                 tracks = tracks.filter(t => t.filename && Number(t.downvotes || 0) <= Number(t.upvotes || 0));
-                radioQueue.push(...tracks.filter(t => !radioQueue.some(q => q.id === t.id)));
+                radioQueue.unshift(...tracks.filter(t => t.id !== currentRadioTrack?.id && !radioQueue.some(q => q.id === t.id)));
                 updateRadioQueue();
                 radioStatus(tracks.length ? '' : 'No eligible music available. Select the station to retry.');
                 if (!currentRadioTrack && radioQueue.length) playNextTrack();
             } catch (error) {
-                if (session === radioSession) radioStatus(error.message);
+                if (session === radioSession) {
+                    radioFailedSession = session;
+                    radioStatus(error.message);
+                }
             } finally {
-                if (radioFillSession === session) radioFillSession = null;
+                if (radioFillSession === session) {
+                    radioFillSession = null;
+                    document.getElementById('radio-generation-progress').hidden = true;
+                }
             }
         }
 
@@ -10675,7 +10727,10 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 console.error('Audio playback error:', e);
                 showErrorToast('Failed to load audio. Skipping to next track...');
                 // Skip to next track on error
-                setTimeout(() => playNextTrack(), 1000);
+                const session = radioSession;
+                setTimeout(() => {
+                    if (session === radioSession && radioUserStarted) playNextTrack();
+                }, 1000);
             });
         }
 
@@ -10736,17 +10791,34 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
         // Stop all other audio when one starts playing (exclusive playback)
         function stopOtherAudio(currentAudio) {
-            // Stop all library audio elements except the current one
-            document.querySelectorAll('.library-item audio').forEach(audio => {
-                if (audio !== currentAudio && !audio.paused) {
-                    audio.pause();
-                    audio.currentTime = 0;
-                }
+            const players = new Set(document.querySelectorAll('audio'));
+            if (sampleAudio) players.add(sampleAudio);
+            if (window.radioWidgetInstance?.core?.audioElement)
+                players.add(window.radioWidgetInstance.core.audioElement);
+            players.forEach(audio => {
+                if (audio !== currentAudio) audio.pause();
             });
-            // Also pause the main radio player if library audio starts
-            if (radioPlayer && !radioPlayer.paused) {
-                radioPlayer.pause();
+            if (sampleAudio !== currentAudio && playingVoiceId) {
+                document.getElementById(`play-${playingVoiceId}`)?.classList.remove('playing');
+                playingVoiceId = null;
             }
+        }
+
+        // Navigation pauses every source, including detached previews. Invalidate
+        // async radio responses so finishing a job cannot restart background audio.
+        function stopPlayback(clearQueue = true) {
+            radioSession++;
+            radioUserStarted = false;
+            radioStatus('');
+            stopOtherAudio(null);
+            if (clearQueue) {
+                radioQueue = [];
+                updateRadioQueue();
+                if (radioPlayer.src) radioPlayer.currentTime = 0;
+            }
+            updateMiniPlayer();
+            if (currentPlayingLibraryItemId)
+                updateLibraryItemPlayerUI(currentPlayingLibraryItemId, false);
         }
 
         function renderPageNumbers(currentPage, totalPages) {
@@ -12190,7 +12262,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
             // Auto-unmute when user clicks play on any audio element
             document.addEventListener('play', function(e) {
-                if (e.target.tagName === 'AUDIO') {
+                if (e.target.tagName === 'AUDIO' && !e.target.paused) {
+                    stopOtherAudio(e.target);
                     autoUnmuteOnPlay();
                 }
             }, true);
@@ -14728,6 +14801,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
         <!-- Controls -->
         <div class="mini-player-controls">
+            <button class="mini-player-btn" onclick="stopPlayback()" title="Stop playback and automatic radio" aria-label="Stop playback">■</button>
             <button class="mini-player-btn primary" onclick="toggleRadioPlayPause()" id="mini-player-play" title="Play/Pause" data-tooltip="Play/Pause">
                 <svg class="icon"><use href="#icon-pause"/></svg>
             </button>
@@ -15042,6 +15116,42 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             opacity: 1;
             visibility: visible;
             transform: translateX(-50%) translateY(0);
+        }
+
+        /* A bounded two-row layout also fits narrow desktop panes and zoom. */
+        .mini-player, .mini-player.expanded {
+            box-sizing: border-box;
+            width: min(560px, calc(100vw - 24px));
+            min-width: 0;
+            overflow: visible;
+            max-width: none;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            padding: 12px;
+            gap: 8px;
+            bottom: max(12px, env(safe-area-inset-bottom));
+        }
+        .mini-player.hidden { display: none; }
+        .mini-player-info, .mini-player-track { min-width: 0; }
+        .mini-player-controls { grid-column: 1 / -1; justify-content: flex-end; flex-wrap: wrap; }
+        .mini-player-expanded { grid-column: 1 / -1; min-width: 0; }
+        .mini-player-btn, .mini-player-btn.primary, .mini-rating-btn {
+            min-width: 44px; min-height: 44px;
+        }
+        .radio-generation-status {
+            display: flex; align-items: center; flex-wrap: wrap;
+            gap: 12px; padding: 12px 0;
+            border-top: 1px solid var(--border);
+        }
+        .radio-generation-status[hidden] { display: none; }
+        .radio-generation-copy { display: grid; gap: 4px; flex: 1 1 180px; min-width: 0; }
+        .radio-generation-copy strong { font-size: .85rem; color: var(--accent); }
+        .radio-generation-copy span { font-size: .8rem; color: var(--text-muted); overflow-wrap: anywhere; }
+        #radio-generation-progress { width: 120px; max-width: 100%; height: 6px; accent-color: var(--accent); }
+        @media (max-width: 480px) {
+            .mini-player-brand .brand-text { display: none; }
+            .mini-player-brand { padding: 0; }
+            .mini-player-info { gap: 6px; }
         }
 
         /* Site Footer */
