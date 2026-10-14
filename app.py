@@ -2174,6 +2174,9 @@ def generate():
     })
 
 
+from radio_generation import install_radio_generation
+install_radio_generation(app, db, jobs, queue_lock, generate)
+
 @app.route('/audio/<filename>')
 def serve_audio(filename):
     # Security: Validate filename to prevent path traversal

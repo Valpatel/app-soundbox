@@ -84,12 +84,15 @@ class TestSanitizeFts5Query:
         """Input with only operators should return None."""
         assert db.sanitize_fts5_query("NOT AND OR") is None
 
-    def test_injection_attempt(self):
+    def test_injection_attempt(self, test_db):
         """SQL injection attempts should be sanitized."""
         result = db.sanitize_fts5_query("test'); DROP TABLE--")
-        # Should be safe and not contain dangerous chars
-        assert ';' not in result
+        # Punctuation inside a quoted, bound FTS literal is safe.
+        assert result.startswith('"') and result.endswith('"')
         assert '--' not in result
+        assert db.get_random_tracks(search="test'); DROP TABLE--") == []
+        with db.get_db() as conn:
+            assert conn.execute('SELECT COUNT(*) FROM generations').fetchone()[0] == 0
 
 
 class TestCreateGeneration:
@@ -324,9 +327,8 @@ class TestFavorites:
         gen_id = gen_for_favorites
         user_id = "fav_user"
 
-        result = db.toggle_favorite(gen_id, user_id)
-        assert result['success'] == True
-        assert result['is_favorite'] == True
+        assert db.add_favorite(user_id, gen_id)
+        assert db.is_favorite(user_id, gen_id)
 
     def test_remove_favorite(self, gen_for_favorites):
         """Test removing a favorite."""
@@ -334,11 +336,9 @@ class TestFavorites:
         user_id = "fav_user2"
 
         # Add then remove
-        db.toggle_favorite(gen_id, user_id)
-        result = db.toggle_favorite(gen_id, user_id)
-
-        assert result['success'] == True
-        assert result['is_favorite'] == False
+        db.add_favorite(user_id, gen_id)
+        assert db.remove_favorite(user_id, gen_id)
+        assert not db.is_favorite(user_id, gen_id)
 
     def test_get_favorites(self, gen_for_favorites):
         """Test getting user favorites."""
@@ -346,13 +346,13 @@ class TestFavorites:
         user_id = "fav_user3"
 
         # Add favorite
-        db.toggle_favorite(gen_id, user_id)
+        db.add_favorite(user_id, gen_id)
 
         # Get favorites
         favorites = db.get_favorites(user_id)
 
-        assert len(favorites['favorites']) > 0
-        fav_ids = [f['id'] for f in favorites['favorites']]
+        assert len(favorites['items']) > 0
+        fav_ids = [f['id'] for f in favorites['items']]
         assert gen_id in fav_ids
 
 

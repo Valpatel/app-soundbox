@@ -2,6 +2,7 @@
 """Strict browser controls regression; stubs expensive generation, never silently skips controls.
 Run against the reviewed deployment. Use check_live_music_loop.py separately for GPU qualification.
 """
+from pathlib import Path
 import argparse
 import json
 from playwright.sync_api import sync_playwright, expect
@@ -9,11 +10,14 @@ from playwright.sync_api import sync_playwright, expect
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('--url', default='http://localhost:5309')
 p.add_argument('--chrome', default='/usr/bin/google-chrome')
+p.add_argument('--html', help='Rendered candidate HTML; requests still target --url')
 a = p.parse_args()
 with sync_playwright() as pw:
     browser = pw.chromium.launch(executable_path=a.chrome, headless=True, args=['--no-sandbox'])
     for width in (1440, 390):
         page = browser.new_page(viewport={'width': width, 'height': 1000})
+        if a.html:
+            page.route(a.url.rstrip('/') + '/', lambda r: r.fulfill(content_type='text/html', body=Path(a.html).read_text()))
         submitted = []
         def generate(route):
             submitted.append(route.request.post_data_json)
