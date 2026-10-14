@@ -9264,6 +9264,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     radioQueueEl.classList.add('hidden');
                     currentRadioTrack = null;
                     updateRadioControlsState();
+                    fillRadioStation();
                     return;
                 }
 
@@ -9360,6 +9361,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         }
 
         async function fetchMoreTracks() {
+            const session = radioSession;
+            if (currentStation === 'favorites' || currentStation === 'playlist') return;
             if (isFetchingMore) return;  // Already fetching
             isFetchingMore = true;
 
@@ -9384,11 +9387,13 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     throw new Error(`HTTP ${response.status}`);
                 }
                 const data = await response.json();
+                if (session !== radioSession) return;
 
                 if (data.tracks && data.tracks.length > 0) {
                     // Add new tracks to queue
                     radioQueue.push(...data.tracks);
                     updateRadioQueue();
+                    if (!currentRadioTrack && radioUserStarted) playNextTrack();
                 }
             } catch (err) {
                 console.error('Failed to fetch more tracks:', err);
@@ -9872,9 +9877,87 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
         // Current active station
         let currentStation = null;
+        let radioSession = 0;
+        let radioFillSession = null;
+        let radioUserStarted = false;
+
+        function radioStatus(message) {
+            let el = document.getElementById('radio-generation-status');
+            if (!el) {
+                el = document.createElement('p');
+                el.id = 'radio-generation-status';
+                el.setAttribute('role', 'status');
+                document.getElementById('content-radio').prepend(el);
+            }
+            el.textContent = message;
+            el.hidden = !message;
+            if (message && radioFillSession === radioSession) {
+                const stop = document.createElement('button');
+                stop.textContent = 'Stop waiting';
+                stop.style.marginLeft = '0.75rem';
+                stop.onclick = () => { radioSession++; radioUserStarted = false; radioStatus(''); };
+                el.append(stop);
+            }
+        }
+
+        async function fillRadioStation() {
+            const session = radioSession;
+            if (!radioUserStarted || radioFillSession === session ||
+                document.getElementById('radio-model').value !== 'music' ||
+                !currentStation || currentStation === 'favorites' || currentStation === 'playlist') return;
+            radioFillSession = session;
+            try {
+                radioStatus('Finding more music…');
+                const response = await authFetch('/api/radio/fill', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({station: currentStation,
+                        exclude: [...new Set([...playHistory, ...radioQueue.map(t => t.id)])].slice(-100)})
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Unable to extend this station');
+                let tracks = data.tracks || [];
+                if (data.job_id) {
+                    radioStatus('Creating a new 90-second song for this station…');
+                    const deadline = Date.now() + 30 * 60 * 1000;
+                    while (session === radioSession) {
+                        if (Date.now() > deadline) throw new Error('Generation is taking longer than expected. Check Generate for its progress.');
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        if (session !== radioSession) return;
+                        const progressResponse = await authFetch('/job/' + encodeURIComponent(data.job_id));
+                        const job = await progressResponse.json();
+                        if (!progressResponse.ok || ['failed', 'error', 'cancelled', 'skipped'].includes(job.status))
+                            throw new Error(job.error || 'Song generation failed. Select the station to retry.');
+                        radioStatus('Creating a new song · ' + (job.progress || job.status));
+                        if (job.status === 'completed') {
+                            const trackResponse = await fetch('/api/library/' + encodeURIComponent(data.job_id));
+                            if (!trackResponse.ok) throw new Error('Generated track could not be loaded');
+                            const track = await trackResponse.json();
+                            tracks = [track];
+                            break;
+                        }
+                    }
+                }
+                if (session !== radioSession) return;
+                tracks = tracks.filter(t => t.filename && Number(t.downvotes || 0) <= Number(t.upvotes || 0));
+                radioQueue.push(...tracks.filter(t => !radioQueue.some(q => q.id === t.id)));
+                updateRadioQueue();
+                radioStatus(tracks.length ? '' : 'No eligible music available. Select the station to retry.');
+                if (!currentRadioTrack && radioQueue.length) playNextTrack();
+            } catch (error) {
+                if (session === radioSession) radioStatus(error.message);
+            } finally {
+                if (radioFillSession === session) radioFillSession = null;
+            }
+        }
 
         // Station preset handler
         async function startStation(stationId, element) {
+            const session = ++radioSession;
+            radioUserStarted = true;
+            radioStatus('');
+            radioPlayer.pause();
+            currentRadioTrack = null;
+            radioQueue = [];
             const model = document.getElementById('radio-model').value;
             const userId = getEffectiveUserId();
 
@@ -9915,6 +9998,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     throw new Error(`HTTP ${response.status}`);
                 }
                 const data = await response.json();
+                if (session !== radioSession) return;
 
                 if (data.tracks && data.tracks.length > 0) {
                     radioQueue = data.tracks;
@@ -9924,7 +10008,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     if (stationId === 'favorites') {
                         showWarningToast('No favorites yet! Use the heart button to save tracks.');
                     } else {
-                        showWarningToast('No tracks found for this station');
+                        await fillRadioStation();
                     }
                 }
             } catch (err) {
@@ -9935,6 +10019,11 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
         // Play top rated tracks
         async function playTrending(btn) {
+            const session = ++radioSession;
+            radioUserStarted = true;
+            radioQueue = []; currentRadioTrack = null; radioPlayer.pause();
+            radioStatus('');
+            document.getElementById('radio-keywords').value = '';
             const model = document.getElementById('radio-model').value;
 
             // Update button states
@@ -9955,6 +10044,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     throw new Error(`HTTP ${response.status}`);
                 }
                 const data = await response.json();
+                if (session !== radioSession) return;
 
                 if (data.tracks && data.tracks.length > 0) {
                     radioQueue = data.tracks;
@@ -9962,7 +10052,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     updateRadioQueue();
                     showFeedbackToast('Playing trending tracks');
                 } else {
-                    showWarningToast('No trending tracks yet. Play some music to build trends!');
+                    await fillRadioStation();
                 }
             } catch (err) {
                 console.error('Trending failed:', err);
@@ -9971,6 +10061,11 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         }
 
         async function playTopRated(btn) {
+            const session = ++radioSession;
+            radioUserStarted = true;
+            radioQueue = []; currentRadioTrack = null; radioPlayer.pause();
+            radioStatus('');
+            document.getElementById('radio-keywords').value = '';
             const model = document.getElementById('radio-model').value;
 
             // Update button states
@@ -9989,6 +10084,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     throw new Error(`HTTP ${response.status}`);
                 }
                 const data = await response.json();
+                if (session !== radioSession) return;
 
                 if (data.tracks && data.tracks.length > 0) {
                     radioQueue = data.tracks;
@@ -9996,7 +10092,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     updateRadioQueue();
                     showFeedbackToast('Playing top rated tracks');
                 } else {
-                    showWarningToast('No rated tracks yet. Vote on some tracks first!');
+                    await fillRadioStation();
                 }
             } catch (err) {
                 console.error('Top rated failed:', err);
@@ -10006,6 +10102,11 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
         // Play new arrivals
         async function playNewArrivals(btn) {
+            const session = ++radioSession;
+            radioUserStarted = true;
+            radioQueue = []; currentRadioTrack = null; radioPlayer.pause();
+            radioStatus('');
+            document.getElementById('radio-keywords').value = '';
             const model = document.getElementById('radio-model').value;
 
             // Update button states
@@ -10024,6 +10125,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     throw new Error(`HTTP ${response.status}`);
                 }
                 const data = await response.json();
+                if (session !== radioSession) return;
 
                 if (data.tracks && data.tracks.length > 0) {
                     radioQueue = data.tracks;
@@ -10031,7 +10133,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     updateRadioQueue();
                     showFeedbackToast('Playing new arrivals');
                 } else {
-                    showWarningToast('No new tracks this week. Generate some!');
+                    await fillRadioStation();
                 }
             } catch (err) {
                 console.error('New arrivals failed:', err);
@@ -10041,6 +10143,9 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
         // Surprise me - random shuffle
         async function playSurpriseMe(btn) {
+            const session = ++radioSession;
+            radioUserStarted = true; radioStatus('');
+            radioQueue = []; currentRadioTrack = null; radioPlayer.pause();
             const model = document.getElementById('radio-model').value;
 
             // Update button states
@@ -10061,6 +10166,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     throw new Error(`HTTP ${response.status}`);
                 }
                 const data = await response.json();
+                if (session !== radioSession) return;
 
                 if (data.tracks && data.tracks.length > 0) {
                     radioQueue = data.tracks;
@@ -10068,7 +10174,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     updateRadioQueue();
                     showFeedbackToast('Surprise!');
                 } else {
-                    showWarningToast('No tracks found. Generate some music first!');
+                    await fillRadioStation();
                 }
             } catch (err) {
                 console.error('Surprise me failed:', err);
@@ -11510,6 +11616,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
         // Play library item now through the radio player
         function playLibraryItemNow(genId) {
+            radioSession++; radioUserStarted = false; radioStatus('');
             const item = libraryItemsData[genId];
             if (!item || !item.filename) return;
 
@@ -12112,6 +12219,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         }
 
         async function preloadStation(stationId, element) {
+            const session = radioSession;
             const model = document.getElementById('radio-model').value;
             const keywords = element?.dataset.keywords || '';
 
@@ -12121,6 +12229,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
                 const response = await fetch('/api/radio/shuffle?' + params.toString());
                 const data = await response.json();
+                if (session !== radioSession || radioUserStarted) return;
 
                 if (data.tracks && data.tracks.length > 0) {
                     radioQueue = data.tracks;

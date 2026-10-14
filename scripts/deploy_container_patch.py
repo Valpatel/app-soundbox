@@ -50,19 +50,19 @@ def main():
             run(['docker', 'cp', container + ':/app/' + name, str(target)])
         for patch in a.patch:
             subprocess.run(['patch', '--batch', '--fuzz=0', '-p1', '-i', str(Path(patch).resolve())], cwd=stage, check=True)
-        for name in ('app.py', 'database.py'):
-            compile((stage / name).read_text(), name, 'exec')
+        for source in stage.glob('*.py'):
+            compile(source.read_text(), source.name, 'exec')
         image = 'soundbox-reviewed:' + str(time.time_ns())
         base = 'soundbox-base:' + info['Image'].split(':')[-1][:16]
         run(['docker', 'tag', info['Image'], base])
         digest = hashlib.sha256()
-        for name in ('app.py', 'database.py', 'templates/index.html'):
+        for name in sorted([p.name for p in stage.glob('*.py')] + ['templates/index.html']):
             digest.update(name.encode() + b'\0' + (stage / name).read_bytes())
         (stage / 'build-info.json').write_text(json.dumps({
             'build_id': digest.hexdigest(), 'built_at': datetime.now(timezone.utc).isoformat(),
             'source_revisions': a.source_revision, 'base_image': info['Image']}))
         quota_env = '' if a.generation_quotas is None else 'ENV SOUNDBOX_GENERATION_QUOTAS=' + a.generation_quotas + '\n'
-        (stage / 'Dockerfile').write_text('FROM ' + base + '\nCOPY app.py database.py /app/\nCOPY templates/index.html /app/templates/index.html\nCOPY build-info.json /app/static/build-info.json\nENV PYTHONUNBUFFERED=1\n' + quota_env)
+        (stage / 'Dockerfile').write_text('FROM ' + base + '\nCOPY *.py /app/\nCOPY templates/index.html /app/templates/index.html\nCOPY build-info.json /app/static/build-info.json\nENV PYTHONUNBUFFERED=1\n' + quota_env)
         if not a.apply:
             print('Patches and Python syntax verified; no deployment')
             return
