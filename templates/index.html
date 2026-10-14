@@ -148,6 +148,11 @@
             margin-bottom: 0;
         }
 
+        .build-info { position: relative; margin-right: auto; font-size: 0.7rem; color: var(--text-muted); }
+        .build-info summary { cursor: pointer; min-height: 28px; display: flex; align-items: center; }
+        .build-info pre { position: absolute; top: 100%; left: 0; z-index: 1000; width: min(360px, calc(100vw - 48px)); padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--bg-card, #181824); border: 1px solid var(--border); border-radius: 8px; }
+        .widget-bar-top { flex-wrap: wrap; gap: 8px; }
+
         .widget-bar-top .header-brand {
             font-size: 0.75rem;
             color: var(--text-muted);
@@ -5259,7 +5264,12 @@
         }
 
         .page-btn {
-            padding: 10px 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            min-height: 44px;
+            padding: 10px 12px;
             border: 1px solid var(--border);
             border-radius: 10px;
             background: transparent;
@@ -5298,10 +5308,20 @@
             padding: 10px 6px;
         }
 
+        .page-position {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
         .page-info {
             color: var(--text-muted);
             font-size: 0.9rem;
-            margin-left: 8px;
+            text-align: center;
+            white-space: nowrap;
         }
 
         @media (max-width: 640px) {
@@ -5890,9 +5910,26 @@
     </svg>
 
     <div class="widget-bar-top">
+        <details class="build-info" id="build-info">
+            <summary id="build-label" title="Build metadata unavailable">Build: development</summary>
+            <pre id="build-details">No release metadata supplied.</pre>
+        </details>
         <div id="wallet-widget-container"></div>
         <span class="header-brand">&copy; 2026 Valpatel Software LLC</span>
     </div>
+    <script>
+        fetch('/static/build-info.json', {cache: 'no-store'})
+            .then(response => response.ok ? response.json() : null)
+            .then(info => {
+                if (!info || !info.build_id) return;
+                const details = 'Source fingerprint: ' + info.build_id + '\nBuilt: ' + info.built_at +
+                    '\nGit revisions: ' + (info.source_revisions || []).join(', ') +
+                    (info.base_image ? '\nBase image: ' + info.base_image : '');
+                document.getElementById('build-label').textContent = 'Build ' + info.build_id.slice(0, 8) + ' · ' + info.built_at.slice(0, 10);
+                document.getElementById('build-label').title = details;
+                document.getElementById('build-details').textContent = details;
+            }).catch(() => {});
+    </script>
     <div class="page-header">
         <h1 class="page-title">Sound <span>Box</span></h1>
     </div>
@@ -6576,8 +6613,10 @@
                         <button class="page-btn" id="prev-page" onclick="prevPage()" title="Previous page">
                             <svg class="icon icon-sm"><use href="#icon-skip-prev"/></svg>
                         </button>
-                        <div class="page-numbers" id="page-numbers"></div>
-                        <span class="page-info" id="page-info">Page 1 of 1</span>
+                        <div class="page-position">
+                            <div class="page-numbers" id="page-numbers"></div>
+                            <span class="page-info" id="page-info">Page 1 of 1</span>
+                        </div>
                         <button class="page-btn" id="next-page" onclick="nextPage()" title="Next page">
                             <svg class="icon icon-sm"><use href="#icon-skip-next"/></svg>
                         </button>
@@ -8854,6 +8893,9 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 return;
             }
 
+            // A previous completed job hides this panel; every new attempt needs feedback.
+            statusEl.style.display = 'block';
+
             const prompt = promptEl.value.trim();
             if (!prompt) {
                 statusEl.className = 'status error';
@@ -8925,7 +8967,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     // Show quality badge
                     if (job.quality) {
                         const score = job.quality.score;
-                        qualityBadge.textContent = `${score}%`;
+                        qualityBadge.textContent = score == null ? 'Signal: unchecked' : `Signal: ${score}/100`;
+                        qualityBadge.title = 'Checks clipping, silence and extreme noise only. Musical quality and prompt matching are not rated.';
                         qualityBadge.className = 'quality-badge ' +
                             (score >= 80 ? 'good' : score >= 60 ? 'medium' : 'bad');
                     } else {
@@ -10858,6 +10901,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                                 <svg class="empty-icon"><use href="#icon-search"/></svg>
                                 <h3>No tracks found</h3>
                                 <p>No results for "<strong>${escapeHtml(search)}</strong>". Try different keywords.</p>
+                                <button class="page-btn" onclick="clearAllFilters()">Clear search and filters</button>
                             </div>
                         `;
                     } else if (hasActiveFilters) {
@@ -10865,7 +10909,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                             <div class="library-empty">
                                 <svg class="empty-icon"><use href="#icon-filter"/></svg>
                                 <h3>No matching tracks</h3>
-                                <p>Try adjusting the filters in the sidebar, or use the "Clear Filters" button.</p>
+                                <p>Try adjusting your filters.</p>
+                                <button class="page-btn" onclick="clearAllFilters()">Clear search and filters</button>
                             </div>
                         `;
                     } else {

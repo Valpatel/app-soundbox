@@ -25,6 +25,8 @@ WORKDIR /app
 
 # Copy app code
 COPY . .
+ARG VCS_REF=unknown
+RUN python3 scripts/write_build_info.py --revision "$VCS_REF"
 
 # Run setup.sh in non-interactive mode to handle all platform-specific logic:
 # - Creates venv and installs PyTorch with correct CUDA wheels

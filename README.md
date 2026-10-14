@@ -161,3 +161,33 @@ Created by Matthew Valancy
 All engines are part of [AudioCraft](https://github.com/facebookresearch/audiocraft) (Meta AI) except Piper TTS ([Rhasspy](https://github.com/rhasspy/piper)). Generated audio is [CC0 public domain](https://creativecommons.org/publicdomain/zero/1.0/).
 
 (c) 2026 Valpatel Software LLC
+
+### Shared library visibility
+
+Generated music, sound effects and speech saved to the server are public in the
+Soundbox library by default. No administrator approval menu is required.
+Explicit private records are still supported for integrations that request them.
+This setting does not change network access to your server.
+
+To publish older pending records, preview and then apply a backed-up migration:
+
+```bash
+python scripts/publish_library.py --database data/soundbox.db
+python scripts/publish_library.py --database data/soundbox.db --apply
+```
+### Private deployments without generation quotas
+
+Set `SOUNDBOX_GENERATION_QUOTAS=false` in the application environment to disable
+hourly music/SFX/speech request quotas and per-user pending-job limits. The
+default remains enabled for public installations. This does not grant admin
+access or change authentication. The global 100-job queue, model readiness,
+prompt/text validation, and 180-second per-request audio bound remain enforced.
+Restart after draining the queue; queued jobs currently live in process memory.
+### Build identity
+
+The top-left build label exposes a fingerprint of `app.py`, `database.py` and
+`templates/index.html`, the UTC build time, and supplied Git revisions. Hover
+or tap to expand details. Docker builds accept `--build-arg VCS_REF=<git-sha>`;
+local releases can run `python scripts/write_build_info.py --revision <git-sha>`.
+Without stamping, the UI honestly shows development. The fingerprint identifies
+the core app source, not every dependency or runtime setting.

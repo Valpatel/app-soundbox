@@ -200,6 +200,8 @@ PRIORITY_LEVELS = {
 
 # Queue and rate limits by user tier
 MAX_QUEUE_SIZE = 100  # Total jobs in queue
+# Explicit opt-out for trusted private deployments; public defaults stay enabled.
+GENERATION_QUOTAS_ENABLED = os.environ.get('SOUNDBOX_GENERATION_QUOTAS', 'true').lower() not in ('0', 'false', 'no')
 MAX_PENDING_PER_USER = {
     'creator': 20,    # Whitelisted IPs / admin
     'premium': 10,    # Premium tier
@@ -214,7 +216,7 @@ GENERATION_LIMITS = {
     'creator': {'per_hour': 60, 'max_duration': 180},   # Whitelisted IPs / admin
     'premium': {'per_hour': 30, 'max_duration': 120},   # Premium tier
     'supporter': {'per_hour': 15, 'max_duration': 60},  # Supporter tier
-    'free': {'per_hour': 10, 'max_duration': 60}        # Free / anonymous users
+    'free': {'per_hour': 10, 'max_duration': 120}        # Free / anonymous users
 }
 
 # =============================================================================
@@ -1547,7 +1549,7 @@ def process_queue():
                             quality_score=quality['score'],
                             spectrogram=spec_filename,
                             user_id=job.get('user_id'),
-                            is_public=job.get('is_public', False)  # Localhost/admin = public
+                            is_public=job.get('is_public', True)
                         )
                         db_saved = True
                         break
@@ -1597,8 +1599,10 @@ def process_queue():
                 print(f"[Generation] Job {job_id} failed: {e}")
                 # Sanitize error - only show safe generic messages
                 error_str = str(e).lower()
-                if 'cuda' in error_str or 'gpu' in error_str or 'memory' in error_str:
-                    job['error'] = 'GPU memory error - try a shorter duration'
+                if 'out of memory' in error_str:
+                    job['error'] = 'GPU memory exhausted - try a shorter duration'
+                elif 'cuda' in error_str or 'gpu' in error_str:
+                    job['error'] = 'GPU unavailable - the server needs attention'
                 elif 'model' in error_str or 'load' in error_str:
                     job['error'] = 'Model temporarily unavailable'
                 else:
@@ -1998,7 +2002,7 @@ def is_email_verified(user):
 
 
 @app.route('/generate', methods=['POST'])
-@limiter.limit("60 per hour")  # Global rate limit (per-user limits are stricter)
+@limiter.limit("60 per hour", exempt_when=lambda: not GENERATION_QUOTAS_ENABLED)
 @require_auth_or_localhost  # Auth required, but localhost can bypass for batch generation
 def generate():
     """
@@ -2027,6 +2031,8 @@ def generate():
     # Determine user tier and limits
     tier = get_user_tier(user)
     limits = GENERATION_LIMITS.get(tier, GENERATION_LIMITS['free'])
+    if not GENERATION_QUOTAS_ENABLED:
+        limits = {'per_hour': None, 'max_duration': 180}
 
     # Free users must have verified email to generate
     # Paying subscribers (supporter, premium, creator) can generate without verification
@@ -2041,7 +2047,7 @@ def generate():
     # Check per-user pending job limit
     pending_count = count_user_pending_jobs(user_id)
     max_pending = MAX_PENDING_PER_USER.get(tier, 2)
-    if pending_count >= max_pending:
+    if GENERATION_QUOTAS_ENABLED and pending_count >= max_pending:
         return jsonify({
             'success': False,
             'error': f'You have {pending_count} pending jobs. Please wait for them to complete.',
@@ -2078,7 +2084,7 @@ def generate():
     )
     if not is_valid:
         if 'at most' in str(error):
-            error = f'Duration limited to {max_duration}s for your account tier'
+            error = f'Duration limited to {max_duration}s' + (' for your account tier' if GENERATION_QUOTAS_ENABLED else ' per request')
         return jsonify({'success': False, 'error': error}), 400
 
     # Validate model type
@@ -2101,11 +2107,8 @@ def generate():
     job_id = uuid.uuid4().hex
     priority_num = PRIORITY_LEVELS.get(priority, 2)
 
-    # Determine if this generation should be public immediately
-    # Localhost requests (batch generation, admin scripts) are trusted
-    # Admin users can also create public content directly
-    is_admin = user.get('is_admin', False) if user else False
-    is_public = is_localhost_request() or is_admin
+    # This shared library publishes generated audio without an admin review step.
+    is_public = True
 
     job = {
         'id': job_id,
@@ -2120,7 +2123,7 @@ def generate():
         'created': datetime.now().isoformat(),
         'progress': 'Waiting in queue...',
         'user_id': user_id,
-        'is_public': is_public,  # Localhost/admin = public, user = needs review
+        'is_public': is_public,
         'notify_on_complete': True  # Flag to send notification when done
     }
 
@@ -2128,7 +2131,7 @@ def generate():
         # SECURITY: Final atomic check for pending job limit (prevents race condition)
         pending_count = sum(1 for j in jobs.values()
                            if j.get('user_id') == user_id and j['status'] in ['queued', 'processing'])
-        if pending_count >= max_pending:
+        if GENERATION_QUOTAS_ENABLED and pending_count >= max_pending:
             return jsonify({
                 'success': False,
                 'error': f'You have {pending_count} pending jobs. Please wait for them to complete.',
@@ -3804,7 +3807,7 @@ def api_voice_licenses():
 
 
 @app.route('/api/tts/generate', methods=['POST'])
-@limiter.limit("60 per hour")  # Base rate limit (tier-based limits checked in handler)
+@limiter.limit("60 per hour", exempt_when=lambda: not GENERATION_QUOTAS_ENABLED)
 @require_auth_or_localhost  # Authentication required, but localhost can bypass for batch generation
 def api_tts_generate():
     """
@@ -3887,7 +3890,7 @@ def api_tts_generate():
 
             # Save to database - clean up file on failure
             # Localhost/admin TTS generations are public by default
-            is_public = is_localhost_request() or (hasattr(request, 'user') and request.user.get('is_admin', False))
+            is_public = True  # Saved speech joins the shared library too.
             try:
                 db.create_generation(
                     gen_id=gen_id,
@@ -4533,7 +4536,7 @@ def api_manifest():
             'method': 'anonymous_ip' if OPEN_ACCESS_MODE else 'bearer_token',
         },
         'rate_limits': {
-            'free_tier': '10 generations/hour, 60s max duration',
+            'free_tier': '10 generations/hour, 120s max duration',
             'creator_tier': '60 generations/hour, 180s max duration (whitelisted IPs)',
         },
         'endpoints': {
