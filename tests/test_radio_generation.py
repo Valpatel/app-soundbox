@@ -48,7 +48,7 @@ def test_concurrent_station_requests_share_one_admission(radio):
 def test_validation_and_existing_admission_failure(radio):
     app,db,jobs,calls=radio;c=app.test_client()
     assert c.post('/api/radio/fill',data='{}').status_code==415
-    for payload in [[],{'station':'favorites'},{'station':'ambient','exclude':'bad'},
+    for payload in [[],{'station':[]},{'station':{}},{'station':'favorites'},{'station':'ambient','exclude':'bad'},
                     {'station':'ambient','exclude':['x']*101},{'station':'ambient','exclude':[{}]}]:
         assert c.post('/api/radio/fill',json=payload).status_code==400
     assert not calls

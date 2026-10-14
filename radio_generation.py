@@ -26,7 +26,8 @@ def install_radio_generation(app, db, jobs, queue_lock, generate):
         if not request.is_json:
             return jsonify(error='Content-Type must be application/json'), 415
         data = request.get_json(silent=True)
-        if not isinstance(data, dict) or data.get('station') not in STATIONS:
+        if (not isinstance(data, dict) or not isinstance(data.get('station'), str)
+                or data['station'] not in STATIONS):
             return jsonify(error='Choose a supported music station'), 400
         station = data['station']
         excluded = data.get('exclude', [])
