@@ -62,7 +62,7 @@ with sync_playwright() as pw:
         count=len(fills);page.wait_for_timeout(3500);assert len(fills)==count
         state['mode']='waiting'
         page.locator('.station-happy').click()
-        page.get_by_role('button',name='Stop waiting').click()
+        page.get_by_role('button',name='Stop radio',exact=True).click()
         state['mode']='complete';page.wait_for_timeout(3500)
         assert page.evaluate('currentRadioTrack') is None
         assert not errors,errors
