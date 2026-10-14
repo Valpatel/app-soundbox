@@ -27,8 +27,9 @@ Validation:
 - `pytest tests/test_database.py tests/test_generation_quotas.py tests/test_radio_generation.py`
 - `python scripts/check_radio_lifecycle.py --url URL` (mocked GPU jobs, real browser UI)
 - Existing generation controls and pagination browser checks.
-- Deployment qualification: select a station with no eligible tracks, observe a
-  real job complete, verify 90-second downloadable audio and library visibility.
+- `python scripts/check_live_radio.py --url URL --station dreamy --run-generation`
+  (requires an empty station; creates one real public song and verifies shared
+  admission, 90-second downloadable audio and library visibility).
 
 `scripts/deploy_container_patch.py` accepts reviewed diffs, including a newly added
 root Python module. It compiles staged Python, fingerprints the staged application,

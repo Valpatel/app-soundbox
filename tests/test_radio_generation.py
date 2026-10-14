@@ -81,3 +81,16 @@ def test_real_generation_handler_retains_admission_and_fixed_duration():
     ns['loading_status']['music']='ready'
     ns['jobs'].update({str(i):{'user_id':'other','status':'queued'} for i in range(100)})
     assert client.post('/api/radio/fill',json={'station':'retro'}).status_code==503
+
+
+def test_radio_fill_does_not_bypass_public_hourly_quota():
+    from test_generation_quotas import GenerationQuotasTest
+    client, ns = GenerationQuotasTest().build()
+    class EmptyDB:
+        def get_random_tracks_excluding(self, **kwargs):return []
+    install_radio_generation(ns['app'],EmptyDB(),ns['jobs'],ns['queue_lock'],ns['generate'])
+    for _ in range(60):
+        response=client.post('/api/radio/fill',json={'station':'ambient'})
+        assert response.status_code==202
+        ns['jobs'][response.json['job_id']]['status']='completed'
+    assert client.post('/api/radio/fill',json={'station':'ambient'}).status_code==429
