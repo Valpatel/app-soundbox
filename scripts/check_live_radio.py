@@ -38,7 +38,7 @@ with sync_playwright() as pw:
   if result['status']=='completed':break
   page.wait_for_timeout(10000)
  else:raise TimeoutError(job)
- page.wait_for_function('(id)=>currentRadioTrack?.id===id',arg=job,timeout=15000)
+ page.wait_for_function('(id)=>currentRadioTrack?.id===id && !radioPlayer.paused && radioPlayer.currentTime > 0',arg=job,timeout=15000)
  audio=page.request.get(url+'/audio/'+result['filename']);assert audio.ok
  with wave.open(io.BytesIO(audio.body())) as wav:duration=wav.getnframes()/wav.getframerate()
  assert 89<=duration<=91,duration
