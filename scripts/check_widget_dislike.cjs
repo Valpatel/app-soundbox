@@ -7,13 +7,14 @@ global.document = {addEventListener() {}};
 (async () => {
     const core = Object.create(RadioWidgetCore.prototype);
     const old = {id: 'old'}, next = {id: 'next', downvotes: 0};
-    let skips = 0, pauses = 0, resolveVote, submitted;
+    let skips = 0, pauses = 0, resolveVote, submitted, submittedUrl;
     Object.assign(core, {currentTrack: old, queue: [old, next], userId: 'tester',
         apiBaseUrl: '', currentVote: 0, audioElement: {pause() {pauses++;}},
         _events: {emit(name) {assert.notEqual(name, 'vote', 'Old vote must not repaint next track');}},
         next() {skips++; this.currentTrack = this.queue.shift();}});
     global.fetch = (url, request) => {
         submitted = JSON.parse(request.body);
+        submittedUrl = url;
         return new Promise(resolve => {resolveVote = resolve;});
     };
     let click;
@@ -26,6 +27,7 @@ global.document = {addEventListener() {}};
     assert.equal(skips, 1);
     assert.equal(pauses, 1);
     assert.equal(core.currentTrack, next);
+    assert.equal(submittedUrl, '/api/library/old/vote');
     assert.equal(submitted.generation_id, 'old');
     assert.equal(submitted.vote, -1);
     resolveVote({ok: true, json: async () => ({downvotes: 99, upvotes: 0})});

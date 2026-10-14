@@ -10557,31 +10557,11 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         // Clear radio vote (toggle off)
         async function clearRadioVote() {
             if (!currentRadioTrack) return;
-
-            const voterId = getEffectiveUserId();
             try {
-                const response = await fetch('/api/library/vote', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        generation_id: currentRadioTrack.id,
-                        vote: 0,
-                        user_id: voterId
-                    })
-                });
-                const data = await response.json();
-
-                rejectedTrackIds.delete(currentRadioTrack.id);
-                currentRadioVote = 0;
-                document.getElementById('radio-upvotes').textContent = data.upvotes || 0;
-                document.getElementById('radio-downvotes').textContent = data.downvotes || 0;
-                document.getElementById('radio-vote-up').classList.remove('voted-up');
-                document.getElementById('radio-vote-down').classList.remove('voted-down');
-
+                await persistTrackVote({...currentRadioTrack}, 0);
                 showFeedbackToast('Vote removed');
-            } catch (err) {
-                console.error('Failed to clear radio vote:', err);
-                showErrorToast('Failed to remove vote');
+            } catch (error) {
+                showErrorToast('Failed to remove vote: ' + error.message);
             }
         }
 
@@ -11858,44 +11838,14 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
         // Clear a library vote (toggle off)
         async function clearLibraryVote(genId) {
-            // Require authentication to vote
-            if (!isUserAuthenticated()) {
-                showLoginPrompt('rate tracks');
-                return;
-            }
-
+            if (!isUserAuthenticated()) { showLoginPrompt('rate tracks'); return; }
+            const track = libraryItemsData[genId];
+            if (!track) return;
             try {
-                const response = await authFetch(`/api/library/${genId}/vote`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ vote: 0 })
-                });
-                const data = await response.json();
-
-                // Update local state
-                userVotes[genId] = 0;
-                rejectedTrackIds.delete(genId);
-
-                // Update UI
-                const item = document.querySelector(`[data-id="${genId}"]`);
-                if (item) {
-                    const upBtn = item.querySelector('.vote-up');
-                    const downBtn = item.querySelector('.vote-down');
-                    if (upBtn) {
-                        upBtn.classList.remove('voted');
-                        const upCount = upBtn.querySelector('.vote-count');
-                        if (upCount) upCount.textContent = data.upvotes || 0;
-                    }
-                    if (downBtn) {
-                        downBtn.classList.remove('voted');
-                        const downCount = downBtn.querySelector('.vote-count');
-                        if (downCount) downCount.textContent = data.downvotes || 0;
-                    }
-                }
+                await persistTrackVote({...track}, 0);
                 showFeedbackToast('Vote removed');
-            } catch (err) {
-                console.error('Failed to clear vote:', err);
-                showErrorToast('Failed to remove vote');
+            } catch (error) {
+                showErrorToast('Failed to remove vote: ' + error.message);
             }
         }
 

@@ -408,10 +408,10 @@ class RadioWidgetCore {
                 user_id: voterId
             };
 
-            if (options.reasons) body.reasons = options.reasons;
+            if (options.reasons) body.feedback_reasons = options.reasons;
             if (options.suggestedModel) body.suggested_model = options.suggestedModel;
 
-            const response = await fetch(`${this.apiBaseUrl}/api/library/vote`, {
+            const response = await fetch(`${this.apiBaseUrl}/api/library/${encodeURIComponent(track.id)}/vote`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)

@@ -449,3 +449,17 @@ class TestRadioVoteEligibility:
         with db.get_db() as conn:
             conn.execute("UPDATE generations SET upvotes=3 WHERE id='bad'");conn.commit()
         assert 'bad' in {t['id'] for t in db.get_random_tracks()}
+
+
+def test_dislike_then_optional_details_updates_one_vote(test_db):
+    gen_id = 'a' * 32
+    db.create_generation(gen_id, gen_id + '.wav', 'Feedback test', 'music', 90)
+    first = db.vote(gen_id, 'listener', -1)
+    assert first['downvotes'] == 1
+    detailed = db.vote(gen_id, 'listener', -1, feedback_reasons=['low_quality'])
+    assert detailed['downvotes'] == 1 and detailed['user_vote'] == -1
+    with db.get_db() as conn:
+        rows = conn.execute('SELECT feedback_reasons FROM votes WHERE generation_id=?', (gen_id,)).fetchall()
+        assert len(rows) == 1 and json.loads(rows[0]['feedback_reasons']) == ['low_quality']
+    cleared = db.vote(gen_id, 'listener', 0)
+    assert cleared['downvotes'] == 0 and cleared['user_vote'] == 0
