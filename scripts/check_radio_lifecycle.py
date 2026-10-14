@@ -16,7 +16,7 @@ with wave.open(buf,'wb') as wav:
 with sync_playwright() as pw:
     browser=pw.chromium.launch(executable_path='/usr/bin/google-chrome',headless=True,args=['--autoplay-policy=no-user-gesture-required'])
     for width in (390,1440):
-        page=browser.new_page(viewport={'width':width,'height':900});errors=[];fills=[]
+        page=browser.new_page(bypass_csp=True,viewport={'width':width,'height':900});errors=[];fills=[]
         state={'mode':'complete','station':None}
         page.on('pageerror',lambda e:errors.append(str(e)))
         if a.html:
