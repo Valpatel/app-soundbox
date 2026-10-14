@@ -1538,6 +1538,25 @@
             margin-bottom: 4px;
         }
 
+        #queue-explorer-list .queue-item { align-items: flex-start; }
+        .server-status-header { flex-wrap: wrap; }
+        .server-gpu { min-width: 0; flex-wrap: wrap; }
+        .server-queue-summary { flex-wrap: wrap; }
+        @media (max-width: 600px) {
+            .server-status-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+            .server-gpu { grid-column: 1 / -1; }
+            .server-queue-summary { border: 0; padding-left: 0; }
+        }
+        .queue-description summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 8px; }
+        .queue-description summary::after { content: '⌄'; flex: 0 0 auto; color: var(--text-muted); }
+        .queue-description[open] summary::after { content: '⌃'; }
+        .queue-description summary .queue-item-prompt {
+            white-space: normal; display: -webkit-box; -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical; overflow-wrap: anywhere; margin: 0;
+        }
+        .queue-full-prompt { font-size: .85rem; line-height: 1.5; overflow-wrap: anywhere; margin: 8px 0; }
+        .queue-item-progress .progress-text { overflow-wrap: anywhere; }
+        .queue-item .cancel-btn { min-width: 44px; min-height: 44px; flex-shrink: 0; }
         .queue-item-meta {
             display: flex;
             gap: 8px;
@@ -9327,6 +9346,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
             // Update now playing display
             document.getElementById('radio-prompt').textContent = currentRadioTrack.prompt;
+            document.getElementById('radio-prompt').title = currentRadioTrack.prompt;
             document.getElementById('radio-duration').textContent = Number(currentRadioTrack.duration).toFixed(1) + 's';
             document.getElementById('radio-upvotes').textContent = currentRadioTrack.upvotes || 0;
             document.getElementById('radio-downvotes').textContent = currentRadioTrack.downvotes || 0;
@@ -10626,6 +10646,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
             // Update UI
             document.getElementById('radio-prompt').textContent = currentRadioTrack.prompt;
+            document.getElementById('radio-prompt').title = currentRadioTrack.prompt;
             document.getElementById('radio-duration').textContent = Number(currentRadioTrack.duration).toFixed(1) + 's';
             document.getElementById('radio-upvotes').textContent = currentRadioTrack.upvotes || 0;
             document.getElementById('radio-downvotes').textContent = currentRadioTrack.downvotes || 0;
@@ -12131,15 +12152,16 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 list.innerHTML = data.jobs.map(job => {
                     const isProcessing = job.status === 'processing';
                     const isOwnJob = job.user_id === userId;
-                    const modelBadgeClass = job.model === 'audio' ? 'audio' : '';
-                    const priorityClass = job.priority === 'admin' ? 'admin' : job.priority === 'premium' ? 'premium' : '';
+                    const modelBadgeClass = job.model === 'audio' ? 'audio' : job.model === 'voice' ? 'voice' : '';
+                    const modelLabel = {music: 'Music', audio: 'Sound effects', voice: 'Speech'}[job.model] || 'Audio';
+                    const percent = Math.max(0, Math.min(100, Number(job.progress_pct) || 0));
 
                     let progressHtml = '';
                     if (isProcessing && job.progress_pct > 0) {
                         progressHtml = `
                             <div class="queue-item-progress">
                                 <div class="progress-bar">
-                                    <div class="fill" style="width: ${job.progress_pct}%"></div>
+                                    <div class="fill" style="width: ${percent}%"></div>
                                 </div>
                                 <span class="progress-text">${escapeHtml(job.progress || 'Processing...')}</span>
                             </div>
@@ -12159,11 +12181,16 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                         <div class="queue-item ${isProcessing ? 'processing' : ''} ${isOwnJob ? 'own-job' : ''}">
                             <div class="queue-item-position">#${job.position}</div>
                             <div class="queue-item-info">
-                                <div class="queue-item-prompt">${escapeHtml(job.prompt)}</div>
+                                <details class="queue-description">
+                                    <summary><span class="queue-item-prompt">${escapeHtml(job.prompt || 'Audio generation')}</span></summary>
+                                    <p class="queue-full-prompt">${escapeHtml(job.prompt || 'Audio generation')}</p>
+                                </details>
                                 <div class="queue-item-meta">
-                                    <span class="model-badge ${modelBadgeClass}"><svg class="icon icon-sm" style="vertical-align: -2px; margin-right: 2px;"><use href="${job.model === 'music' ? '#icon-music' : '#icon-volume'}"/></svg>${job.model === 'music' ? 'Music' : 'SFX'}</span>
+                                    <span class="model-badge ${modelBadgeClass}"><svg class="icon icon-sm" style="vertical-align: -2px; margin-right: 2px;"><use href="${job.model === 'music' ? '#icon-music' : '#icon-volume'}"/></svg>${modelLabel}</span>
                                     <span class="duration-badge">${Number(job.duration).toFixed(1)}s</span>
-                                    ${job.priority !== 'standard' ? `<span class="priority-badge ${priorityClass}">${job.priority}</span>` : ''}
+                                    <span class="duration-badge">${isProcessing ? 'Generating' : 'Waiting'}</span>
+                                    <span class="duration-badge">${job.radio_station ? 'Radio · ' + escapeHtml(job.radio_station.replaceAll('_', ' ')) : 'On demand'}</span>
+                                    ${job.loop ? '<span class="duration-badge">Loop enabled</span>' : ''}
                                 </div>
                                 ${progressHtml}
                             </div>
@@ -15137,6 +15164,20 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         .mini-player-expanded { grid-column: 1 / -1; min-width: 0; }
         .mini-player-btn, .mini-player-btn.primary, .mini-rating-btn {
             min-width: 44px; min-height: 44px;
+        }
+        .now-playing .control-bar { flex-wrap: wrap; justify-content: flex-start; }
+        .now-playing .track-title {
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+            overflow: hidden; overflow-wrap: anywhere;
+        }
+        .now-playing .styled-audio { min-width: 0; }
+        .now-playing .control-btn, .now-playing .favorite-btn { min-width: 44px; min-height: 44px; }
+        @media (max-width: 480px) {
+            .now-playing .hero-section { gap: 12px; }
+            .now-playing .eq-visualizer { width: 44px; min-width: 44px; height: 60px; padding: 8px; }
+            .now-playing .control-bar { padding: 8px; gap: 6px; }
+            .now-playing .playback-controls { flex-basis: 100%; }
+            .now-playing .control-separator { display: none; }
         }
         .radio-generation-status {
             display: flex; align-items: center; flex-wrap: wrap;
