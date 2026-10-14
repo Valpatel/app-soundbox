@@ -5259,7 +5259,12 @@
         }
 
         .page-btn {
-            padding: 10px 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            min-height: 44px;
+            padding: 10px 12px;
             border: 1px solid var(--border);
             border-radius: 10px;
             background: transparent;
@@ -5298,10 +5303,20 @@
             padding: 10px 6px;
         }
 
+        .page-position {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
         .page-info {
             color: var(--text-muted);
             font-size: 0.9rem;
-            margin-left: 8px;
+            text-align: center;
+            white-space: nowrap;
         }
 
         @media (max-width: 640px) {
@@ -6576,8 +6591,10 @@
                         <button class="page-btn" id="prev-page" onclick="prevPage()" title="Previous page">
                             <svg class="icon icon-sm"><use href="#icon-skip-prev"/></svg>
                         </button>
-                        <div class="page-numbers" id="page-numbers"></div>
-                        <span class="page-info" id="page-info">Page 1 of 1</span>
+                        <div class="page-position">
+                            <div class="page-numbers" id="page-numbers"></div>
+                            <span class="page-info" id="page-info">Page 1 of 1</span>
+                        </div>
                         <button class="page-btn" id="next-page" onclick="nextPage()" title="Next page">
                             <svg class="icon icon-sm"><use href="#icon-skip-next"/></svg>
                         </button>
@@ -10861,6 +10878,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                                 <svg class="empty-icon"><use href="#icon-search"/></svg>
                                 <h3>No tracks found</h3>
                                 <p>No results for "<strong>${escapeHtml(search)}</strong>". Try different keywords.</p>
+                                <button class="page-btn" onclick="clearAllFilters()">Clear search and filters</button>
                             </div>
                         `;
                     } else if (hasActiveFilters) {
@@ -10868,7 +10886,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                             <div class="library-empty">
                                 <svg class="empty-icon"><use href="#icon-filter"/></svg>
                                 <h3>No matching tracks</h3>
-                                <p>Try adjusting the filters in the sidebar, or use the "Clear Filters" button.</p>
+                                <p>Try adjusting your filters.</p>
+                                <button class="page-btn" onclick="clearAllFilters()">Clear search and filters</button>
                             </div>
                         `;
                     } else {
