@@ -86,6 +86,21 @@ with sync_playwright() as pw:
         page.evaluate("document.getElementById('audio').src='/audio/interlude.wav'; document.getElementById('audio').play()")
         page.evaluate("switchTab('radio')")
         assert page.evaluate("document.getElementById('audio').paused")
+        # Library card audio is a separate source from the radio transport.
+        page.evaluate("switchTab('library')")
+        page.wait_for_timeout(600)  # Let the navigation's library refresh settle.
+        library_audio = page.locator('#library-items audio').first
+        library_audio.wait_for(state='attached')
+        library_audio.evaluate("el => { el.src='/audio/interlude.wav'; return el.play(); }")
+        assert library_audio.evaluate('el => !el.paused')
+        page.evaluate("switchTab('radio')")
+        assert library_audio.evaluate('el => el.paused'), 'Library audio must stop when opening radio'
+        page.evaluate("switchTab('library')")
+        page.wait_for_timeout(600)
+        page.locator('#library-items audio').first.evaluate("el => { window.removedAudio = el; el.src='/audio/interlude.wav'; return el.play(); }")
+        page.evaluate('removedAudio.remove()')
+        page.wait_for_function('removedAudio.paused')
+        page.evaluate("switchTab('radio')")
         # A pending job must never restart playback after leaving the tab.
         state['complete'] = False
         page.locator('.station-retro').click()
