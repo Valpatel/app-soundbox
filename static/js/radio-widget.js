@@ -873,7 +873,8 @@ class RadioWidgetInstance {
                 if (btn.classList.contains('voted')) return;
 
                 // Delegate to main app's feedback modal (shows reason selection)
-                if (window.showFeedbackMenu) {
+                if (window.showFeedbackMenu && typeof currentRadioTrack !== 'undefined' &&
+                    this.core.currentTrack?.id === currentRadioTrack?.id) {
                     window.showFeedbackMenu();
                     return;
                 }
@@ -884,18 +885,8 @@ class RadioWidgetInstance {
                     return;
                 }
 
-                btn.classList.add('voting');
+                // The core captures the voted track and advances immediately.
                 this.core.vote(-1);
-
-                // After glow animation, skip to next track
-                setTimeout(() => {
-                    btn.classList.remove('voting');
-                    btn.classList.add('voted');
-                    // Skip to next track after brief visual feedback
-                    setTimeout(() => {
-                        this.core.next();
-                    }, 400);
-                }, 600);
             });
         });
 

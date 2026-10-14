@@ -393,11 +393,17 @@ class RadioWidgetCore {
     async vote(value, options = {}) {
         if (!this.currentTrack) return;
 
+        const track = this.currentTrack;
+        if (value === -1) {
+            this.queue = this.queue.filter(item => item.id !== track.id);
+            this.audioElement.pause();
+            this.next();
+        }
         const voterId = this.userId || this._getAnonymousId();
 
         try {
             const body = {
-                generation_id: this.currentTrack.id,
+                generation_id: track.id,
                 vote: value,
                 user_id: voterId
             };
@@ -414,20 +420,13 @@ class RadioWidgetCore {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
             const data = await response.json();
-            this.currentVote = value;
-
-            // Update track vote counts
-            if (this.currentTrack) {
-                this.currentTrack.upvotes = data.upvotes;
-                this.currentTrack.downvotes = data.downvotes;
+            if (this.currentTrack?.id === track.id) {
+                this.currentVote = value;
+                track.upvotes = data.upvotes;
+                track.downvotes = data.downvotes;
+                this._events.emit('vote', {track, value,
+                    upvotes: data.upvotes, downvotes: data.downvotes});
             }
-
-            this._events.emit('vote', {
-                track: this.currentTrack,
-                value,
-                upvotes: data.upvotes,
-                downvotes: data.downvotes
-            });
 
         } catch (err) {
             console.error('[RadioWidget] Vote failed:', err);
@@ -661,13 +660,14 @@ class RadioWidgetCore {
     async _loadTrackVote() {
         if (!this.currentTrack) return;
 
+        const trackId = this.currentTrack.id;
         try {
             const voterId = this.userId || this._getAnonymousId();
             const response = await fetch(`${this.apiBaseUrl}/api/library/votes`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    generation_ids: [this.currentTrack.id],
+                    generation_ids: [trackId],
                     user_id: voterId
                 })
             });
@@ -675,7 +675,8 @@ class RadioWidgetCore {
             if (!response.ok) return;
 
             const data = await response.json();
-            this.currentVote = data.votes?.[this.currentTrack.id] || 0;
+            if (this.currentTrack?.id !== trackId) return;
+            this.currentVote = data.votes?.[trackId] || 0;
         } catch (err) {
             console.error('[RadioWidget] Failed to load vote:', err);
         }

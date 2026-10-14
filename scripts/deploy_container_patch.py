@@ -55,7 +55,7 @@ def main():
             raise SystemExit('Queue is busy; leave running jobs intact')
     with tempfile.TemporaryDirectory(prefix='soundbox-release-') as temp:
         stage = Path(temp)
-        for name in ('app.py', 'database.py', 'templates/index.html'):
+        for name in ('app.py', 'database.py', 'templates/index.html', 'static/js/radio-widget-core.js', 'static/js/radio-widget.js'):
             target = stage / name
             target.parent.mkdir(parents=True, exist_ok=True)
             run(['docker', 'cp', container + ':/app/' + name, str(target)])
@@ -72,7 +72,7 @@ def main():
         base = 'soundbox-base:' + info['Image'].split(':')[-1][:16]
         run(['docker', 'tag', info['Image'], base])
         digest = hashlib.sha256()
-        for name in sorted([p.name for p in stage.glob('*.py')] + [p.name for p in stage.glob('requirements-*.txt')] + ['templates/index.html']):
+        for name in sorted([p.name for p in stage.glob('*.py')] + [p.name for p in stage.glob('requirements-*.txt')] + ['templates/index.html', 'static/js/radio-widget-core.js', 'static/js/radio-widget.js']):
             digest.update(name.encode() + b'\0' + (stage / name).read_bytes())
         (stage / 'build-info.json').write_text(json.dumps({
             'build_id': digest.hexdigest(), 'built_at': datetime.now(timezone.utc).isoformat(),
@@ -80,7 +80,7 @@ def main():
         quota_env = '' if a.generation_quotas is None else 'ENV SOUNDBOX_GENERATION_QUOTAS=' + a.generation_quotas + '\n'
         legacy_copy = 'COPY generations.json /app/generations.json\n' if (stage / 'generations.json').exists() else ''
         s3_install = ('COPY requirements-s3.txt /app/requirements-s3.txt\nRUN /app/venv/bin/python -m pip install --no-cache-dir -r /app/requirements-s3.txt\n' if (stage / 'requirements-s3.txt').exists() else '')
-        (stage / 'Dockerfile').write_text('FROM ' + base + '\n' + s3_install + legacy_copy + 'COPY *.py /app/\nCOPY templates/index.html /app/templates/index.html\nCOPY build-info.json /app/static/build-info.json\nENV PYTHONUNBUFFERED=1\n' + quota_env)
+        (stage / 'Dockerfile').write_text('FROM ' + base + '\n' + s3_install + legacy_copy + 'COPY *.py /app/\nCOPY templates/index.html /app/templates/index.html\nCOPY static/js/ /app/static/js/\nCOPY build-info.json /app/static/build-info.json\nENV PYTHONUNBUFFERED=1\n' + quota_env)
         if not a.apply:
             print('Patches and Python syntax verified; no deployment')
             return

@@ -91,3 +91,28 @@ There is no automatic night schedule or power-policy change.
 Validate with `pytest tests/test_radio_precache.py` and
 `python scripts/check_continuous_radio.py --url URL` (mocked jobs, six consecutive
 track transitions at phone/desktop widths).
+
+## Dislike and keep listening
+
+Thumbs-down on the playing track immediately advances playback. The negative vote
+is saved even if the optional feedback dialog is closed without choosing tags.
+Main-player and library feedback retain the original track identity while the next
+song plays; submitting details updates that vote and never skips a second time.
+Mini-player and standalone widget dislikes also skip immediately. Delayed or failed
+vote requests never label the next track; failures are shown explicitly.
+
+For a library audio preview, dislike moves to the next eligible card on the current
+page, or stops if there is none. Rating a nonplaying library item does not interrupt
+unrelated audio. The current page suppresses rejected radio tracks immediately
+while the vote is being saved; the existing majority-downvote server eligibility
+rule still applies. Removing a vote or liking the track clears that local suppression.
+
+Validation: `python scripts/check_dislike_skip.py --url URL` uses actual buttons
+and mocked delayed/failing vote APIs at phone and desktop sizes. It does not write
+production ratings or generate audio. `node scripts/check_widget_dislike.cjs`
+covers the standalone widget's click handler and core, including delayed responses
+and exactly one immediate skip.
+
+Interaction references: [Pandora feedback and skipping](https://developer.pandora.com/docs/reference/graphql-api/feedback/set-feedback-source/)
+and [Spotify hiding songs](https://support.spotify.com/ws/article/hide-unhide-songs/).
+These inform the immediate response; Soundbox retains its own voting rules.
