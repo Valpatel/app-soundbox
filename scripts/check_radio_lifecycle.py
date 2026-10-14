@@ -40,7 +40,8 @@ with sync_playwright() as pw:
         page.wait_for_timeout(500)
         assert not fills, 'Passive page preload must not generate'
         page.locator('.station-ambient').click()
-        expect(page.locator('#radio-generation-status')).to_contain_text('Creating')
+        expect(page.locator('#now-playing #radio-generation-status')).to_contain_text('Creating')
+        expect(page.locator('#now-playing')).to_be_visible()
         page.wait_for_function('currentRadioTrack !== null',timeout=12000)
         assert fills[-1]['station']=='ambient'
         # End the last track: the normal media event should extend the station.
@@ -66,6 +67,6 @@ with sync_playwright() as pw:
         state['mode']='complete';page.wait_for_timeout(3500)
         assert page.evaluate('currentRadioTrack') is None
         assert not errors,errors
-        print(f'{width}px: passive load, empty station, exhaustion, station switch, failure, stop waiting passed',flush=True)
+        print(f'{width}px: passive load, empty station, exhaustion, station switch, failure, integrated empty-library player and Stop passed',flush=True)
         page.close()
     browser.close()

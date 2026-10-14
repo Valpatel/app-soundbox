@@ -7115,6 +7115,8 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         let currentModel = 'music';
         let modelStatus = { music: 'pending', audio: 'pending', tts: 'ready' };
         let currentTab = 'radio';
+        let activePlaybackAudio = null;
+        let activePlaybackWasConnected = false;
 
         // ========================================
         // SHARED CATEGORY DEFINITIONS
@@ -10813,12 +10815,15 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         // Stop all other audio when one starts playing (exclusive playback)
         function stopOtherAudio(currentAudio) {
             const players = new Set(document.querySelectorAll('audio'));
+            if (activePlaybackAudio) players.add(activePlaybackAudio);
             if (sampleAudio) players.add(sampleAudio);
             if (window.radioWidgetInstance?.core?.audioElement)
                 players.add(window.radioWidgetInstance.core.audioElement);
             players.forEach(audio => {
                 if (audio !== currentAudio) audio.pause();
             });
+            activePlaybackAudio = currentAudio;
+            activePlaybackWasConnected = Boolean(currentAudio?.isConnected);
             if (sampleAudio !== currentAudio && playingVoiceId) {
                 document.getElementById(`play-${playingVoiceId}`)?.classList.remove('playing');
                 playingVoiceId = null;
@@ -12279,6 +12284,11 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
             // Watch for new audio elements and apply mute state
             const observer = new MutationObserver(mutations => {
+                if (activePlaybackAudio && activePlaybackWasConnected && !activePlaybackAudio.isConnected) {
+                    activePlaybackAudio.pause();
+                    activePlaybackAudio = null;
+                    activePlaybackWasConnected = false;
+                }
                 if (isGlobalMuted) {
                     document.querySelectorAll('audio').forEach(audio => {
                         audio.muted = true;
