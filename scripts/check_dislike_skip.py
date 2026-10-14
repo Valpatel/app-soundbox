@@ -48,6 +48,7 @@ with sync_playwright() as pw:
             if mode == 'undo':
                 page.evaluate("switchTab('library')")
                 page.locator('.library-item').first.wait_for()
+                page.wait_for_load_state('networkidle')  # Navigation refresh must finish before playing its cards.
                 page.evaluate("id => {userVotes[id]=-1; rejectedTrackIds.add(id); playNextTrack();}", tracks[0]['id'])
                 page.wait_for_function('!radioPlayer.paused')
                 page.locator('.library-item .vote-down').first.click()
@@ -66,6 +67,7 @@ with sync_playwright() as pw:
             if mode in ('mini', 'library', 'nonplaying'):
                 page.evaluate("switchTab('library')")
                 page.locator('.library-item').first.wait_for()
+                page.wait_for_load_state('networkidle')  # Navigation refresh must finish before playing its cards.
                 if mode == 'library':
                     page.locator('.library-item audio').first.evaluate('a => a.play()')
                 else:
