@@ -51,3 +51,41 @@ Keep its receipt and previous image for rollback; verify deployed build identity
 health and affected browser flows. Run real radio generation qualification after
 changes to generation behavior; UI-only changes can use mocked browser jobs and
 existing audio without consuming GPU time.
+
+## Continuous radio and optional overnight stocking
+
+All Music and the station presets repeat eligible songs when history is exhausted.
+The queue panel stays visible while the final song plays. Radio prefers the least
+recently played songs in the selected category and uses an all-music interlude if
+that category has no eligible songs. It prefetches when fewer than two tracks are
+queued, sharing one active generation per station. Favorites/playlists stay curated.
+
+For deliberate unattended stocking, run this separate, bounded command on the
+Soundbox host (Python 3.10+; standard library only):
+
+```sh
+python3 scripts/radio_precache.py --url http://127.0.0.1:5309 \
+  --until 2026-10-15T08:00:00-07:00 --max-tracks 120 \
+  --state /var/lib/soundbox/precache.json \
+  --pause-file /var/lib/soundbox/precache.pause
+```
+
+Use your intended date and timezone. The deadline stops new admissions; an
+already-running job may finish. Creating the pause file pauses admissions after
+the current job, allowing an empty queue for maintenance. Removing it resumes
+within the original deadline. The state file records completed library IDs and
+current work; restarting with the same state resumes polling, not duplicate work.
+Only one process can own a state file. Do not use multiple state files for the
+same batch. Ambiguous submission failures deliberately stop for queue inspection.
+Three consecutive failed jobs also stop the batch.
+
+The tool waits behind existing queues and model warmup. It stocks six station
+categories, prioritizing low eligible-track counts relative to a target adjusted
+by positive votes and accumulated plays. Downvoted-majority songs do not count as
+stock. This is a simple demand heuristic, not an audio-quality classifier. It
+varies instrument/mood prompts and chooses 60/90/120-second instrumental songs.
+There is no automatic night schedule or power-policy change.
+
+Validate with `pytest tests/test_radio_precache.py` and
+`python scripts/check_continuous_radio.py --url URL` (mocked jobs, six consecutive
+track transitions at phone/desktop widths).

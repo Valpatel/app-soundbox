@@ -48,7 +48,7 @@ with sync_playwright() as pw:
         page.evaluate("radioQueue=[]; document.getElementById('radio-player').dispatchEvent(new Event('ended'))")
         page.wait_for_function('radioFillSession !== null')
         page.wait_for_function('currentRadioTrack !== null',timeout=12000)
-        assert len(fills)==2 and track['id'] in fills[-1]['exclude']
+        assert len(fills) >= 2 and any(track['id'] in fill['exclude'] for fill in fills)
         state['mode']='waiting'
         page.locator('.station-retro').click()
         expect(page.locator('#radio-generation-status')).to_contain_text('Creating')
