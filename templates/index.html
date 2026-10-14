@@ -7237,8 +7237,11 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         // ========================================
         // TAB SWITCHING
         // ========================================
-        function switchTab(tabName) {
-            if (tabName !== currentTab) stopPlayback(false);
+        function switchTab(tabName, {preserveRadio = false} = {}) {
+            if (tabName !== currentTab) {
+                if (preserveRadio && tabName === 'radio') stopOtherAudio(radioPlayer);
+                else stopPlayback(false);
+            }
             currentTab = tabName;
 
             // Update tab buttons
@@ -14864,7 +14867,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 <svg class="icon expand-icon"><use href="#icon-chevron-up"/></svg>
                 <svg class="icon collapse-icon"><use href="#icon-chevron-down"/></svg>
             </button>
-            <button class="mini-player-btn" onclick="switchTab('radio')" title="Open Radio" data-tooltip="Radio">
+            <button class="mini-player-btn" onclick="switchTab('radio', {preserveRadio: true})" title="Open Radio" data-tooltip="Radio">
                 <svg class="icon"><use href="#icon-radio"/></svg>
             </button>
         </div>

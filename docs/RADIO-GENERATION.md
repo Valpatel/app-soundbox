@@ -19,7 +19,9 @@ stations, changing tabs or choosing Stop invalidates pending radio responses; a 
 admitted can finish and remains in the public library. Passive page loads do not
 generate. Failed requests do not retry automatically. Browser autoplay policy may
 require pressing Play when the first song finishes generating. A mini-player
-provides explicit resume and Stop controls outside Radio. Library refreshes pause
+provides explicit resume and Stop controls outside Radio. Its Open Radio shortcut
+changes the visible page without pausing, reloading audio, resetting time or
+clearing the queue/session. Other tab changes still stop previews as described above. Library refreshes pause
 audio elements that disappear, including detached previews on navigation.
 
 The generation queue shows descriptions only for explicitly public jobs. Private
