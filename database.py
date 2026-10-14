@@ -928,6 +928,7 @@ def get_library(page=1, per_page=20, model=None, search=None, sort='recent', use
 def get_random_tracks(model=None, search=None, count=10, min_duration=60):
     """Get random tracks for radio shuffle."""
     conditions = []
+    conditions.append("COALESCE(g.downvotes, 0) <= COALESCE(g.upvotes, 0)")
     params = []
 
     # Filter out short tracks (sound effects) - minimum 60 seconds for radio
@@ -963,6 +964,7 @@ def get_random_tracks(model=None, search=None, count=10, min_duration=60):
 def get_random_tracks_excluding(model=None, search=None, count=10, min_duration=60, exclude_ids=None):
     """Get random tracks for radio, excluding recently played."""
     conditions = []
+    conditions.append("COALESCE(g.downvotes, 0) <= COALESCE(g.upvotes, 0)")
     params = []
 
     # Filter out short tracks - minimum 60 seconds for radio
@@ -1759,6 +1761,7 @@ def get_favorites(user_id, page=1, per_page=20, model=None):
 def get_random_favorites(user_id, count=10, model=None):
     """Get random tracks from user's favorites for radio."""
     conditions = ["f.user_id = ?"]
+    conditions.append("COALESCE(g.downvotes, 0) <= COALESCE(g.upvotes, 0)")
     params = [user_id]
 
     if model:
@@ -1783,6 +1786,7 @@ def get_random_favorites(user_id, count=10, model=None):
 def get_top_rated_tracks(model=None, count=10, min_duration=60):
     """Get top rated tracks sorted by (upvotes - downvotes)."""
     conditions = []
+    conditions.append("COALESCE(downvotes, 0) <= COALESCE(upvotes, 0)")
     params = []
 
     if min_duration:
@@ -1813,6 +1817,7 @@ def get_top_rated_tracks(model=None, count=10, min_duration=60):
 def get_recent_tracks(model=None, count=10, min_duration=60, hours=168):
     """Get recently created tracks (default: last 7 days = 168 hours)."""
     conditions = []
+    conditions.append("COALESCE(downvotes, 0) <= COALESCE(upvotes, 0)")
     params = []
 
     if min_duration:
@@ -2055,6 +2060,7 @@ def get_trending_tracks(hours=24, limit=20, model=None):
         List of tracks with play counts
     """
     conditions = ["pe.played_at >= datetime('now', ?)"]
+    conditions.append("COALESCE(g.downvotes, 0) <= COALESCE(g.upvotes, 0)")
     params = [f'-{hours} hours']
 
     if model:
@@ -3020,6 +3026,7 @@ def get_playlist_for_radio(playlist_id, shuffle=False):
             FROM playlist_tracks pt
             JOIN generations g ON pt.generation_id = g.id
             WHERE pt.playlist_id = ?
+              AND COALESCE(g.downvotes, 0) <= COALESCE(g.upvotes, 0)
             ORDER BY {order}
         """, (playlist_id,)).fetchall()
 

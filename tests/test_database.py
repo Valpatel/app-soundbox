@@ -425,3 +425,27 @@ def test_publish_existing_is_explicit_backed_up_and_idempotent(test_db):
         assert backup.execute('SELECT is_public FROM generations WHERE id=?', ('old-private',)).fetchone()[0] == 0
     assert publish(test_db, apply=True) == {'private_records': 0, 'applied': False}
     os.unlink(result['backup'])
+
+
+class TestRadioVoteEligibility:
+    def test_majority_downvoted_excluded_from_all_radio_queries(self, test_db):
+        for name,up,down in [('bad',1,2),('tie',2,2),('good',2,1),('new',0,0)]:
+            db.create_generation(name,name+'.wav','ambient piano','music',90)
+            with db.get_db() as conn:
+                conn.execute('UPDATE generations SET upvotes=?,downvotes=? WHERE id=?',(up,down,name));conn.commit()
+            db.add_favorite('listener',name)
+            db.record_play(name,source='radio')
+        db.create_playlist('radio-list','listener','Test radio')
+        for name in ['bad','tie','good','new']:
+            db.add_track_to_playlist('radio-list',name,'listener')
+        queries=[lambda:db.get_playlist_for_radio('radio-list'),lambda:db.get_random_tracks(),lambda:db.get_random_tracks_excluding(exclude_ids=['absent']),
+                 lambda:db.get_random_favorites('listener'),lambda:db.get_top_rated_tracks(),
+                 lambda:db.get_recent_tracks(),lambda:db.get_trending_tracks()]
+        for query in queries:
+            ids={t['id'] for t in query()}
+            assert 'bad' not in ids
+            assert {'tie','good'} <= ids
+        assert db.get_generation('bad') is not None
+        with db.get_db() as conn:
+            conn.execute("UPDATE generations SET upvotes=3 WHERE id='bad'");conn.commit()
+        assert 'bad' in {t['id'] for t in db.get_random_tracks()}
