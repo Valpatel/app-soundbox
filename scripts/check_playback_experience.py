@@ -78,6 +78,16 @@ with sync_playwright() as pw:
                 assert box['y'] >= bounds['y'] and box['y'] + box['height'] <= bounds['y'] + bounds['height'] + 1
         page.locator('#mini-player-play').click()
         page.wait_for_function('!radioPlayer.paused')
+        # Opening Radio from its floating transport is navigation, not Stop.
+        page.evaluate("window.radioNavigationBefore = {src:radioPlayer.src, time:radioPlayer.currentTime, session:radioSession, queue:JSON.stringify(radioQueue)}; window.radioPauseEvents=0; radioPlayer.addEventListener('pause', () => radioPauseEvents++)")
+        page.locator('#mini-player button[title="Open Radio"]').click()
+        page.wait_for_timeout(300)
+        assert page.evaluate("currentTab === 'radio' && !radioPlayer.paused && radioPauseEvents === 0 && radioPlayer.src === radioNavigationBefore.src && radioPlayer.currentTime >= radioNavigationBefore.time && radioSession === radioNavigationBefore.session && JSON.stringify(radioQueue) === radioNavigationBefore.queue"), 'Radio shortcut must preserve transport, time, queue and session'
+        expect(page.locator('#mini-player')).to_be_hidden()
+        expect(page.locator('#now-playing')).to_be_visible()
+        page.evaluate("switchTab('library')")
+        page.locator('#mini-player-play').click()
+        page.wait_for_function('!radioPlayer.paused')
         page.evaluate("playSample('test-voice')")
         page.wait_for_function('sampleAudio && !sampleAudio.paused')
         assert page.evaluate('radioPlayer.paused'), 'Voice preview must pause radio'
