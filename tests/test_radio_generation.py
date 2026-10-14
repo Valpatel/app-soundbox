@@ -63,3 +63,21 @@ def test_failure_can_be_retried_but_unrelated_station_not_reused(radio):
     assert second!=first
     jobs[first]['status']='failed'
     assert c.post('/api/radio/fill',json={'station':'piano'}).json['job_id']!=first
+
+
+def test_real_generation_handler_retains_admission_and_fixed_duration():
+    from test_generation_quotas import GenerationQuotasTest
+    client, ns = GenerationQuotasTest().build('false')
+    class EmptyDB:
+        def get_random_tracks_excluding(self, **kwargs):return []
+    install_radio_generation(ns['app'],EmptyDB(),ns['jobs'],ns['queue_lock'],ns['generate'])
+    response=client.post('/api/radio/fill',json={'station':'ambient','duration':9999,'model':'invalid'})
+    assert response.status_code==202
+    job=ns['jobs'][response.json['job_id']]
+    assert job['duration']==90 and job['model']=='music' and job['is_public']
+    job['status']='completed'
+    ns['loading_status']['music']='loading'
+    assert client.post('/api/radio/fill',json={'station':'retro'}).status_code==503
+    ns['loading_status']['music']='ready'
+    ns['jobs'].update({str(i):{'user_id':'other','status':'queued'} for i in range(100)})
+    assert client.post('/api/radio/fill',json={'station':'retro'}).status_code==503
