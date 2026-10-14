@@ -9320,7 +9320,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 currentRadioTrack = radioQueue.shift();
 
                 // Skip tracks with missing data (defensive null check)
-                if (!currentRadioTrack || !currentRadioTrack.filename || !currentRadioTrack.prompt) {
+                if (!currentRadioTrack || !currentRadioTrack.filename || !currentRadioTrack.prompt || rejectedTrackIds.has(currentRadioTrack.id)) {
                     console.warn('Skipping invalid track:', currentRadioTrack);
                     skippedCount++;
                     if (skippedCount >= maxSkips) {
@@ -9492,14 +9492,16 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
         async function loadRadioTrackVote() {
             if (!currentRadioTrack) return;
             if (!isAuthenticated()) return;  // Votes require auth
+            const trackId = currentRadioTrack.id;
             try {
                 const response = await authFetch('/api/library/votes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ generation_ids: [currentRadioTrack.id] })
+                    body: JSON.stringify({ generation_ids: [trackId] })
                 });
                 const data = await response.json();
-                currentRadioVote = data.votes?.[currentRadioTrack.id] || 0;
+                if (currentRadioTrack?.id !== trackId) return;
+                currentRadioVote = data.votes?.[trackId] || 0;
                 document.getElementById('radio-vote-up').classList.toggle('voted-up', currentRadioVote === 1);
                 document.getElementById('radio-vote-down').classList.toggle('voted-down', currentRadioVote === -1);
             } catch (err) {
@@ -9507,93 +9509,80 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             }
         }
 
-        async function voteRadioTrack(voteValue) {
-            if (!currentRadioTrack) return;
+        // Serialize changes per track so optional feedback cannot race the initial vote.
+        const trackVoteRequests = new Map();
+        const rejectedTrackIds = new Set();
 
-            // Require authentication to vote
-            if (!isUserAuthenticated()) {
-                showLoginPrompt('vote on tracks');
-                return;
-            }
-
-            // Toggle vote if clicking same button
-            const newVote = currentRadioVote === voteValue ? 0 : voteValue;
-
-            try {
-                const response = await authFetch(`/api/library/${currentRadioTrack.id}/vote`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ vote: newVote })
+        function persistTrackVote(track, value, details = {}) {
+            const previous = trackVoteRequests.get(track.id) || Promise.resolve();
+            const request = previous.catch(() => {}).then(async () => {
+                const response = await authFetch(`/api/library/${track.id}/vote`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({vote: value, ...details})
                 });
                 const data = await response.json();
-
-                currentRadioVote = data.user_vote;
-                document.getElementById('radio-upvotes').textContent = data.upvotes;
-                document.getElementById('radio-downvotes').textContent = data.downvotes;
-                document.getElementById('radio-vote-up').classList.toggle('voted-up', data.user_vote === 1);
-                document.getElementById('radio-vote-down').classList.toggle('voted-down', data.user_vote === -1);
-
-                // If downvoted, skip to next track after a moment
-                if (newVote === -1) {
-                    showFeedbackToast('Skipping...');
-                    setTimeout(() => skipTrack(), 800);
+                if (!response.ok) throw new Error(data.error || 'Vote could not be saved');
+                userVotes[track.id] = data.user_vote;
+                if (value >= 0) rejectedTrackIds.delete(track.id);
+                if (currentRadioTrack?.id === track.id) {
+                    currentRadioVote = data.user_vote;
+                    document.getElementById('radio-upvotes').textContent = data.upvotes;
+                    document.getElementById('radio-downvotes').textContent = data.downvotes;
+                    document.getElementById('radio-vote-up').classList.toggle('voted-up', data.user_vote === 1);
+                    document.getElementById('radio-vote-down').classList.toggle('voted-down', data.user_vote === -1);
+                    document.getElementById('mini-vote-up').classList.toggle('voted', data.user_vote === 1);
+                    document.getElementById('mini-vote-down').classList.toggle('voted', data.user_vote === -1);
                 }
-            } catch (err) {
-                console.error('Radio vote failed:', err);
+                const card = document.querySelector(`.library-item[data-id="${track.id}"]`);
+                if (card) {
+                    for (const [kind, vote, count] of [['up', 1, data.upvotes], ['down', -1, data.downvotes]]) {
+                        const button = card.querySelector('.vote-' + kind);
+                        button?.classList.toggle('voted', data.user_vote === vote);
+                        const counter = button?.querySelector('.vote-count');
+                        if (counter) counter.textContent = count;
+                    }
+                }
+                return data;
+            });
+            trackVoteRequests.set(track.id, request);
+            const cleanup = () => {
+                if (trackVoteRequests.get(track.id) === request) trackVoteRequests.delete(track.id);
+            };
+            request.then(cleanup, cleanup);
+            return request;
+        }
+
+        function rejectPlayingTrack(track) {
+            rejectedTrackIds.add(track.id);
+            radioQueue = radioQueue.filter(t => t.id !== track.id);
+            updateRadioQueue();
+            const cards = [...document.querySelectorAll('#library-items .library-item')];
+            const index = cards.findIndex(card => card.dataset.id === track.id);
+            const preview = cards[index]?.querySelector('audio');
+            if (preview && !preview.paused) {
+                preview.pause();
+                const next = cards.slice(index + 1).find(card => !rejectedTrackIds.has(card.dataset.id));
+                next?.querySelector('audio')?.play().catch(error => console.warn('Next preview:', error.message));
+            } else if (currentRadioTrack?.id === track.id && !radioPlayer.paused) {
+                skipTrack();
             }
         }
 
-        // Quick vote from mini-player (no modal)
+        async function voteRadioTrack(voteValue) {
+            return quickVote(voteValue);
+        }
+
+        // A dislike takes effect immediately; saving never holds playback hostage.
         async function quickVote(voteValue) {
             if (!currentRadioTrack) return;
-
-            // Require authentication to vote
-            if (!isUserAuthenticated()) {
-                showLoginPrompt('vote on tracks');
-                return;
-            }
-
-            const newVote = currentRadioVote === voteValue ? 0 : voteValue;
-
-            // Visual feedback on mini-player buttons
-            const upBtn = document.getElementById('mini-vote-up');
-            const downBtn = document.getElementById('mini-vote-down');
-
+            if (!isUserAuthenticated()) { showLoginPrompt('vote on tracks'); return; }
+            const track = {...currentRadioTrack};
+            const value = currentRadioVote === voteValue ? 0 : voteValue;
+            if (value === -1) rejectPlayingTrack(track);
             try {
-                const response = await authFetch(`/api/library/${currentRadioTrack.id}/vote`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ vote: newVote })
-                });
-                const data = await response.json();
-
-                currentRadioVote = data.user_vote;
-
-                // Update mini-player button states
-                if (upBtn) upBtn.classList.toggle('voted', data.user_vote === 1);
-                if (downBtn) downBtn.classList.toggle('voted', data.user_vote === -1);
-
-                // Also update main radio buttons if visible
-                const radioUpBtn = document.getElementById('radio-vote-up');
-                const radioDownBtn = document.getElementById('radio-vote-down');
-                if (radioUpBtn) {
-                    radioUpBtn.classList.toggle('voted-up', data.user_vote === 1);
-                    document.getElementById('radio-upvotes').textContent = data.upvotes;
-                }
-                if (radioDownBtn) {
-                    radioDownBtn.classList.toggle('voted-down', data.user_vote === -1);
-                    document.getElementById('radio-downvotes').textContent = data.downvotes;
-                }
-
-                // Quick feedback
-                if (newVote === 1) {
-                    showFeedbackToast('Liked! Thanks for voting.');
-                } else if (newVote === -1) {
-                    showFeedbackToast('Noted. Skipping...');
-                    setTimeout(() => skipTrack(), 600);
-                }
-            } catch (err) {
-                console.error('Quick vote failed:', err);
+                await persistTrackVote(track, value);
+            } catch (error) {
+                showErrorToast('Vote was not saved: ' + error.message);
             }
         }
 
@@ -9959,7 +9948,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 }
                 if (session !== radioSession || !radioUserStarted || currentRadioTrack) return;
                 const tracks = (data.tracks || []).filter(t => t.filename &&
-                    Number(t.downvotes || 0) <= Number(t.upvotes || 0));
+                    !rejectedTrackIds.has(t.id) && Number(t.downvotes || 0) <= Number(t.upvotes || 0));
                 // Prefer something not heard recently; repeats are better than silence
                 // when a small library is waiting for its next generated song.
                 tracks.sort((a, b) => playHistory.indexOf(a.id) - playHistory.indexOf(b.id));
@@ -10022,7 +10011,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                     }
                 }
                 if (session !== radioSession) return;
-                tracks = tracks.filter(t => t.filename && Number(t.downvotes || 0) <= Number(t.upvotes || 0));
+                tracks = tracks.filter(t => t.filename && !rejectedTrackIds.has(t.id) && Number(t.downvotes || 0) <= Number(t.upvotes || 0));
                 radioQueue.unshift(...tracks.filter(t => t.id !== currentRadioTrack?.id && !radioQueue.some(q => q.id === t.id)));
                 updateRadioQueue();
                 radioStatus(tracks.length ? '' : 'No eligible music available. Select the station to retry.');
@@ -10424,9 +10413,17 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             const submitBtn = document.getElementById('feedback-modal-submit');
             submitBtn.className = 'feedback-modal-submit' + (isPositive ? ' positive' : '');
             submitBtn.disabled = true;
+            submitBtn.textContent = 'Submit Feedback';
 
             // Show modal
             document.getElementById('feedback-modal-overlay').classList.remove('hidden');
+            if (!isPositive) {
+                // Capture the disliked track before advancing playback. Closing the
+                // optional feedback dialog does not undo this initial vote.
+                persistTrackVote({...track}, -1).catch(error =>
+                    showErrorToast('Vote was not saved: ' + error.message));
+                rejectPlayingTrack(track);
+            }
         }
 
         function generateFeedbackParticles(isPositive) {
@@ -10500,73 +10497,20 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
             submitBtn.disabled = true;
             submitBtn.textContent = 'Submitting...';
 
-            const voteValue = feedbackModalState.isPositive ? 1 : -1;
-            const genId = feedbackModalState.track.id;
-
+            const state = feedbackModalState;
+            const track = {...state.track};
+            const details = {
+                feedback_reasons: state.selectedReasons.length ? [...state.selectedReasons] : null,
+                suggested_model: state.suggestedModel
+            };
             try {
-                const response = await authFetch(`/api/library/${genId}/vote`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        vote: voteValue,
-                        feedback_reasons: feedbackModalState.selectedReasons.length > 0 ? feedbackModalState.selectedReasons : null,
-                        suggested_model: feedbackModalState.suggestedModel
-                    })
-                });
-
-                if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    throw new Error(errData.error || 'Failed to submit feedback');
-                }
-
-                const data = await response.json();
-
-                // Update UI based on source
-                if (feedbackModalState.source === 'radio') {
-                    currentRadioVote = voteValue;
-                    document.getElementById('radio-upvotes').textContent = data.upvotes;
-                    document.getElementById('radio-downvotes').textContent = data.downvotes;
-                    document.getElementById('radio-vote-up').classList.toggle('voted-up', voteValue === 1);
-                    document.getElementById('radio-vote-down').classList.toggle('voted-down', voteValue === -1);
-                } else {
-                    // Library item
-                    userVotes[genId] = voteValue;
-                    const item = document.querySelector(`.library-item[data-id="${genId}"]`);
-                    if (item) {
-                        const upBtn = item.querySelector('.action-btn.vote-up');
-                        const downBtn = item.querySelector('.action-btn.vote-down');
-                        if (upBtn) {
-                            upBtn.classList.toggle('voted', voteValue === 1);
-                            const upCount = upBtn.querySelector('.vote-count');
-                            if (upCount) upCount.textContent = data.upvotes;
-                        }
-                        if (downBtn) {
-                            downBtn.classList.toggle('voted', voteValue === -1);
-                            const downCount = downBtn.querySelector('.vote-count');
-                            if (downCount) downCount.textContent = data.downvotes;
-                        }
-                    }
-                }
-
-                // Show toast
-                const reasonCount = feedbackModalState.selectedReasons.length;
-                const reclassifyMsg = feedbackModalState.suggestedModel ? ' + reclassify' : '';
-                showFeedbackToast(`Thanks for the feedback! (${reasonCount} tag${reasonCount !== 1 ? 's' : ''}${reclassifyMsg})`);
-
-                // Close modal
-                closeFeedbackModal();
-
-                // Skip track if downvoted in radio
-                if (feedbackModalState.source === 'radio' && !feedbackModalState.isPositive) {
-                    setTimeout(() => skipTrack(), 500);
-                }
-
-            } catch (err) {
-                console.error('Feedback failed:', err);
-                showErrorToast('Failed to submit feedback: ' + err.message);
+                await persistTrackVote(track, state.isPositive ? 1 : -1, details);
+                showFeedbackToast('Feedback saved');
+                if (feedbackModalState === state) closeFeedbackModal();
+            } catch (error) {
+                showErrorToast('Failed to submit feedback: ' + error.message);
             } finally {
-                // Re-enable button (in case modal wasn't closed)
-                if (submitBtn) {
+                if (feedbackModalState === state) {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Submit Feedback';
                 }
@@ -10627,6 +10571,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
                 });
                 const data = await response.json();
 
+                rejectedTrackIds.delete(currentRadioTrack.id);
                 currentRadioVote = 0;
                 document.getElementById('radio-upvotes').textContent = data.upvotes || 0;
                 document.getElementById('radio-downvotes').textContent = data.downvotes || 0;
@@ -11929,6 +11874,7 @@ curl "https://localhost:5309/api/library?search=epic+battle&amp;limit=10"</code>
 
                 // Update local state
                 userVotes[genId] = 0;
+                rejectedTrackIds.delete(genId);
 
                 // Update UI
                 const item = document.querySelector(`[data-id="${genId}"]`);
