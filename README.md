@@ -175,3 +175,11 @@ To publish older pending records, preview and then apply a backed-up migration:
 python scripts/publish_library.py --database data/soundbox.db
 python scripts/publish_library.py --database data/soundbox.db --apply
 ```
+### Private deployments without generation quotas
+
+Set `SOUNDBOX_GENERATION_QUOTAS=false` in the application environment to disable
+hourly music/SFX/speech request quotas and per-user pending-job limits. The
+default remains enabled for public installations. This does not grant admin
+access or change authentication. The global 100-job queue, model readiness,
+prompt/text validation, and 180-second per-request audio bound remain enforced.
+Restart after draining the queue; queued jobs currently live in process memory.
