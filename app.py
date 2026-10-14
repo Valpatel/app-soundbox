@@ -55,6 +55,7 @@ import io
 import database as db
 import voice_licenses
 import backup
+from object_storage import S3Store
 
 # Voice models directory
 VOICES_DIR = os.path.join(os.path.dirname(__file__), "models", "voices")
@@ -62,7 +63,7 @@ voice_models = OrderedDict()  # Cached voice models with LRU eviction
 voice_models_lock = threading.Lock()  # Thread safety for voice cache
 _VOICE_CACHE_MAX_SIZE = 10  # Max voices to keep in memory (each ~100-300MB)
 
-METADATA_FILE = "generations.json"
+METADATA_FILE = db.METADATA_FILE
 OUTPUT_DIR = "generated"
 SPECTROGRAMS_DIR = "spectrograms"
 
@@ -301,8 +302,15 @@ def load_metadata():
     return {}
 
 def save_metadata(data):
-    with open(METADATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2)
+    os.makedirs(os.path.dirname(METADATA_FILE) or '.', exist_ok=True)
+    temporary = METADATA_FILE + '.' + uuid.uuid4().hex + '.tmp'
+    try:
+        with open(temporary, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+        os.replace(temporary, METADATA_FILE)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def make_loopable(wav, sample_rate, fade_duration=0.5):
@@ -326,6 +334,7 @@ def make_loopable(wav, sample_rate, fade_duration=0.5):
 
 app = Flask(__name__)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+object_store = S3Store.from_env()
 
 
 @app.after_request
@@ -2182,6 +2191,17 @@ def generate():
 from radio_generation import install_radio_generation
 install_radio_generation(app, db, jobs, queue_lock, generate)
 
+@app.route('/api/storage/status')
+def storage_status():
+    return jsonify(object_store.status if object_store else {'backend': 'local', 'state': 'local'})
+
+
+def hydrate_audio(filename, filepath):
+    # Called only after the serving route's filename and resolved-path checks.
+    if object_store and not os.path.exists(filepath):
+        object_store.ensure_audio(OUTPUT_DIR, filename)
+
+
 @app.route('/audio/<filename>')
 def serve_audio(filename):
     # Security: Validate filename to prevent path traversal
@@ -2195,6 +2215,12 @@ def serve_audio(filename):
     real_output_dir = os.path.realpath(OUTPUT_DIR)
     if not real_path.startswith(real_output_dir + os.sep):
         return jsonify({'error': 'Invalid path'}), 400
+
+    try:
+        hydrate_audio(filename, filepath)
+    except Exception:
+        app.logger.exception('S3 audio retrieval failed')
+        return jsonify({'error': 'Audio storage is temporarily unavailable'}), 503
 
     if os.path.exists(filepath):
         response = send_file(filepath, mimetype='audio/wav')
@@ -4035,6 +4061,12 @@ def download(filename):
     if not real_path.startswith(real_output_dir + os.sep):
         return jsonify({'error': 'Invalid path'}), 400
 
+    try:
+        hydrate_audio(filename, filepath)
+    except Exception:
+        app.logger.exception('S3 audio retrieval failed')
+        return jsonify({'error': 'Audio storage is temporarily unavailable'}), 503
+
     if os.path.exists(filepath):
         # Generate a clean download name from metadata
         metadata = load_metadata()
@@ -4710,6 +4742,11 @@ if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 5309))
     DEBUG = os.environ.get('FLASK_DEBUG', '').lower() in ('1', 'true', 'yes')
 
+    # Preserve legacy ratings when moving JSON beside a persistent SQLite file.
+    if not os.path.exists(METADATA_FILE) and os.path.exists('generations.json'):
+        with open('generations.json', encoding='utf-8') as legacy:
+            save_metadata(json.load(legacy))
+
     # Initialize database and migrate from JSON if needed
     db.init_db()
     db.migrate_from_json()
@@ -4723,19 +4760,20 @@ if __name__ == '__main__':
     worker_thread = threading.Thread(target=process_queue, daemon=True)
     worker_thread.start()
 
-    # Start backup scheduler if BACKUP_DIR is configured
-    if os.environ.get('BACKUP_DIR'):
-        try:
-            from apscheduler.schedulers.background import BackgroundScheduler
-            scheduler = BackgroundScheduler()
+    # Local backups and optional S3 snapshots share the existing lightweight scheduler.
+    if os.environ.get('BACKUP_DIR') or object_store:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        scheduler = BackgroundScheduler()
+        if os.environ.get('BACKUP_DIR'):
             backup_time = os.environ.get('BACKUP_TIME', '03:00')
             hour, minute = map(int, backup_time.split(':'))
             scheduler.add_job(backup.run_backup, 'cron', hour=hour, minute=minute)
-            scheduler.start()
-            print(f"Backup scheduler started - daily at {backup_time}")
-        except ImportError:
-            print("Warning: APScheduler not installed, backups disabled")
-            print("Install with: pip install apscheduler")
+        if object_store:
+            scheduler.add_job(object_store.snapshot, 'interval',
+                seconds=max(60, int(os.environ.get('SOUNDBOX_S3_SYNC_SECONDS', '300'))),
+                kwargs={'database': db.DB_PATH, 'directory': OUTPUT_DIR, 'metadata': METADATA_FILE},
+                max_instances=1, coalesce=True, next_run_time=datetime.now())
+        scheduler.start()
 
     print("Starting server... Models loading in background.")
     print(f"Access at http://{HOST if HOST != '0.0.0.0' else 'localhost'}:{PORT}")

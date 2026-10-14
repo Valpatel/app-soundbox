@@ -94,6 +94,7 @@ Full docs are in the [`docs/`](docs/) directory:
 - [API Reference](docs/api/README.md) — Endpoints, authentication, rate limits
 - [Frontend](docs/frontend/README.md) — UI components, radio widget
 - [Operations](docs/operations/deployment.md) — Deployment, backup, monitoring
+- [S3-compatible storage](docs/S3-STORAGE.md) — Shared audio, verified snapshots, host recovery
 - [Service Discovery](docs/systems/service-discovery.md) — mDNS, MCP, A2A, OpenAPI
 
 ## Configuration
