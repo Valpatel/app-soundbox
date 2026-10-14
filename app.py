@@ -1773,6 +1773,11 @@ def api_queue():
                     'id': job_id,
                     'status': job['status'],
                     'model': job.get('model', 'music'),
+                    # This endpoint is public: never expose legacy private prompts
+                    # or owner identities. New shared-library jobs are public.
+                    'prompt': job.get('prompt', '') if job.get('is_public', False) else 'Private generation',
+                    'radio_station': job.get('radio_station') if job.get('is_public', False) else None,
+                    'loop': bool(job.get('loop', False)),
                     'duration': job.get('duration', 8),
                     'priority': job.get('priority', 'standard'),
                     'created': job.get('created'),

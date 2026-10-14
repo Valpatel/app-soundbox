@@ -51,6 +51,9 @@ with sync_playwright() as pw:
         page.wait_for_function("currentRadioTrack?.id === '" + track['id'] + "' && !radioPlayer.paused")
         expect(page.locator('#now-playing')).to_be_visible()
         expect(page.locator('#now-playing #radio-generation-status')).to_be_visible()
+        assert page.locator('#now-playing .control-bar').evaluate('(el) => el.scrollWidth <= el.clientWidth + 1')
+        page.locator('#now-playing').scroll_into_view_if_needed()
+        page.screenshot(path=f'/tmp/soundbox-radio-waiting-{width}.png')
         # Repeat interlude at exhaustion without admitting another job.
         page.evaluate("radioQueue=[]; radioPlayer.dispatchEvent(new Event('ended'))")
         page.wait_for_function('currentRadioTrack !== null && !radioPlayer.paused')
