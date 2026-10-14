@@ -183,3 +183,11 @@ default remains enabled for public installations. This does not grant admin
 access or change authentication. The global 100-job queue, model readiness,
 prompt/text validation, and 180-second per-request audio bound remain enforced.
 Restart after draining the queue; queued jobs currently live in process memory.
+### Build identity
+
+The top-left build label exposes a fingerprint of `app.py`, `database.py` and
+`templates/index.html`, the UTC build time, and supplied Git revisions. Hover
+or tap to expand details. Docker builds accept `--build-arg VCS_REF=<git-sha>`;
+local releases can run `python scripts/write_build_info.py --revision <git-sha>`.
+Without stamping, the UI honestly shows development. The fingerprint identifies
+the core app source, not every dependency or runtime setting.
